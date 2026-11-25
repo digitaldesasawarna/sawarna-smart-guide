@@ -144,6 +144,7 @@
       renderAllMarkers();
       updateLODVisibility();
       setupSearch();
+      setupRotationControls();
       setupCalibration();
       setupEventHandlers();
 
@@ -183,8 +184,8 @@
     );
 
     const maxBounds = L.latLngBounds(
-      [calibratedBounds.south - 0.005, calibratedBounds.west - 0.005],
-      [calibratedBounds.north + 0.005, calibratedBounds.east + 0.005]
+      [calibratedBounds.south - 0.008, calibratedBounds.west - 0.008],
+      [calibratedBounds.north + 0.008, calibratedBounds.east + 0.008]
     );
 
     map = L.map('map', {
@@ -195,7 +196,12 @@
       zoomControl: false,
       attributionControl: false,
       maxBounds: maxBounds,
-      maxBoundsViscosity: view.maxBoundsViscosity || 0.95
+      maxBoundsViscosity: view.maxBoundsViscosity || 0.95,
+      rotate: true,
+      bearing: 0,
+      touchRotate: true,
+      shiftKeyRotate: true,
+      rotateControl: false
     });
 
     // 1. BASELINE LAYER: Google Maps Hybrid (Satelit + Label Jalan)
@@ -682,6 +688,170 @@
     modalEl.classList.remove('open');
   }
 
+  // --- SETUP MAP ROTATION CONTROLS (0°-360°, COMPASS NEEDLE & PRESETS) ---
+  function setupRotationControls() {
+    const compassBtn = document.getElementById('btn-compass');
+    const compassNeedle = document.getElementById('compass-needle-svg');
+    const compassBadge = document.getElementById('compass-deg-badge');
+    const rotateLeftBtn = document.getElementById('btn-rotate-left');
+    const rotateRightBtn = document.getElementById('btn-rotate-right');
+    const rotationPanel = document.getElementById('rotation-panel');
+    const closeRotationBtn = document.getElementById('btn-close-rotation');
+    const rotationSlider = document.getElementById('rotation-slider');
+    const rotationDegValue = document.getElementById('rotation-deg-value');
+    const rotationDegDesc = document.getElementById('rotation-deg-desc');
+    const presetChips = document.querySelectorAll('.rotation-presets .preset-chip');
+    const scaleMarkers = document.querySelectorAll('.rotation-slider-scale span');
+
+    // Keterangan arah mata angin berdasarkan derajat rotasi
+    function getDirectionDescription(deg) {
+      const d = ((deg % 360) + 360) % 360;
+      if (d >= 348.75 || d < 11.25) return '(Utara)';
+      if (d >= 11.25 && d < 33.75) return '(Utara-Timur Laut)';
+      if (d >= 33.75 && d < 56.25) return '(Timur Laut)';
+      if (d >= 56.25 && d < 78.75) return '(Timur-Timur Laut)';
+      if (d >= 78.75 && d < 101.25) return '(Timur)';
+      if (d >= 101.25 && d < 123.75) return '(Timur-Tenggara)';
+      if (d >= 123.75 && d < 146.25) return '(Tenggara)';
+      if (d >= 146.25 && d < 168.75) return '(Selatan-Tenggara)';
+      if (d >= 168.75 && d < 190.0) return '(Selatan)';
+      if (d >= 190.0 && d <= 200.0) return '(Hadap Pantai Ciantir)';
+      if (d > 200.0 && d < 213.75) return '(Selatan-Barat Daya)';
+      if (d >= 213.75 && d < 236.25) return '(Barat Daya)';
+      if (d >= 236.25 && d < 258.75) return '(Barat-Barat Daya)';
+      if (d >= 258.75 && d < 281.25) return '(Barat)';
+      if (d >= 281.25 && d < 303.75) return '(Barat-Barat Laut)';
+      if (d >= 303.75 && d < 326.25) return '(Barat Laut)';
+      return '(Utara-Barat Laut)';
+    }
+
+    function updateRotationUI(bearing) {
+      const normalized = Math.round(((bearing % 360) + 360) % 360);
+
+      // Jarum kompas: Saat peta berputar searah jarum jam (+bearing),
+      // arah fisik Utara berputar berlawanan jarum jam (-bearing).
+      if (compassNeedle) {
+        compassNeedle.style.transform = `rotate(${-normalized}deg)`;
+      }
+
+      // Badge derajat pada tombol kompas di dock kanan
+      if (compassBadge) {
+        compassBadge.textContent = `${normalized}°`;
+        if (normalized === 0) {
+          compassBadge.classList.remove('rotated');
+        } else {
+          compassBadge.classList.add('rotated');
+        }
+      }
+
+      // Sinkronisasi slider dan teks pembaca derajat
+      if (rotationSlider && document.activeElement !== rotationSlider) {
+        rotationSlider.value = normalized;
+      }
+      if (rotationDegValue) {
+        rotationDegValue.textContent = `${normalized}°`;
+      }
+      if (rotationDegDesc) {
+        rotationDegDesc.textContent = getDirectionDescription(normalized);
+      }
+
+      // Highlight preset chip yang cocok
+      presetChips.forEach(chip => {
+        const chipDeg = parseInt(chip.getAttribute('data-deg'), 10);
+        if (Math.abs(chipDeg - normalized) <= 2 || (chipDeg === 0 && (normalized >= 358 || normalized <= 2))) {
+          chip.classList.add('active');
+        } else {
+          chip.classList.remove('active');
+        }
+      });
+    }
+
+    // Dengarkan event rotasi Leaflet bawaan plugin leaflet-rotate
+    map.on('rotate', () => {
+      const b = map.getBearing();
+      updateRotationUI(b);
+    });
+
+    // Klik tombol kompas:
+    // Jika peta sedang miring/berputar (bearing != 0), reset mulus ke Utara (0°).
+    // Jika peta sudah di 0°, toggle buka/tutup panel rotasi slider derajat.
+    if (compassBtn) {
+      compassBtn.addEventListener('click', (e) => {
+        if (e.target === compassBadge) {
+          if (rotationPanel) rotationPanel.hidden = !rotationPanel.hidden;
+          return;
+        }
+
+        const currentB = Math.round(((map.getBearing() % 360) + 360) % 360);
+        if (currentB !== 0) {
+          map.setBearing(0, { animate: true, duration: 0.4 });
+        } else {
+          if (rotationPanel) rotationPanel.hidden = !rotationPanel.hidden;
+        }
+      });
+    }
+
+    // Klik langsung pada badge angka derajat membuka panel rotasi
+    if (compassBadge) {
+      compassBadge.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (rotationPanel) rotationPanel.hidden = !rotationPanel.hidden;
+      });
+    }
+
+    // Tombol Putar Kiri (-15°)
+    if (rotateLeftBtn) {
+      rotateLeftBtn.addEventListener('click', () => {
+        const target = map.getBearing() - 15;
+        map.setBearing(target, { animate: true, duration: 0.25 });
+      });
+    }
+
+    // Tombol Putar Kanan (+15°)
+    if (rotateRightBtn) {
+      rotateRightBtn.addEventListener('click', () => {
+        const target = map.getBearing() + 15;
+        map.setBearing(target, { animate: true, duration: 0.25 });
+      });
+    }
+
+    // Tutup panel rotasi
+    if (closeRotationBtn) {
+      closeRotationBtn.addEventListener('click', () => {
+        if (rotationPanel) rotationPanel.hidden = true;
+      });
+    }
+
+    // Slider range (0° s.d. 360°)
+    if (rotationSlider) {
+      rotationSlider.addEventListener('input', (e) => {
+        const val = parseFloat(e.target.value);
+        map.setBearing(val);
+      });
+    }
+
+    // Preset arah cepat (0°, 90°, 180°, 195°, 270°)
+    presetChips.forEach(chip => {
+      chip.addEventListener('click', () => {
+        const deg = parseFloat(chip.getAttribute('data-deg'));
+        map.setBearing(deg, { animate: true, duration: 0.4 });
+      });
+    });
+
+    // Label skala pada slider
+    scaleMarkers.forEach(marker => {
+      marker.addEventListener('click', () => {
+        const deg = parseFloat(marker.getAttribute('data-deg'));
+        if (!isNaN(deg)) {
+          map.setBearing(deg, { animate: true, duration: 0.4 });
+        }
+      });
+    });
+
+    // Inisialisasi awal ke 0°
+    updateRotationUI(0);
+  }
+
   // --- REAL-TIME CALIBRATION & GEOREFERENCING ENGINE ---
   function setupCalibration() {
     if (!btnCalibrate || !calibratePanel) return;
@@ -907,6 +1077,7 @@
         [geoBounds.south, geoBounds.west],
         [geoBounds.north, geoBounds.east]
       );
+      map.setBearing(0, { animate: true, duration: 0.4 });
       map.fitBounds(bounds, { animate: true });
 
       if (currentActivePolyline) {

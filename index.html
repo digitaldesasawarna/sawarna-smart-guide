@@ -141,6 +141,38 @@
 
     <!-- FLOATING MAP CONTROLS -->
     <aside class="map-controls">
+      <!-- Kompas & Tombol Orientasi Peta (Rotasi Derajat) -->
+      <button id="btn-compass" class="control-btn compass-btn" title="Kompas & Orientasi Peta (Klik untuk reset Utara / buka slider derajat)" aria-label="Orientasi Kompas Peta">
+        <svg id="compass-needle-svg" class="compass-needle-svg" viewBox="0 0 32 32" width="22" height="22">
+          <circle cx="16" cy="16" r="14" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.3"></circle>
+          <line x1="16" y1="3" x2="16" y2="6" stroke="currentColor" stroke-width="1.5"></line>
+          <!-- Needle: Utara (Merah) -->
+          <polygon points="16,4 12,16 16,13" fill="#e74c3c"></polygon>
+          <polygon points="16,4 20,16 16,13" fill="#c0392b"></polygon>
+          <!-- Needle: Selatan (Abu-abu Slate) -->
+          <polygon points="16,28 12,16 16,19" fill="#7f8c8d"></polygon>
+          <polygon points="16,28 20,16 16,19" fill="#95a5a6"></polygon>
+          <circle cx="16" cy="16" r="2" fill="#2c3e50"></circle>
+        </svg>
+        <span id="compass-deg-badge" class="compass-deg-badge" title="Derajat rotasi peta">0°</span>
+      </button>
+
+      <!-- Putar Kiri (-15°) -->
+      <button id="btn-rotate-left" class="control-btn" title="Putar Kiri (-15°)" aria-label="Putar Berlawanan Jarum Jam">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="1 4 1 10 7 10"></polyline>
+          <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+        </svg>
+      </button>
+
+      <!-- Putar Kanan (+15°) -->
+      <button id="btn-rotate-right" class="control-btn" title="Putar Kanan (+15°)" aria-label="Putar Searah Jarum Jam">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="23 4 23 10 17 10"></polyline>
+          <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+        </svg>
+      </button>
+
       <!-- Layer Toggle (Google Hybrid / Satelit / Roadmap) -->
       <button id="btn-toggle-layer" class="control-btn" title="Ganti Tampilan Google Maps (Hybrid Satelit / Satelit Murni / Peta Jalan)" aria-label="Ganti Lapisan Peta">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -169,13 +201,60 @@
         </svg>
       </button>
       <!-- Reset View -->
-      <button id="btn-reset-view" class="control-btn" title="Tampilan Keseluruhan (Reset)" aria-label="Reset tampilan awal">
+      <button id="btn-reset-view" class="control-btn" title="Tampilan Keseluruhan (Reset Posisi & Orientasi)" aria-label="Reset tampilan awal">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="12" cy="12" r="10"></circle>
           <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon>
         </svg>
       </button>
     </aside>
+
+    <!-- ROTATION CONTROL FLOATING PANEL (SLIDER DERAJAT 0°-360° & PRESET ARAH) -->
+    <div id="rotation-panel" class="rotation-panel" aria-label="Panel Pengaturan Orientasi Peta" hidden>
+      <div class="rotation-panel-header">
+        <div class="rotation-panel-title">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon>
+          </svg>
+          <span>Orientasi Peta</span>
+        </div>
+        <div class="rotation-deg-pill">
+          <span id="rotation-deg-value">0°</span>
+          <span id="rotation-deg-desc">(Utara)</span>
+        </div>
+        <button id="btn-close-rotation" class="rotation-close-btn" aria-label="Tutup panel orientasi">✕</button>
+      </div>
+
+      <div class="rotation-slider-wrap">
+        <input type="range" id="rotation-slider" class="rotation-slider" min="0" max="360" value="0" step="1" aria-label="Derajat Rotasi Peta">
+        <div class="rotation-slider-scale">
+          <span data-deg="0">0° (U)</span>
+          <span data-deg="90">90° (T)</span>
+          <span data-deg="180">180° (S)</span>
+          <span data-deg="270">270° (B)</span>
+          <span data-deg="360">360°</span>
+        </div>
+      </div>
+
+      <div class="rotation-presets-label">Preset Arah Cepat:</div>
+      <div class="rotation-presets">
+        <button type="button" class="preset-chip active" data-deg="0" title="Utara (Default)">0° Utara</button>
+        <button type="button" class="preset-chip" data-deg="90" title="Timur">90° Timur</button>
+        <button type="button" class="preset-chip" data-deg="180" title="Selatan">180° Selatan</button>
+        <button type="button" class="preset-chip highlight-preset" data-deg="195" title="Arah Hadap Laut Pantai Ciantir">195° Hadap Pantai</button>
+        <button type="button" class="preset-chip" data-deg="270" title="Barat">270° Barat</button>
+      </div>
+
+      <div class="rotation-hint">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="16" x2="12" y2="12"></line>
+          <line x1="12" y1="8" x2="12.01" y2="8"></line>
+        </svg>
+        <span>Desktop: <strong>Shift</strong> + scroll mouse atau seret mouse kanan. HP: Putar dengan <strong>2 jari</strong>.</span>
+      </div>
+    </div>
   </main>
 
   <!-- BOTTOM SHEET FACILITY DRAWER -->
@@ -369,6 +448,8 @@
 
   <!-- Leaflet JS -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <!-- Leaflet Rotate Plugin (Dukungan Rotasi Derajat Peta) -->
+  <script src="js/leaflet-rotate.js"></script>
   <!-- Main Application Script -->
   <script src="js/app.js"></script>
 </body>
