@@ -14,10 +14,12 @@ window.PETA = {
     zoomMaks: 19,
   },
 
-  // Peta ilustrasi (dibuat oleh tools/gen-ilustrasi.mjs). Batas HARUS sama dengan data/geografi.json → batasGambar.
+  // Peta ilustrasi: tile WebP hasil tools/gen-ilustrasi.mjs + tools/render-tiles.mjs.
+  // Batas HARUS sama dengan data/geografi.json → batasGambar. Zoom 19 hanya ada di kawasan inti.
   ilustrasi: {
-    url: "assets/peta-ilustrasi.svg",
+    tiles: "assets/tiles/{z}/{x}/{y}.webp",
     batas: [[-6.9960, 106.2960], [-6.9735, 106.3180]],
+    marginInti: 0.0015,
   },
 
   // Label nama tempat di atas ilustrasi. tipe: laut | sungai | zona | alam

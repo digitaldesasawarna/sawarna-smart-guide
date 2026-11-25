@@ -14,6 +14,11 @@
     maxBounds: batasGambar,
     maxBoundsViscosity: 1.0,
     zoomControl: false,
+    rotate: true,
+    bearing: 0,
+    touchRotate: true,
+    shiftKeyRotate: true,
+    rotateControl: false,
   });
   L.control.zoom({ position: "bottomright" }).addTo(map);
 
@@ -34,7 +39,7 @@
         keyboard: false,
         icon: L.divIcon({
           className: `label-peta label-${l.tipe}`,
-          html: `<span style="${l.warna ? `--c:${l.warna};` : ""}${l.putar ? `transform:rotate(${l.putar}deg)` : ""}">${l.teks}</span>`,
+          html: `<span data-putar="${l.putar || 0}" style="${l.warna ? `--c:${l.warna};` : ""}${l.putar ? `transform:rotate(${l.putar}deg)` : ""}">${l.teks}</span>`,
           iconSize: [0, 0],
         }),
       }).on("add", function () { this._zoomMin = l.zoomMin || 0; })
@@ -47,8 +52,15 @@
   map.on("zoomend", aturLabel);
   lapisLabel.on("add", () => setTimeout(aturLabel));
 
+  const batasInti = L.latLngBounds(batas).pad(0).extend([
+    [Math.min(...batas.map((b) => b[0])) - ilustrasi.marginInti, Math.min(...batas.map((b) => b[1])) - ilustrasi.marginInti],
+    [Math.max(...batas.map((b) => b[0])) + ilustrasi.marginInti, Math.max(...batas.map((b) => b[1])) + ilustrasi.marginInti],
+  ]);
+  const opsiTile = { bounds: batasGambar, noWrap: true, keepBuffer: 4, className: "ilustrasi", attribution: "Ilustrasi © KKN Sawarna" };
   const gambar = L.layerGroup([
-    L.imageOverlay(ilustrasi.url, batasGambar, { interactive: false, className: "ilustrasi" }),
+    L.tileLayer(ilustrasi.tiles, { ...opsiTile, minNativeZoom: 16, maxNativeZoom: 18, maxZoom: 19 }),
+    // detail zoom 19 hanya untuk kawasan inti
+    L.tileLayer(ilustrasi.tiles, { ...opsiTile, bounds: batasInti, minZoom: 18.5, minNativeZoom: 19, maxNativeZoom: 19, maxZoom: 19 }),
     lapisLabel,
   ]).addTo(map);
   const satelit = L.tileLayer(
@@ -211,6 +223,7 @@
 
   // ---------- Tombol aksi ----------
   document.getElementById("btn-reset").addEventListener("click", () => {
+    map.setBearing(0);
     map.flyTo(config.pusat, zoomAwal, { duration: 0.6 });
   });
 
@@ -256,6 +269,60 @@
     pertama = true;
     btnLokasi.classList.remove("active");
   });
+
+  // ---------- Arah pandang (rotasi peta) ----------
+  const ARAH = [
+    [0, "U", "Utara"], [45, "TL", "Timur Laut"], [90, "T", "Timur"], [135, "TG", "Tenggara"],
+    [180, "S", "Selatan"], [225, "BD", "Barat Daya"], [270, "B", "Barat"], [315, "BL", "Barat Laut"],
+  ];
+  const elPanel = document.getElementById("panel-arah");
+  const btnKompas = document.getElementById("btn-kompas");
+  const elRange = document.getElementById("pa-range");
+  const norm = (d) => ((Math.round(d) % 360) + 360) % 360;
+  const selisih = (a, b) => Math.abs(((a - b + 540) % 360) - 180);
+  document.getElementById("pa-preset").innerHTML = ARAH.map(
+    ([d, s, n]) => `<button class="pa-chip" data-derajat="${d}" title="${n} (${d}°)"><b>${s}</b><span>${d}°</span></button>`
+  ).join("");
+
+  // derajat = arah yang dihadapi (bagian atas layar). leaflet-rotate memutar isi peta searah jarum jam → bearing = -arah
+  const arahKini = () => norm(-map.getBearing());
+  const setArah = (deg) => map.setBearing(norm(-deg));
+  function perbaruiArah() {
+    const b = arahKini();
+    elRange.value = b;
+    document.getElementById("pa-derajat").textContent = b + "°";
+    const dekat = ARAH.reduce((a, c) => (selisih(c[0], b) < selisih(a[0], b) ? c : a));
+    document.getElementById("pa-nama").textContent = (selisih(dekat[0], b) <= 10 ? "Menghadap " : "Mendekati ") + dekat[2];
+    btnKompas.querySelector(".jarum").style.transform = `rotate(${-b}deg)`;
+    btnKompas.classList.toggle("diputar", b !== 0);
+    elPanel.querySelectorAll(".pa-chip").forEach((c) => c.classList.toggle("on", +c.dataset.derajat === b));
+    // label yang mengikuti garis pantai ikut berputar dan tidak terbalik
+    document.querySelectorAll(".label-peta span[data-putar]").forEach((sp) => {
+      const p = +sp.dataset.putar;
+      if (!p) return;
+      let a = norm(p - b);
+      if (a > 90 && a < 270) a = (a + 180) % 360;
+      sp.style.transform = `rotate(${a}deg)`;
+    });
+  }
+  map.on("rotate", perbaruiArah);
+  map.on("zoomend moveend", perbaruiArah);
+  elRange.addEventListener("input", () => setArah(+elRange.value));
+  elPanel.addEventListener("click", (e) => {
+    const c = e.target.closest("[data-derajat]");
+    const st = e.target.closest("[data-step]");
+    if (c) setArah(+c.dataset.derajat);
+    if (st) setArah(arahKini() + +st.dataset.step);
+  });
+  function bukaPanel(buka) {
+    elPanel.hidden = !buka;
+    btnKompas.setAttribute("aria-expanded", String(buka));
+    btnKompas.classList.toggle("active", buka);
+  }
+  btnKompas.addEventListener("click", () => bukaPanel(elPanel.hidden));
+  btnKompas.addEventListener("dblclick", () => setArah(0));
+  document.getElementById("pa-tutup").addEventListener("click", () => bukaPanel(false));
+  perbaruiArah();
 
   // Mode ambil koordinat (untuk survei / input data)
   let modeKoordinat = false;

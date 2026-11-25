@@ -185,7 +185,35 @@ body { display: flex; flex-direction: column; overflow: hidden; }
 .popup-koor .leaflet-popup-content { padding: 10px 14px; }
 .tip-zona { font-weight: 600; }
 
+/* ---------- Kompas & panel arah pandang ---------- */
+.fab.kompas { padding: 0; display: grid; place-items: center; }
+.fab.kompas svg { width: 34px; height: 34px; }
+.fab.kompas .jarum { transform-origin: 20px 20px; transition: transform .15s; }
+.fab.kompas.active { background: var(--sw-biru-50); color: var(--fg); box-shadow: 0 0 0 2px var(--sw-biru-400), var(--shadow); }
+.panel-arah {
+  position: fixed; right: 68px; bottom: 110px; z-index: 1001; width: 300px;
+  background: var(--bg); border-radius: var(--radius); box-shadow: var(--sw-bayangan-3); padding: 14px 16px 12px;
+}
+.panel-arah[hidden] { display: none; }
+.panel-arah header { display: flex; justify-content: space-between; align-items: flex-start; }
+.pa-judul { font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--sw-oranye-600); }
+.pa-nilai b { font-size: 26px; color: var(--sw-biru-900); }
+.pa-nilai span { color: var(--muted); font-size: 13px; font-weight: 600; }
+.pa-tutup { border: 0; background: var(--soft); width: 36px; height: 36px; border-radius: 50%; cursor: pointer; font-size: 14px; }
+.pa-slider { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+.pa-slider input { flex: 1; accent-color: var(--sw-biru-600); height: 28px; min-width: 0; }
+.pa-step { width: 44px; height: 44px; border-radius: 10px; border: 1px solid var(--line); background: var(--bg); font-size: 18px; cursor: pointer; }
+.pa-skala { display: flex; justify-content: space-between; padding: 0 52px; font-size: 10px; color: var(--muted); }
+.pa-preset { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 10px; }
+.pa-chip { display: flex; flex-direction: column; align-items: center; padding: 6px 0; min-height: 44px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); cursor: pointer; font: inherit; }
+.pa-chip b { font-size: 13px; color: var(--sw-biru-800); }
+.pa-chip span { font-size: 10px; color: var(--muted); }
+.pa-chip.on { border-color: var(--sw-biru-500); background: var(--sw-biru-50); }
+.pa-tips { margin: 10px 0 0; font-size: 11px; color: var(--muted); }
+.pa-tips kbd { font: inherit; font-weight: 700; background: var(--soft); padding: 0 4px; border-radius: 4px; }
+
 @media (max-width: 767px) {
+  .panel-arah { left: 0; right: 0; bottom: 0; width: auto; border-radius: 20px 20px 0 0; padding-bottom: max(14px, env(safe-area-inset-bottom)); }
   .leaflet-control-zoom { display: none; }   /* di HP cukup cubit untuk zoom */
   .fab-stack { bottom: 28px; }
   .legend { font-size: 11px; padding: 6px 10px; }

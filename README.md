@@ -23,6 +23,8 @@ lalu buka http://localhost:5173
 | `js/app.js` | Logika peta (Leaflet): ilustrasi/satelit, filter, lokasi saya, mode ambil koordinat |
 | `data/geografi.json` | Bentuk pantai, sungai, sawah, hutan (untuk ilustrasi) |
 | `tools/gen-ilustrasi.mjs` | Generator ilustrasi peta → `assets/peta-ilustrasi.svg` |
+| `tools/render-tiles.mjs` | SVG → tile WebP `assets/tiles/{z}/{x}/{y}.webp` |
+| `js/vendor/leaflet-rotate.js` | Plugin rotasi peta (Raruto, GPL-3.0) |
 
 ## Fitur kerangka
 
@@ -35,15 +37,16 @@ lalu buka http://localhost:5173
 
 ## Peta ilustrasi
 
-Peta dasar bawaan adalah ilustrasi `assets/peta-ilustrasi.svg` (gaya peta taman wisata), ditempel presisi di atas koordinat asli sehingga marker & GPS tetap tepat. Satelit dan peta jalan tetap tersedia di tombol lapisan.
+Peta dasar bawaan adalah ilustrasi bergaya peta taman wisata, ditempel presisi di atas koordinat asli sehingga marker & GPS tetap tepat. Satelit dan peta jalan tetap tersedia di tombol lapisan. Peta bisa diputar ke segala arah (tombol kompas: slider 0–359°, ±15°, 8 arah mata angin; dua jari di HP; Shift + seret di laptop).
 
-File SVG **dibuat otomatis**, jangan diedit manual. Setelah mengubah zona/jalur di `js/data.js` atau bentuk pantai/sungai/sawah/hutan di `data/geografi.json`, buat ulang:
+Ilustrasi disajikan sebagai **tile WebP** (`assets/tiles/`, ±3,5 MB total; tiap tampilan hanya memuat beberapa ratus KB). Cara membuat ulang setelah mengubah zona/jalur di `js/data.js` atau bentuk alam di `data/geografi.json`:
 
 ```
-node tools/gen-ilustrasi.mjs
+node tools/gen-ilustrasi.mjs     # 1. gambar SVG (assets/peta-ilustrasi.svg, tidak di-commit)
+node tools/render-tiles.mjs      # 2. potong jadi tile WebP memakai Chrome/Edge headless (±30 detik)
 ```
 
-Label nama tempat (Samudra Hindia, zona, dll.) diatur di `js/data.js` → `label`.
+Simbol (rumah, lapak, pohon, payung, dll.) ada di `tools/ilustrasi/simbol.mjs`. Label nama tempat diatur di `js/data.js` → `label`.
 
 ## Menambah data
 
