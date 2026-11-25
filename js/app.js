@@ -1,8 +1,8 @@
 (function () {
-  const { config, kategori, batas, zona, jalur, titik } = window.PETA;
+  const { config, kategori, batas, zona, jalur, titik, ilustrasi, label } = window.PETA;
 
   // ---------- Peta dasar ----------
-  const batasBounds = L.latLngBounds(batas).pad(0.15);
+  const batasGambar = L.latLngBounds(ilustrasi.batas);
   const layarKecil = window.innerWidth < 768;
   const zoomAwal = layarKecil ? config.zoomAwal - 0.5 : config.zoomAwal;
   const map = L.map("map", {
@@ -11,16 +11,50 @@
     zoomSnap: 0.5,
     minZoom: config.zoomMin,
     maxZoom: config.zoomMaks,
-    maxBounds: batasBounds,
+    maxBounds: batasGambar,
     maxBoundsViscosity: 1.0,
     zoomControl: false,
   });
   L.control.zoom({ position: "bottomright" }).addTo(map);
 
+  // Zoom minimum menyesuaikan layar agar tepi ilustrasi tidak pernah terlihat
+  function aturZoomMin() {
+    const z = Math.max(config.zoomMin, Math.ceil(map.getBoundsZoom(batasGambar, true) * 2) / 2);
+    map.setMinZoom(z);
+    if (map.getZoom() < z) map.setZoom(z);
+  }
+  aturZoomMin();
+  map.on("resize", aturZoomMin);
+
+  // Lapisan dasar: ilustrasi (bawaan), satelit, peta jalan
+  const lapisLabel = L.layerGroup(
+    label.map((l) =>
+      L.marker(l.lokasi, {
+        interactive: false,
+        keyboard: false,
+        icon: L.divIcon({
+          className: `label-peta label-${l.tipe}`,
+          html: `<span style="${l.warna ? `--c:${l.warna};` : ""}${l.putar ? `transform:rotate(${l.putar}deg)` : ""}">${l.teks}</span>`,
+          iconSize: [0, 0],
+        }),
+      }).on("add", function () { this._zoomMin = l.zoomMin || 0; })
+    )
+  );
+  function aturLabel() {
+    const z = map.getZoom();
+    lapisLabel.eachLayer((m) => m.getElement() && m.getElement().classList.toggle("sembunyi", z < m._zoomMin));
+  }
+  map.on("zoomend", aturLabel);
+  lapisLabel.on("add", () => setTimeout(aturLabel));
+
+  const gambar = L.layerGroup([
+    L.imageOverlay(ilustrasi.url, batasGambar, { interactive: false, className: "ilustrasi" }),
+    lapisLabel,
+  ]).addTo(map);
   const satelit = L.tileLayer(
     "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
     { maxZoom: 19, attribution: "Citra &copy; Esri" }
-  ).addTo(map);
+  );
   const jalan = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
     maxZoom: 19,
     attribution: "&copy; OpenStreetMap",
@@ -28,17 +62,21 @@
 
   // ---------- Batas, zona, jalur ----------
   const lapisBatas = L.polygon(batas, {
-    color: "#facc15", weight: 3, fill: false, dashArray: "8 6", interactive: false,
-  }).addTo(map);
+    color: "#DF9232", weight: 3, fill: false, dashArray: "8 6", interactive: false,
+  });
 
+  // Di mode ilustrasi zona sudah tergambar → poligon hanya jadi area klik (muncul tipis saat disorot)
+  let modeIlustrasi = true;
+  const gayaZona = (z, sorot) =>
+    modeIlustrasi
+      ? { color: "#fff", weight: sorot ? 3 : 0, opacity: 0.9, fillColor: "#fff", fillOpacity: sorot ? 0.18 : 0 }
+      : { color: z.warna, weight: 2.5, opacity: 1, fillColor: z.warna, fillOpacity: sorot ? 0.38 : 0.22 };
   const lapisZona = L.layerGroup().addTo(map);
   const poligonZona = {};
   zona.forEach((z) => {
-    const p = L.polygon(z.koordinat, {
-      color: z.warna, weight: 2.5, fillColor: z.warna, fillOpacity: 0.22,
-    });
-    p.on("mouseover", () => p.setStyle({ fillOpacity: 0.38 }));
-    p.on("mouseout", () => p.setStyle({ fillOpacity: 0.22 }));
+    const p = L.polygon(z.koordinat, gayaZona(z, false));
+    p.on("mouseover", () => p.setStyle(gayaZona(z, true)));
+    p.on("mouseout", () => p.setStyle(gayaZona(z, false)));
     p.bindPopup(() => buatPopupZona(z, ringkasZona(z)), { className: "popup-zona", maxWidth: 280 });
     p.bindTooltip(z.nama, { sticky: true, className: "tip-zona" });
     p.addTo(lapisZona);
@@ -46,18 +84,25 @@
   });
 
   const lapisJalur = L.polyline(jalur.koordinat, {
-    color: "#3b82f6", weight: 5, opacity: 0.9, lineCap: "round",
-  })
-    .bindTooltip(`🚶 ${jalur.nama}<br><small>${jalur.keterangan}</small>`, { sticky: true })
-    .addTo(map);
+    color: "#C69A5B", weight: 5, opacity: 0.9, lineCap: "round",
+  }).bindTooltip(`🚶 ${jalur.nama}<br><small>${jalur.keterangan}</small>`, { sticky: true });
 
   L.control
     .layers(
-      { "🛰️ Satelit": satelit, "🗺️ Peta jalan": jalan },
+      { "🎨 Ilustrasi": gambar, "🛰️ Satelit": satelit, "🗺️ Peta jalan": jalan },
       { "Zona kawasan": lapisZona, "Jalur utama": lapisJalur, "Batas kawasan": lapisBatas },
       { position: "topright", collapsed: true }
     )
     .addTo(map);
+
+  // Ganti lapisan dasar → sesuaikan tampilan zona/jalur/batas
+  map.on("baselayerchange", (e) => {
+    modeIlustrasi = e.layer === gambar;
+    map.getContainer().classList.toggle("mode-ilustrasi", modeIlustrasi);
+    zona.forEach((z) => poligonZona[z.id].setStyle(gayaZona(z, false)));
+    [lapisJalur, lapisBatas].forEach((l) => (modeIlustrasi ? map.removeLayer(l) : map.addLayer(l)));
+  });
+  map.getContainer().classList.add("mode-ilustrasi");
 
   // ---------- Marker titik layanan ----------
   const ikonPin = (k) =>
@@ -152,8 +197,7 @@
   // ---------- Legenda zona ----------
   document.getElementById("legend").innerHTML =
     zona.map((z) => `<div><span class="sw" style="--c:${z.warna}"></span>${z.nama}</div>`).join("") +
-    `<div><span class="sw line" style="--c:#3b82f6"></span>${jalur.nama}</div>` +
-    `<div><span class="sw dash" style="--c:#facc15"></span>Batas kawasan</div>`;
+    `<div><span class="sw line" style="--c:#C69A5B"></span>${jalur.nama}</div>`;
 
   // ---------- Toast ----------
   const elToast = document.getElementById("toast");

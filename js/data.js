@@ -14,16 +14,33 @@ window.PETA = {
     zoomMaks: 19,
   },
 
+  // Peta ilustrasi (dibuat oleh tools/gen-ilustrasi.mjs). Batas HARUS sama dengan data/geografi.json → batasGambar.
+  ilustrasi: {
+    url: "assets/peta-ilustrasi.svg",
+    batas: [[-6.9960, 106.2960], [-6.9735, 106.3180]],
+  },
+
+  // Label nama tempat di atas ilustrasi. tipe: laut | sungai | zona | alam
+  label: [
+    { teks: "Samudra Hindia", lokasi: [-6.9850, 106.3012], tipe: "laut", zoomMin: 16 },
+    { teks: "Pantai Ciantir", lokasi: [-6.9857, 106.3083], tipe: "alam", zoomMin: 17.5, putar: 58 },
+    { teks: "Sungai Cisawarna", lokasi: [-6.98035, 106.3125], tipe: "sungai", zoomMin: 17, putar: -2 },
+    { teks: "Kawasan UMKM Pantai", lokasi: [-6.9876, 106.3085], tipe: "zona", warna: "#E0674F", zoomMin: 16 },
+    { teks: "Kawasan Homestay", lokasi: [-6.98235, 106.3088], tipe: "zona", warna: "#4E9F6A", zoomMin: 16 },
+    { teks: "Persawahan", lokasi: [-6.9822, 106.3135], tipe: "alam", zoomMin: 17 },
+    { teks: "Hutan", lokasi: [-6.9905, 106.3135], tipe: "alam", zoomMin: 17 },
+  ],
+
   // Kategori layanan: warna pin + ikon + label filter
   kategori: {
-    homestay:    { label: "Homestay",        ikon: "🏠", warna: "#16a34a" },
-    kuliner:     { label: "Kuliner",         ikon: "🍜", warna: "#ea580c" },
-    sewa:        { label: "Sewa & Jasa",     ikon: "🏄", warna: "#0891b2" },
-    fasilitas:   { label: "Tiket & Parkir",  ikon: "🎫", warna: "#7c3aed" },
-    dasar:       { label: "Toilet & Ibadah", ikon: "🚻", warna: "#64748b" },
-    keselamatan: { label: "Keselamatan",     ikon: "⛑️", warna: "#dc2626" },
-    spot:        { label: "Spot Wisata",     ikon: "📸", warna: "#db2777" },
-    akses:       { label: "Akses",           ikon: "🚪", warna: "#2563eb" },
+    homestay:    { label: "Homestay",        ikon: "🏠", warna: "#4E9F6A" },
+    kuliner:     { label: "Kuliner",         ikon: "🍜", warna: "#DF9232" },
+    sewa:        { label: "Sewa & Jasa",     ikon: "🏄", warna: "#2A9DB5" },
+    fasilitas:   { label: "Tiket & Parkir",  ikon: "🎫", warna: "#7A5FB8" },
+    dasar:       { label: "Toilet & Ibadah", ikon: "🚻", warna: "#6B7A8F" },
+    keselamatan: { label: "Keselamatan",     ikon: "⛑️", warna: "#D64545" },
+    spot:        { label: "Spot Wisata",     ikon: "📸", warna: "#D35B9A" },
+    akses:       { label: "Akses",           ikon: "🚪", warna: "#4677B4" },
   },
 
   // Batas kawasan studi (garis kuning)
@@ -37,7 +54,7 @@ window.PETA = {
     {
       id: "zona-umkm",
       nama: "Kawasan UMKM Pantai",
-      warna: "#ef4444",
+      warna: "#E0674F",
       kategori: ["kuliner", "sewa", "dasar"],
       deskripsi: "Deretan warung, kuliner laut, sewa papan surfing, dan fasilitas bilas di sepanjang bibir Pantai Ciantir.",
       koordinat: [
@@ -52,7 +69,7 @@ window.PETA = {
     {
       id: "zona-homestay",
       nama: "Kawasan Homestay",
-      warna: "#22c55e",
+      warna: "#4E9F6A",
       kategori: ["homestay"],
       deskripsi: "Permukiman warga yang menyediakan penginapan, sekitar 5–10 menit jalan kaki ke pantai.",
       koordinat: [

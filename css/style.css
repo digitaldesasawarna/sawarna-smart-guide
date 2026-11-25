@@ -4,10 +4,10 @@
   --muted: #64748b;
   --line: #e2e8f0;
   --soft: #f1f5f9;
-  --accent: #0e7490;
+  --accent: var(--sw-primer);
   --shadow: 0 4px 16px rgba(15, 23, 42, .18);
   --radius: 14px;
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-family: var(--sw-font);
 }
 
 * { box-sizing: border-box; }
@@ -23,11 +23,8 @@ body { display: flex; flex-direction: column; overflow: hidden; }
   padding-top: max(10px, env(safe-area-inset-top));
 }
 .brand { display: flex; align-items: center; gap: 10px; }
-.logo {
-  width: 38px; height: 38px; border-radius: 10px; display: grid; place-items: center;
-  background: linear-gradient(135deg, #0891b2, #0e7490); font-size: 20px;
-}
-.brand h1 { font-size: 17px; margin: 0; line-height: 1.2; }
+.logo { width: 40px; height: auto; display: block; }
+.brand h1 { font-size: 17px; margin: 0; line-height: 1.2; font-weight: 800; color: var(--sw-biru-900); }
 .brand p { font-size: 12px; margin: 0; color: var(--muted); }
 
 .filter {
@@ -46,10 +43,31 @@ body { display: flex; flex-direction: column; overflow: hidden; }
 .chip .n { font-size: 11px; color: var(--muted); background: var(--soft); border-radius: 999px; padding: 0 6px; }
 .chip:not(.on) { opacity: .55; }
 .chip.on { border-color: var(--c); background: color-mix(in srgb, var(--c) 10%, white); }
-.chip.semua.on { background: var(--fg); color: #fff; border-color: var(--fg); }
+.chip.semua.on { background: var(--sw-biru-900); color: #fff; border-color: var(--sw-biru-900); }
 
 /* ---------- Map ---------- */
 #map { flex: 1; background: #0b3b4a; }
+#map.mode-ilustrasi { background: #4C93CD; }
+.ilustrasi { image-rendering: auto; }
+
+/* Label nama tempat di atas ilustrasi */
+.label-peta { pointer-events: none; }
+.label-peta span {
+  position: absolute; left: 0; top: 0; translate: -50% -50%;
+  white-space: nowrap; font-weight: 800; letter-spacing: .02em; transition: opacity .2s;
+}
+.label-peta.sembunyi span { opacity: 0; }
+.label-laut span {
+  font-family: var(--sw-font-aksen); font-weight: 400; font-size: 30px; color: #fff;
+  text-shadow: 0 2px 6px rgba(23, 40, 63, .35); letter-spacing: 0;
+}
+.label-sungai span { font-size: 12px; color: #fff; font-style: italic; text-shadow: 0 1px 3px rgba(23, 40, 63, .6); }
+.label-alam span { font-size: 12px; color: var(--sw-biru-900); text-transform: uppercase; letter-spacing: .14em; text-shadow: 0 0 4px #fff, 0 0 8px #fff; opacity: .8; }
+.label-zona span {
+  --c: var(--sw-biru);
+  font-size: 13px; color: #fff; background: var(--c); padding: 5px 12px 5px 12px; border-radius: 999px;
+  border: 2px solid #fff; box-shadow: 0 3px 10px rgba(23, 40, 63, .25);
+}
 #map.picking { cursor: crosshair; }
 .leaflet-container { font: inherit; }
 .leaflet-interactive:focus { outline: none; }
@@ -152,7 +170,7 @@ body { display: flex; flex-direction: column; overflow: hidden; }
   font: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer;
 }
 .pp-btn.primary { background: var(--accent); border-color: var(--accent); color: #fff !important; }
-.pp-btn.wa { background: #16a34a; border-color: #16a34a; color: #fff !important; }
+.pp-btn.wa { background: var(--sw-whatsapp); border-color: var(--sw-whatsapp); color: #fff !important; }
 .pp-btn.disabled { color: var(--muted) !important; background: var(--soft); cursor: not-allowed; font-weight: 500; }
 
 /* Popup zona */

@@ -20,7 +20,9 @@ lalu buka http://localhost:5173
 | `css/style.css` | Tampilan (mobile-first) |
 | `js/data.js` | **Semua data peta**: batas kawasan, zona, jalur, kategori, titik layanan |
 | `js/popup.js` | Isi pop-up per kategori layanan |
-| `js/app.js` | Logika peta (Leaflet): filter, lokasi saya, mode ambil koordinat |
+| `js/app.js` | Logika peta (Leaflet): ilustrasi/satelit, filter, lokasi saya, mode ambil koordinat |
+| `data/geografi.json` | Bentuk pantai, sungai, sawah, hutan (untuk ilustrasi) |
+| `tools/gen-ilustrasi.mjs` | Generator ilustrasi peta → `assets/peta-ilustrasi.svg` |
 
 ## Fitur kerangka
 
@@ -30,6 +32,18 @@ lalu buka http://localhost:5173
 - Pop-up zona: ringkasan layanan di dalam zona + tombol tampilkan layanan zona
 - Tombol **Lokasi saya** (GPS), **kembali ke awal**, dan **📍 ambil koordinat** (untuk survei)
 - Basemap satelit (Esri) / peta jalan (OSM)
+
+## Peta ilustrasi
+
+Peta dasar bawaan adalah ilustrasi `assets/peta-ilustrasi.svg` (gaya peta taman wisata), ditempel presisi di atas koordinat asli sehingga marker & GPS tetap tepat. Satelit dan peta jalan tetap tersedia di tombol lapisan.
+
+File SVG **dibuat otomatis**, jangan diedit manual. Setelah mengubah zona/jalur di `js/data.js` atau bentuk pantai/sungai/sawah/hutan di `data/geografi.json`, buat ulang:
+
+```
+node tools/gen-ilustrasi.mjs
+```
+
+Label nama tempat (Samudra Hindia, zona, dll.) diatur di `js/data.js` → `label`.
 
 ## Menambah data
 
