@@ -183,26 +183,41 @@
       [calibratedBounds.north, calibratedBounds.east]
     );
 
+    // Batas geografis maksimum dikunci ketat khusus kawasan Pantai Ciantir
+    // (buffer ~300m agar sudut rotasi peta tetap mulus tanpa terpotong)
     const maxBounds = L.latLngBounds(
-      [calibratedBounds.south - 0.008, calibratedBounds.west - 0.008],
-      [calibratedBounds.north + 0.008, calibratedBounds.east + 0.008]
+      [calibratedBounds.south - 0.003, calibratedBounds.west - 0.003],
+      [calibratedBounds.north + 0.003, calibratedBounds.east + 0.003]
     );
 
     map = L.map('map', {
       center: view.center,
-      zoom: view.initialZoom,
-      minZoom: view.minZoom,
-      maxZoom: view.maxZoom,
+      zoom: view.initialZoom || 16.5,
+      minZoom: view.minZoom || 15.5,
+      maxZoom: view.maxZoom || 19,
+      zoomSnap: 0.25,
+      zoomDelta: 0.5,
       zoomControl: false,
       attributionControl: false,
       maxBounds: maxBounds,
-      maxBoundsViscosity: view.maxBoundsViscosity || 0.95,
+      maxBoundsViscosity: 1.0,
       rotate: true,
       bearing: 0,
       touchRotate: true,
       shiftKeyRotate: true,
       rotateControl: false
     });
+
+    // Fungsi adaptif: Batasi zoom out minimum agar selalu pas di wilayah Pantai Ciantir
+    function updateAdaptiveMinZoom() {
+      if (!map) return;
+      const boundsZoom = map.getBoundsZoom(illustrationBounds, false);
+      const computedMinZoom = Math.max(15.25, Math.floor(boundsZoom * 4) / 4);
+      map.setMinZoom(computedMinZoom);
+      if (map.getZoom() < computedMinZoom) {
+        map.setZoom(computedMinZoom);
+      }
+    }
 
     // 1. BASELINE LAYER: Google Maps Hybrid (Satelit + Label Jalan, Bersih Tanpa Titik POI Bawaan)
     googleBaseTileLayer = L.tileLayer('https://mt{s}.google.com/vt/lyrs=y&apistyle=s.t:33|p.v:off&x={x}&y={y}&z={z}', {
@@ -222,10 +237,14 @@
     }
 
     map.fitBounds(illustrationBounds);
+    updateAdaptiveMinZoom();
 
     setTimeout(() => {
       map.invalidateSize();
+      updateAdaptiveMinZoom();
     }, 250);
+
+    map.on('resize', updateAdaptiveMinZoom);
 
     map.on('zoomend', () => {
       updateLODVisibility();

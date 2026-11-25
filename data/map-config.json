@@ -16,10 +16,10 @@
   },
   "view": {
     "center": [-6.9860, 106.3070],
-    "initialZoom": 16,
-    "minZoom": 15,
+    "initialZoom": 16.5,
+    "minZoom": 15.5,
     "maxZoom": 19,
-    "maxBoundsViscosity": 0.95
+    "maxBoundsViscosity": 1.0
   },
   "entrance": {
     "id": "jembatan-gantung",
