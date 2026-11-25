@@ -1,0 +1,112 @@
+/*
+ * Sawarna Smart Guide: design tokens
+ * Sumber warna: logo Sawarna (biru ombak #4677B4, oranye senja #DF9232).
+ * Pakai di halaman mana pun:  <link rel="stylesheet" href="/brand/tokens.css">
+ * Font: <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Yellowtail&display=swap" rel="stylesheet">
+ */
+:root {
+  /* ---------- Warna inti (dari logo) ---------- */
+  --sw-biru: #4677B4;          /* Biru Ombak: warna utama */
+  --sw-oranye: #DF9232;        /* Oranye Senja: aksen */
+  --sw-putih: #FFFFFF;         /* Putih Karang */
+
+  /* Skala Biru Ombak */
+  --sw-biru-50:  #EEF4FB;
+  --sw-biru-100: #D9E6F5;
+  --sw-biru-200: #B5CDEA;
+  --sw-biru-300: #86ABD9;
+  --sw-biru-400: #5C8CC6;
+  --sw-biru-500: #4677B4;
+  --sw-biru-600: #375F95;
+  --sw-biru-700: #2C4C78;
+  --sw-biru-800: #22395A;
+  --sw-biru-900: #17283F;
+
+  /* Skala Oranye Senja */
+  --sw-oranye-50:  #FDF5EA;
+  --sw-oranye-100: #FAE6CB;
+  --sw-oranye-200: #F4CB92;
+  --sw-oranye-300: #EDB063;
+  --sw-oranye-400: #E69D45;
+  --sw-oranye-500: #DF9232;
+  --sw-oranye-600: #B8721F;
+  --sw-oranye-700: #8F5718;
+  --sw-oranye-800: #663E13;
+  --sw-oranye-900: #42290E;
+
+  /* Pendukung alam */
+  --sw-pasir: #F3E3C3;          /* Pasir Ciantir */
+  --sw-pasir-terang: #FBF6EC;   /* latar hangat */
+  --sw-laut: #7FB3D9;           /* laut dangkal (ilustrasi) */
+  --sw-laut-dalam: #4F8FC4;     /* laut dalam (ilustrasi) */
+  --sw-kelapa: #4E9F6A;         /* hijau kelapa */
+  --sw-koral: #E0674F;          /* koral / terakota */
+
+  /* ---------- Netral ---------- */
+  --sw-tinta: #1B2A3D;          /* teks utama */
+  --sw-abu-700: #3E4C5E;
+  --sw-abu-500: #5B6B7F;        /* teks sekunder */
+  --sw-abu-300: #A9B4C2;
+  --sw-abu-200: #E3E8EF;        /* garis */
+  --sw-abu-100: #F2F5F8;        /* latar lembut */
+
+  /* ---------- Semantik UI ---------- */
+  --sw-bg: var(--sw-putih);
+  --sw-bg-hangat: var(--sw-pasir-terang);
+  --sw-surface: var(--sw-putih);
+  --sw-teks: var(--sw-tinta);
+  --sw-teks-2: var(--sw-abu-500);
+  --sw-garis: var(--sw-abu-200);
+  --sw-primer: var(--sw-biru-600);          /* tombol utama (kontras AA dgn putih) */
+  --sw-primer-hover: var(--sw-biru-700);
+  --sw-aksen: var(--sw-oranye-500);
+  --sw-sukses: #2E8B57;
+  --sw-peringatan: #C98A06;
+  --sw-bahaya: #D64545;
+  --sw-whatsapp: #178244;      /* hijau WA digelapkan agar teks putih lolos AA */
+
+  /* ---------- Zona peta ---------- */
+  --sw-zona-umkm: var(--sw-koral);
+  --sw-zona-umkm-isi: #FBE3DC;
+  --sw-zona-homestay: var(--sw-kelapa);
+  --sw-zona-homestay-isi: #DDF0E2;
+  --sw-zona-batas: var(--sw-oranye-500);
+  --sw-jalur: #C69A5B;
+  --sw-jalur-isi: #FFF6E3;
+
+  /* ---------- Kategori layanan (pin) ---------- */
+  --sw-kat-homestay: #4E9F6A;
+  --sw-kat-kuliner: #DF9232;
+  --sw-kat-sewa: #2A9DB5;
+  --sw-kat-fasilitas: #7A5FB8;
+  --sw-kat-dasar: #6B7A8F;
+  --sw-kat-keselamatan: #D64545;
+  --sw-kat-spot: #D35B9A;
+  --sw-kat-akses: #4677B4;
+
+  /* ---------- Tipografi ---------- */
+  --sw-font: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --sw-font-aksen: "Yellowtail", cursive;   /* hanya untuk sapaan/dekorasi, bukan teks isi */
+  --sw-teks-xs: 12px;
+  --sw-teks-sm: 14px;
+  --sw-teks-md: 16px;
+  --sw-teks-lg: 20px;
+  --sw-teks-xl: 24px;
+  --sw-teks-2xl: 32px;
+  --sw-teks-3xl: 44px;
+
+  /* ---------- Ruang, sudut, bayangan ---------- */
+  --sw-s1: 4px;  --sw-s2: 8px;  --sw-s3: 12px; --sw-s4: 16px;
+  --sw-s5: 24px; --sw-s6: 32px; --sw-s7: 48px; --sw-s8: 64px;
+  --sw-r-sm: 8px;
+  --sw-r-md: 12px;
+  --sw-r-lg: 16px;
+  --sw-r-xl: 24px;
+  --sw-r-full: 999px;
+  --sw-bayangan-1: 0 1px 2px rgba(23, 40, 63, .08), 0 1px 3px rgba(23, 40, 63, .06);
+  --sw-bayangan-2: 0 4px 14px rgba(23, 40, 63, .12);
+  --sw-bayangan-3: 0 12px 32px rgba(23, 40, 63, .18);
+
+  /* Ukuran sentuh minimum (HP) */
+  --sw-sentuh: 44px;
+}

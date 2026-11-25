@@ -36,3 +36,15 @@ lalu buka http://localhost:5173
 Edit `js/data.js`. Gunakan tombol 📍 di peta untuk menyalin koordinat `[lat, lng]`.
 Titik bertanda `contoh: true` masih **data contoh** dan perlu diganti dengan hasil survei.
 Isi `kontak.wa` / `kontak.telp` hanya dengan izin pemilik usaha.
+
+## Brand kit
+
+Panduan identitas visual ada di [`brand/index.html`](brand/index.html) (buka `/brand/` di situs).
+
+| Path | Isi |
+|---|---|
+| `brand/tokens.css` | Warna, font, ukuran, sudut, bayangan (CSS variables `--sw-*`) |
+| `brand/logo/` | Logo warna penuh, putih, biru, gelap + simbol (PNG transparan); `sawarna-logo-sumber.jpg` = file asli |
+| `brand/ikon/` | Favicon, ikon aplikasi 192/512, maskable, apple-touch-icon |
+
+Warna inti: **Biru Ombak `#4677B4`** dan **Oranye Senja `#DF9232`**. Font: **Plus Jakarta Sans** (+ Yellowtail untuk aksen).

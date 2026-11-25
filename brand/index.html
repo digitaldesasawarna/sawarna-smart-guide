@@ -1,0 +1,571 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Brand Kit Sawarna</title>
+  <meta name="description" content="Panduan identitas visual Sawarna Smart Guide: logo, warna, tipografi, ikon, komponen, dan gaya ilustrasi peta.">
+  <link rel="icon" href="ikon/favicon-32.png" sizes="32x32">
+  <link rel="apple-touch-icon" href="ikon/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Yellowtail&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="tokens.css">
+  <style>
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { margin: 0; font-family: var(--sw-font); color: var(--sw-teks); background: var(--sw-bg); line-height: 1.6; }
+    img { max-width: 100%; display: block; }
+    a { color: var(--sw-primer); }
+    .wrap { max-width: 1080px; margin: 0 auto; padding: 0 16px; }
+
+    /* Nav */
+    .nav { position: sticky; top: 0; z-index: 10; background: rgba(255,255,255,.92); backdrop-filter: blur(8px); border-bottom: 1px solid var(--sw-garis); }
+    .nav .wrap { display: flex; align-items: center; gap: 16px; height: 60px; }
+    .nav img { height: 30px; width: auto; }
+    .nav ul { display: flex; gap: 4px; list-style: none; margin: 0 0 0 auto; padding: 0; overflow-x: auto; scrollbar-width: none; }
+    .nav ul::-webkit-scrollbar { display: none; }
+    .nav a { display: block; padding: 6px 10px; border-radius: var(--sw-r-full); font-size: var(--sw-teks-sm); font-weight: 600; color: var(--sw-abu-700); text-decoration: none; white-space: nowrap; }
+    .nav a:hover { background: var(--sw-biru-50); color: var(--sw-biru-700); }
+
+    /* Hero */
+    .hero { background: radial-gradient(120% 90% at 85% 0%, var(--sw-oranye-100) 0%, transparent 55%), linear-gradient(180deg, var(--sw-biru-50), var(--sw-pasir-terang)); padding: 64px 0 56px; overflow: hidden; position: relative; }
+    .hero .wrap { display: grid; grid-template-columns: 1.1fr 1fr; gap: 40px; align-items: center; }
+    .eyebrow { font-size: var(--sw-teks-xs); font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--sw-oranye-600); }
+    .hero h1 { font-size: clamp(32px, 6vw, 52px); line-height: 1.08; margin: 8px 0 12px; letter-spacing: -.02em; color: var(--sw-biru-900); }
+    .hero h1 em { font-family: var(--sw-font-aksen); font-style: normal; font-weight: 400; color: var(--sw-biru-500); font-size: 1.15em; }
+    .hero p { color: var(--sw-abu-700); font-size: var(--sw-teks-md); max-width: 46ch; }
+    .hero-logo { background: var(--sw-putih); border-radius: var(--sw-r-xl); box-shadow: var(--sw-bayangan-3); padding: 40px 32px; }
+    .hero-wave { position: absolute; left: 0; right: 0; bottom: -1px; height: 40px; }
+
+    /* Sections */
+    section { padding: 64px 0; border-bottom: 1px solid var(--sw-garis); }
+    section:nth-of-type(even) { background: var(--sw-abu-100); }
+    .sec-head { margin-bottom: 28px; }
+    .sec-head .no { font-size: var(--sw-teks-xs); font-weight: 800; color: var(--sw-oranye-600); letter-spacing: .1em; }
+    h2 { font-size: var(--sw-teks-2xl); line-height: 1.2; margin: 4px 0 8px; letter-spacing: -.01em; color: var(--sw-biru-900); }
+    h3 { font-size: var(--sw-teks-lg); margin: 32px 0 12px; }
+    .lead { color: var(--sw-teks-2); max-width: 62ch; margin: 0; }
+    .grid { display: grid; gap: 16px; }
+    .g2 { grid-template-columns: repeat(2, 1fr); }
+    .g3 { grid-template-columns: repeat(3, 1fr); }
+    .g4 { grid-template-columns: repeat(4, 1fr); }
+    .card { background: var(--sw-surface); border: 1px solid var(--sw-garis); border-radius: var(--sw-r-lg); overflow: hidden; }
+    .card .cap { padding: 12px 16px; font-size: var(--sw-teks-sm); border-top: 1px solid var(--sw-garis); }
+    .card .cap b { display: block; }
+    .card .cap span { color: var(--sw-teks-2); font-size: var(--sw-teks-xs); }
+    .stage { aspect-ratio: 16/10; display: grid; place-items: center; padding: 28px; }
+    .stage img { max-height: 100%; width: auto; object-fit: contain; }
+
+    /* Logo rules */
+    .clear { position: relative; background: var(--sw-putih); padding: 48px; }
+    .clear .box { position: relative; outline: 2px dashed var(--sw-oranye-400); outline-offset: 24px; }
+    .clear .tag { position: absolute; font-size: 11px; font-weight: 700; color: var(--sw-oranye-600); background: var(--sw-oranye-50); padding: 2px 6px; border-radius: 4px; }
+    .dont .stage { position: relative; }
+    .dont .stage::after { content: "✕"; position: absolute; top: 10px; right: 12px; width: 26px; height: 26px; border-radius: 50%; background: var(--sw-bahaya); color: #fff; display: grid; place-items: center; font-size: 13px; font-weight: 800; }
+    .do .stage::after { content: "✓"; background: var(--sw-sukses); }
+
+    /* Colours */
+    .sw { border-radius: var(--sw-r-lg); overflow: hidden; border: 1px solid var(--sw-garis); background: var(--sw-surface); cursor: pointer; text-align: left; font: inherit; padding: 0; color: inherit; transition: transform .15s, box-shadow .15s; }
+    .sw:hover { transform: translateY(-2px); box-shadow: var(--sw-bayangan-2); }
+    .sw .chip { height: 110px; background: var(--c); position: relative; }
+    .sw.big .chip { height: 160px; }
+    .sw .meta { padding: 10px 14px 12px; }
+    .sw .meta b { display: block; font-size: var(--sw-teks-sm); }
+    .sw .meta code { font-size: var(--sw-teks-xs); color: var(--sw-teks-2); }
+    .sw .meta small { display: block; color: var(--sw-teks-2); font-size: 11.5px; margin-top: 2px; }
+    .scale { display: grid; grid-template-columns: repeat(10, 1fr); border-radius: var(--sw-r-md); overflow: hidden; border: 1px solid var(--sw-garis); }
+    .scale button { border: 0; height: 64px; background: var(--c); color: var(--t, #fff); font: 600 11px var(--sw-font); cursor: pointer; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 6px; }
+    .ratio { display: inline-block; font-size: 11px; font-weight: 700; padding: 1px 6px; border-radius: 4px; margin-top: 4px; }
+    .ratio.ok { background: #DCF2E3; color: #1E6B3F; }
+    .ratio.no { background: #FDE2E2; color: #9B2C2C; }
+
+    /* Type */
+    .type-row { display: grid; grid-template-columns: 120px 1fr; gap: 16px; align-items: baseline; padding: 14px 0; border-bottom: 1px dashed var(--sw-garis); }
+    .type-row code { color: var(--sw-teks-2); font-size: var(--sw-teks-xs); }
+    .specimen { font-size: clamp(48px, 9vw, 96px); font-weight: 800; letter-spacing: -.03em; line-height: 1; color: var(--sw-biru-900); margin: 0; }
+    .glyphs { font-size: var(--sw-teks-lg); color: var(--sw-abu-700); word-break: break-all; }
+
+    /* Pins */
+    .pins { display: flex; flex-wrap: wrap; gap: 20px 28px; }
+    .pin-demo { display: flex; flex-direction: column; align-items: center; gap: 10px; width: 92px; text-align: center; font-size: var(--sw-teks-xs); font-weight: 600; }
+    .pin { width: 44px; height: 44px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); background: var(--c); border: 3px solid #fff; box-shadow: 0 4px 10px rgba(23,40,63,.3); display: grid; place-items: center; }
+    .pin span { transform: rotate(45deg); font-size: 19px; }
+    .pin-demo code { font-weight: 400; color: var(--sw-teks-2); }
+
+    /* Components */
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: var(--sw-sentuh); padding: 0 18px; border-radius: var(--sw-r-md); border: 1px solid transparent; font: 700 var(--sw-teks-sm) var(--sw-font); cursor: pointer; text-decoration: none; }
+    .btn-primer { background: var(--sw-primer); color: #fff; }
+    .btn-primer:hover { background: var(--sw-primer-hover); }
+    .btn-aksen { background: var(--sw-oranye-500); color: var(--sw-biru-900); }
+    .btn-wa { background: var(--sw-whatsapp); color: #fff; }
+    .btn-garis { background: #fff; border-color: var(--sw-garis); color: var(--sw-teks); }
+    .btn-mati { background: var(--sw-abu-100); color: var(--sw-abu-500); cursor: not-allowed; }
+    .row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+    .fchip { display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 14px; border-radius: var(--sw-r-full); border: 1.5px solid var(--sw-garis); background: #fff; font: 600 13px var(--sw-font); }
+    .fchip i { width: 8px; height: 8px; border-radius: 50%; background: var(--c); }
+    .fchip.on { border-color: var(--c); background: color-mix(in srgb, var(--c) 12%, white); }
+    .fchip.all { background: var(--sw-biru-900); color: #fff; border-color: var(--sw-biru-900); }
+
+    .demo-pair { display: grid; grid-template-columns: 1fr 300px; gap: 24px; align-items: start; }
+    .popup { width: 290px; background: #fff; border-radius: var(--sw-r-lg); box-shadow: var(--sw-bayangan-3); overflow: hidden; }
+    .popup .ph { height: 120px; background: linear-gradient(135deg, color-mix(in srgb, var(--sw-kat-homestay) 70%, white), var(--sw-kat-homestay)); display: grid; place-items: center; font-size: 46px; }
+    .popup .bd { padding: 14px 16px 16px; font-size: 13px; }
+    .badge { display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 9px; border-radius: var(--sw-r-full); color: var(--c); background: color-mix(in srgb, var(--c) 13%, white); }
+    .popup h4 { margin: 6px 0 2px; font-size: 17px; }
+    .popup p { margin: 0 0 10px; color: var(--sw-teks-2); }
+    .kv { display: flex; justify-content: space-between; padding: 4px 0; border-top: 1px dashed var(--sw-garis); }
+    .kv span { color: var(--sw-teks-2); }
+    .popup .row { margin-top: 12px; }
+    .popup .btn { flex: 1; min-height: 40px; font-size: 12.5px; padding: 0 10px; }
+
+    .phone { width: 300px; height: 560px; border-radius: 40px; border: 10px solid var(--sw-biru-900); background: #9fc3df; position: relative; overflow: hidden; box-shadow: var(--sw-bayangan-3); justify-self: center; }
+    .phone .map { position: absolute; inset: 0; }
+    .phone .bar { position: absolute; top: 0; left: 0; right: 0; background: #fff; padding: 14px 12px 8px; display: flex; align-items: center; gap: 8px; box-shadow: var(--sw-bayangan-1); }
+    .phone .bar img { height: 22px; width: auto; }
+    .phone .sheet { position: absolute; left: 0; right: 0; bottom: 0; background: #fff; border-radius: 22px 22px 0 0; padding: 8px 16px 16px; box-shadow: 0 -8px 24px rgba(23,40,63,.2); font-size: 12.5px; }
+    .phone .grab { width: 40px; height: 5px; border-radius: 3px; background: var(--sw-abu-300); margin: 0 auto 10px; }
+    .phone .sheet h4 { margin: 6px 0 2px; font-size: 15px; }
+    .phone .sheet .btn { min-height: 38px; font-size: 12px; flex: 1; }
+
+    /* Illustration */
+    .illus { border-radius: var(--sw-r-xl); overflow: hidden; box-shadow: var(--sw-bayangan-2); background: var(--sw-laut); }
+    .illus svg { display: block; width: 100%; height: auto; }
+    .legend-ill { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; margin-top: 20px; }
+    .legend-ill div { display: flex; gap: 12px; align-items: flex-start; background: #fff; border: 1px solid var(--sw-garis); border-radius: var(--sw-r-md); padding: 12px; font-size: 13px; }
+    .legend-ill i { flex: none; width: 34px; height: 24px; border-radius: 6px; background: var(--c); border: 2px solid var(--b, transparent); }
+    .legend-ill b { display: block; }
+    .legend-ill span { color: var(--sw-teks-2); }
+
+    /* Voice */
+    .voice { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .voice .card { padding: 18px 20px; }
+    .voice h4 { margin: 0 0 10px; display: flex; gap: 8px; align-items: center; }
+    .voice ul { margin: 0; padding-left: 18px; }
+    .voice li { margin: 6px 0; }
+    .yes h4 { color: var(--sw-sukses); }
+    .no h4 { color: var(--sw-bahaya); }
+
+    /* Downloads */
+    .dl a { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border: 1px solid var(--sw-garis); border-radius: var(--sw-r-md); background: #fff; text-decoration: none; color: var(--sw-teks); font-size: var(--sw-teks-sm); font-weight: 600; }
+    .dl a:hover { border-color: var(--sw-biru-300); background: var(--sw-biru-50); }
+    .dl img { width: 44px; height: 32px; object-fit: contain; background: var(--sw-abu-100); border-radius: 6px; padding: 3px; }
+    .dl img.dark { background: var(--sw-biru-800); }
+    .dl small { display: block; color: var(--sw-teks-2); font-weight: 400; }
+
+    footer { padding: 32px 0 48px; color: var(--sw-teks-2); font-size: var(--sw-teks-sm); text-align: center; }
+    .toast { position: fixed; left: 50%; bottom: 24px; transform: translate(-50%, 20px); background: var(--sw-biru-900); color: #fff; padding: 10px 16px; border-radius: var(--sw-r-full); font-size: 13px; font-weight: 600; opacity: 0; transition: .2s; pointer-events: none; z-index: 20; }
+    .toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+    @media (max-width: 860px) {
+      .hero .wrap, .demo-pair { grid-template-columns: 1fr; }
+      .g4 { grid-template-columns: repeat(2, 1fr); }
+      .g3 { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 560px) {
+      section { padding: 44px 0; }
+      .hero { padding: 40px 0 48px; }
+      .g2, .g3, .voice { grid-template-columns: 1fr; }
+      .scale { grid-template-columns: repeat(5, 1fr); }
+      .type-row { grid-template-columns: 1fr; gap: 2px; }
+      .nav img { height: 24px; }
+      .clear { padding: 36px; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <div class="wrap">
+      <img src="logo/sawarna-logo-web.png" alt="Sawarna">
+      <ul>
+        <li><a href="#logo">Logo</a></li>
+        <li><a href="#warna">Warna</a></li>
+        <li><a href="#tipografi">Tipografi</a></li>
+        <li><a href="#ikon">Ikon</a></li>
+        <li><a href="#komponen">Komponen</a></li>
+        <li><a href="#ilustrasi">Ilustrasi</a></li>
+        <li><a href="#bahasa">Bahasa</a></li>
+        <li><a href="#unduh">Unduh</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <header class="hero">
+    <div class="wrap">
+      <div>
+        <div class="eyebrow">Brand Kit · v1.0</div>
+        <h1>Sawarna <em>Smart Guide</em></h1>
+        <p>Panduan identitas visual untuk peta interaktif Pantai Ciantir. Semua turunan diambil dari logo Sawarna: <b>biru ombak</b>, <b>oranye senja</b>, dan <b>putih karang</b> Tanjung Layar.</p>
+      </div>
+      <div class="hero-logo"><img src="logo/sawarna-logo-web.png" alt="Logo Sawarna"></div>
+    </div>
+    <svg class="hero-wave" viewBox="0 0 1440 40" preserveAspectRatio="none" aria-hidden="true"><path d="M0 22 C 240 2, 480 38, 720 20 S 1200 4, 1440 22 V40 H0Z" fill="#fff"/></svg>
+  </header>
+
+  <!-- 01 LOGO -->
+  <section id="logo">
+    <div class="wrap">
+      <div class="sec-head"><div class="no">01</div><h2>Logo</h2>
+        <p class="lead">Logo terdiri dari <b>wordmark</b> "Sawarna" dan <b>simbol</b> matahari senja, karang Tanjung Layar, serta ombak. Gunakan versi penuh bila ruang cukup, dan simbol saja untuk ikon aplikasi, favicon, atau pin.</p></div>
+
+      <div class="grid g2">
+        <div class="card"><div class="stage" style="background:#fff"><img src="logo/sawarna-logo-web.png" alt=""></div><div class="cap"><b>Utama: warna penuh</b><span>Latar putih atau terang</span></div></div>
+        <div class="card"><div class="stage" style="background:var(--sw-biru-800)"><img src="logo/sawarna-logo-putih-web.png" alt=""></div><div class="cap"><b>Putih</b><span>Latar biru tua, foto gelap</span></div></div>
+        <div class="card"><div class="stage" style="background:var(--sw-pasir-terang)"><img src="logo/sawarna-logo-biru-web.png" alt=""></div><div class="cap"><b>Satu warna: biru</b><span>Cetak satu warna, stempel, kaos</span></div></div>
+        <div class="card"><div class="stage" style="background:var(--sw-oranye-200)"><img src="logo/sawarna-logo-gelap-web.png" alt=""></div><div class="cap"><b>Satu warna: gelap</b><span>Latar oranye/pasir, dokumen hitam-putih</span></div></div>
+      </div>
+
+      <h3>Simbol &amp; ikon aplikasi</h3>
+      <div class="grid g4">
+        <div class="card"><div class="stage" style="background:#fff"><img src="logo/sawarna-mark-web.png" alt=""></div><div class="cap"><b>Simbol</b><span>Pin peta, stiker</span></div></div>
+        <div class="card"><div class="stage" style="background:var(--sw-biru-500)"><img src="logo/sawarna-mark-putih-web.png" alt=""></div><div class="cap"><b>Simbol putih</b><span>Di atas biru</span></div></div>
+        <div class="card"><div class="stage" style="background:var(--sw-abu-100)"><img src="ikon/icon-192.png" alt="" style="border-radius:22%;box-shadow:var(--sw-bayangan-2);max-width:96px"></div><div class="cap"><b>Ikon aplikasi</b><span>PWA / layar utama HP</span></div></div>
+        <div class="card"><div class="stage" style="background:var(--sw-abu-100)"><div class="row" style="gap:18px;align-items:end"><img src="ikon/favicon-64.png" alt="" width="48" height="48"><img src="ikon/favicon-32.png" alt="" width="32" height="32"><img src="ikon/favicon-32.png" alt="" width="16" height="16"></div></div><div class="cap"><b>Favicon</b><span>48 · 32 · 16 px</span></div></div>
+      </div>
+
+      <h3>Ruang aman &amp; ukuran minimum</h3>
+      <div class="grid g2">
+        <div class="card"><div class="clear"><div class="box"><img src="logo/sawarna-logo-web.png" alt=""></div></div>
+          <div class="cap"><b>Ruang aman = tinggi matahari ÷ 2</b><span>Jangan ada teks/gambar lain di dalam garis putus-putus</span></div></div>
+        <div class="card"><div class="stage" style="background:#fff;gap:20px;grid-auto-flow:column;align-items:end">
+            <div style="text-align:center"><img src="logo/sawarna-logo-web.png" alt="" style="width:120px;height:auto"><small style="color:var(--sw-teks-2)">120 px</small></div>
+            <div style="text-align:center"><img src="logo/sawarna-mark-web.png" alt="" style="width:24px;height:auto;margin:0 auto"><small style="color:var(--sw-teks-2)">24 px</small></div>
+          </div>
+          <div class="cap"><b>Minimum: logo penuh 120 px, simbol 24 px</b><span>Cetak: logo penuh 30 mm, simbol 8 mm</span></div></div>
+      </div>
+
+      <h3>Yang tidak boleh</h3>
+      <div class="grid g4">
+        <div class="card dont"><div class="stage" style="background:#fff"><img src="logo/sawarna-logo-web.png" alt="" style="transform:scaleX(1.45)"></div><div class="cap"><b>Ditarik/gepeng</b></div></div>
+        <div class="card dont"><div class="stage" style="background:#fff"><img src="logo/sawarna-logo-web.png" alt="" style="filter:hue-rotate(150deg) saturate(1.6)"></div><div class="cap"><b>Ganti warna</b></div></div>
+        <div class="card dont"><div class="stage" style="background:#fff"><img src="logo/sawarna-logo-web.png" alt="" style="transform:rotate(-14deg)"></div><div class="cap"><b>Diputar</b></div></div>
+        <div class="card dont"><div class="stage" style="background:var(--sw-biru-500)"><img src="logo/sawarna-logo-web.png" alt=""></div><div class="cap"><b>Kontras rendah</b><span>Pakai versi putih</span></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 02 WARNA -->
+  <section id="warna">
+    <div class="wrap">
+      <div class="sec-head"><div class="no">02</div><h2>Warna</h2>
+        <p class="lead">Klik warna untuk menyalin kode hex. Proporsi ideal: <b>60% putih/pasir</b>, <b>30% biru</b>, <b>10% oranye</b>. Oranye adalah aksen, bukan warna latar besar.</p></div>
+
+      <div class="grid g3">
+        <button class="sw big" data-hex="#4677B4" style="--c:#4677B4"><div class="chip"></div><div class="meta"><b>Biru Ombak</b><code>#4677B4 · var(--sw-biru)</code><small>Warna utama: wordmark, judul, link</small></div></button>
+        <button class="sw big" data-hex="#DF9232" style="--c:#DF9232"><div class="chip"></div><div class="meta"><b>Oranye Senja</b><code>#DF9232 · var(--sw-oranye)</code><small>Aksen: sorotan, tombol sekunder, label</small></div></button>
+        <button class="sw big" data-hex="#FFFFFF" style="--c:#FFFFFF"><div class="chip" style="border-bottom:1px solid var(--sw-garis)"></div><div class="meta"><b>Putih Karang</b><code>#FFFFFF · var(--sw-putih)</code><small>Latar utama, ruang bernapas</small></div></button>
+      </div>
+
+      <h3>Skala Biru Ombak</h3>
+      <div class="scale" id="scale-biru"></div>
+      <h3>Skala Oranye Senja</h3>
+      <div class="scale" id="scale-oranye"></div>
+
+      <h3>Warna alam pendukung</h3>
+      <div class="grid g3" id="alam"></div>
+
+      <h3>Zona peta &amp; kategori layanan</h3>
+      <div class="grid g4" id="zona-kat"></div>
+
+      <h3>Kontras teks (WCAG)</h3>
+      <div class="grid g4" id="kontras"></div>
+    </div>
+  </section>
+
+  <!-- 03 TIPOGRAFI -->
+  <section id="tipografi">
+    <div class="wrap">
+      <div class="sec-head"><div class="no">03</div><h2>Tipografi</h2>
+        <p class="lead"><b>Plus Jakarta Sans</b> adalah huruf karya desainer Indonesia (Tokotype), gratis di Google Fonts. Bentuknya ramah, jelas di layar HP, dan cocok berdampingan dengan wordmark berhuruf sambung. <b>Yellowtail</b> hanya dipakai sebagai aksen sapaan.</p></div>
+
+      <div class="grid g2" style="align-items:center">
+        <div>
+          <p class="specimen">Aa Bb</p>
+          <p class="glyphs">ABCDEFGHIJKLMNOPQRSTUVWXYZ<br>abcdefghijklmnopqrstuvwxyz<br>0123456789 Rp · ± % → ★</p>
+        </div>
+        <div class="card" style="padding:24px">
+          <div style="font-family:var(--sw-font-aksen);font-size:40px;color:var(--sw-biru);line-height:1">Selamat datang!</div>
+          <div style="font-weight:800;font-size:24px;margin-top:8px;color:var(--sw-biru-900)">Jelajahi Pantai Ciantir</div>
+          <p style="margin:6px 0 0;color:var(--sw-teks-2)">Temukan homestay, kuliner laut, dan spot surfing terbaik, semuanya dalam satu peta.</p>
+        </div>
+      </div>
+
+      <h3>Skala ukuran</h3>
+      <div>
+        <div class="type-row"><code>3xl · 44 / 800</code><div style="font-size:44px;font-weight:800;line-height:1.1;letter-spacing:-.02em">Judul halaman</div></div>
+        <div class="type-row"><code>2xl · 32 / 700</code><div style="font-size:32px;font-weight:700;line-height:1.2">Judul bagian</div></div>
+        <div class="type-row"><code>xl · 24 / 700</code><div style="font-size:24px;font-weight:700">Nama tempat di panel</div></div>
+        <div class="type-row"><code>lg · 20 / 600</code><div style="font-size:20px;font-weight:600">Subjudul</div></div>
+        <div class="type-row"><code>md · 16 / 400</code><div style="font-size:16px">Teks isi: deskripsi tempat dan paragraf informasi.</div></div>
+        <div class="type-row"><code>sm · 14 / 500</code><div style="font-size:14px;font-weight:500">Label, tombol, chip filter</div></div>
+        <div class="type-row"><code>xs · 12 / 600</code><div style="font-size:12px;font-weight:600;color:var(--sw-teks-2)">KETERANGAN · BADGE · ATRIBUSI</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 04 IKON & PIN -->
+  <section id="ikon">
+    <div class="wrap">
+      <div class="sec-head"><div class="no">04</div><h2>Ikon &amp; Pin Peta</h2>
+        <p class="lead">Setiap kategori layanan punya satu warna dan satu ikon. Pin berbentuk tetesan dengan bingkai putih agar terbaca di atas ilustrasi maupun foto satelit.</p></div>
+      <div class="pins" id="pins"></div>
+    </div>
+  </section>
+
+  <!-- 05 KOMPONEN -->
+  <section id="komponen">
+    <div class="wrap">
+      <div class="sec-head"><div class="no">05</div><h2>Komponen UI</h2>
+        <p class="lead">Semua elemen sentuh minimal <b>44 px</b>. Di layar lebar informasi tampil sebagai <b>kartu pop-up</b>, di HP sebagai <b>panel bawah (bottom sheet)</b> agar peta tetap terlihat.</p></div>
+
+      <h3 style="margin-top:0">Tombol</h3>
+      <div class="row">
+        <a class="btn btn-primer" href="#komponen">🧭 Petunjuk Arah</a>
+        <a class="btn btn-wa" href="#komponen">💬 WhatsApp</a>
+        <a class="btn btn-aksen" href="#komponen">☀️ Spot Sunset</a>
+        <a class="btn btn-garis" href="#komponen">📞 Telepon</a>
+        <span class="btn btn-mati">Kontak belum tersedia</span>
+      </div>
+
+      <h3>Chip filter</h3>
+      <div class="row">
+        <span class="fchip all">Semua</span>
+        <span class="fchip on" style="--c:var(--sw-kat-homestay)"><i></i>🏠 Homestay</span>
+        <span class="fchip on" style="--c:var(--sw-kat-kuliner)"><i></i>🍜 Kuliner</span>
+        <span class="fchip" style="--c:var(--sw-kat-sewa)"><i></i>🏄 Sewa &amp; Jasa</span>
+        <span class="fchip" style="--c:var(--sw-kat-keselamatan)"><i></i>⛑️ Keselamatan</span>
+      </div>
+
+      <h3>Kartu informasi: web &amp; HP</h3>
+      <div class="demo-pair">
+        <div class="popup" style="justify-self:center">
+          <div class="ph">🏠</div>
+          <div class="bd">
+            <span class="badge" style="--c:var(--sw-kat-homestay)">🏠 Homestay</span>
+            <h4>Homestay Contoh B</h4>
+            <p>Dekat jalur utama, cocok untuk rombongan keluarga.</p>
+            <div class="kv"><span>💰 Harga</span><b>Rp300.000 / malam</b></div>
+            <div class="kv"><span>🛏️ Kamar</span><b>6 kamar</b></div>
+            <div class="kv"><span>📍 Ke pantai</span><b>± 300 m</b></div>
+            <div class="row"><a class="btn btn-primer" href="#komponen">🧭 Arah</a><a class="btn btn-wa" href="#komponen">💬 WhatsApp</a></div>
+          </div>
+        </div>
+        <div class="phone" aria-label="Contoh tampilan HP">
+          <svg class="map" viewBox="0 0 280 540" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+            <rect width="280" height="540" fill="#7FB3D9"/>
+            <path d="M120 0 H280 V540 H230 C 200 420 150 300 120 0Z" fill="#F3E3C3"/>
+            <path d="M160 0 H280 V540 H260 C 230 400 190 260 160 0Z" fill="#CFE6C4"/>
+            <path d="M175 80 C 200 200 215 300 245 420 L 280 420 L 280 60Z" fill="#FBE3DC" stroke="#E0674F" stroke-width="2" stroke-dasharray="6 4"/>
+            <path d="M250 40 C 235 140 230 250 255 330" stroke="#C69A5B" stroke-width="9" fill="none" stroke-linecap="round"/>
+            <path d="M250 40 C 235 140 230 250 255 330" stroke="#FFF6E3" stroke-width="5" fill="none" stroke-linecap="round"/>
+          </svg>
+          <div class="bar"><img src="logo/sawarna-logo-web.png" alt=""><span style="margin-left:auto" class="fchip on" title="filter">🔍</span></div>
+          <div class="sheet">
+            <div class="grab"></div>
+            <span class="badge" style="--c:var(--sw-kat-kuliner)">🍜 Kuliner</span>
+            <h4>Warung Seafood Contoh</h4>
+            <div style="color:var(--sw-teks-2)">Buka · 08.00–21.00 · ± 120 m</div>
+            <div class="row" style="margin-top:10px"><a class="btn btn-primer" href="#komponen">🧭 Arah</a><a class="btn btn-wa" href="#komponen">💬 Chat</a></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 06 ILUSTRASI -->
+  <section id="ilustrasi">
+    <div class="wrap">
+      <div class="sec-head"><div class="no">06</div><h2>Gaya Ilustrasi Peta</h2>
+        <p class="lead">Peta memakai gaya <b>ilustrasi datar (flat) dengan sedikit kedalaman</b>, seperti papan peta taman wisata. Setiap zona dibedakan oleh <b>warna dasar + bentuk bangunan khasnya</b>, bukan hanya garis tepi.</p></div>
+      <div class="illus">
+        <svg viewBox="0 0 960 520" role="img" aria-label="Contoh gaya ilustrasi peta: laut, pantai, zona UMKM, zona homestay, jalur, dan batas kawasan">
+          <defs>
+            <linearGradient id="laut" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#3F7FB8"/><stop offset=".6" stop-color="#6FA9D6"/><stop offset="1" stop-color="#9CCBEA"/></linearGradient>
+            <pattern id="ombak" width="60" height="26" patternUnits="userSpaceOnUse"><path d="M0 13 q 15 -9 30 0 t 30 0" stroke="#fff" stroke-opacity=".35" stroke-width="2.2" fill="none" stroke-linecap="round"/></pattern>
+            <pattern id="pasir" width="14" height="14" patternUnits="userSpaceOnUse"><circle cx="3" cy="4" r="1" fill="#D9C08F" opacity=".6"/><circle cx="10" cy="11" r=".8" fill="#D9C08F" opacity=".5"/></pattern>
+            <pattern id="rumput" width="18" height="18" patternUnits="userSpaceOnUse"><path d="M4 12 l2 -4 l2 4 M12 6 l2 -4 l2 4" stroke="#8FBF86" stroke-width="1.2" fill="none"/></pattern>
+            <symbol id="lapak" viewBox="0 0 40 34">
+              <rect x="4" y="14" width="32" height="18" rx="2" fill="#fff" stroke="#B5502F" stroke-width="1.5"/>
+              <path d="M2 14 L6 4 H34 L38 14Z" fill="#E0674F"/>
+              <path d="M10 4 L8 14 M18 4 L17 14 M26 4 L27 14 M33 4 L35 14" stroke="#fff" stroke-width="3.2"/>
+              <path d="M2 14 q 4.5 5 9 0 q 4.5 5 9 0 q 4.5 5 9 0 q 4.5 5 9 0" fill="#E0674F"/>
+              <rect x="15" y="21" width="10" height="11" fill="#F4CB92"/>
+            </symbol>
+            <symbol id="payung" viewBox="0 0 30 34">
+              <path d="M15 8 V32" stroke="#6B4A2B" stroke-width="2"/>
+              <path d="M2 12 Q15 -4 28 12Z" fill="#DF9232"/><path d="M15 2 Q10 6 9 12 M15 2 Q20 6 21 12" stroke="#fff" stroke-width="2.4" fill="none"/>
+            </symbol>
+            <symbol id="rumah" viewBox="0 0 40 38">
+              <rect x="6" y="16" width="28" height="20" rx="2" fill="#FFF8EE" stroke="#8A5A3B" stroke-width="1.4"/>
+              <path d="M2 18 L20 3 L38 18Z" fill="#C2553A" stroke="#8A3B26" stroke-width="1.4" stroke-linejoin="round"/>
+              <rect x="17" y="24" width="7" height="12" fill="#8A5A3B"/>
+              <rect x="9" y="21" width="6" height="5" fill="#9CCBEA" stroke="#8A5A3B"/><rect x="27" y="21" width="5" height="5" fill="#9CCBEA" stroke="#8A5A3B"/>
+            </symbol>
+            <symbol id="kelapa" viewBox="0 0 40 48">
+              <path d="M20 46 C 21 34 19 24 22 16" stroke="#8A6A43" stroke-width="3" fill="none" stroke-linecap="round"/>
+              <path d="M22 16 C 14 8 6 10 2 16 M22 16 C 30 7 37 10 39 15 M22 16 C 18 4 24 0 28 2 M22 16 C 13 15 9 22 9 26 M22 16 C 31 16 35 22 34 26" stroke="#3F8F5A" stroke-width="5" fill="none" stroke-linecap="round"/>
+            </symbol>
+            <symbol id="pohon" viewBox="0 0 30 30"><circle cx="15" cy="14" r="12" fill="#5FAE72"/><circle cx="11" cy="11" r="5" fill="#7CC48C"/></symbol>
+          </defs>
+
+          <!-- laut -->
+          <rect width="960" height="520" fill="url(#laut)"/>
+          <rect width="960" height="520" fill="url(#ombak)"/>
+          <!-- daratan -->
+          <path d="M330 0 H960 V520 H600 C 520 420 430 250 330 0Z" fill="#E7F0D8"/>
+          <rect width="960" height="520" fill="url(#rumput)" clip-path="url(#darat)" opacity=".7"/>
+          <clipPath id="darat"><path d="M400 0 H960 V520 H640 C 560 420 480 240 400 0Z"/></clipPath>
+          <!-- pasir -->
+          <path d="M330 0 H410 C 480 230 560 400 650 520 H600 C 520 420 430 250 330 0Z" fill="#F3E3C3"/>
+          <path d="M330 0 H410 C 480 230 560 400 650 520 H600 C 520 420 430 250 330 0Z" fill="url(#pasir)"/>
+          <!-- buih -->
+          <path d="M318 0 C 420 250 500 400 588 520" stroke="#fff" stroke-width="6" fill="none" stroke-linecap="round" opacity=".85"/>
+          <path d="M296 0 C 395 250 476 400 560 520" stroke="#fff" stroke-width="2.5" fill="none" stroke-dasharray="18 14" opacity=".6"/>
+
+          <!-- zona UMKM -->
+          <path d="M415 40 L520 30 L600 150 L640 250 L700 330 L740 470 L690 490 L620 380 L540 260 L470 150Z" fill="#FBE3DC" stroke="#E0674F" stroke-width="3" stroke-dasharray="10 6" stroke-linejoin="round"/>
+          <g>
+            <use href="#lapak" x="455" y="60" width="40" height="34"/><use href="#lapak" x="490" y="100" width="40" height="34"/>
+            <use href="#lapak" x="515" y="145" width="40" height="34"/><use href="#lapak" x="548" y="190" width="40" height="34"/>
+            <use href="#lapak" x="580" y="238" width="40" height="34"/><use href="#lapak" x="615" y="290" width="40" height="34"/>
+            <use href="#lapak" x="648" y="340" width="40" height="34"/><use href="#lapak" x="676" y="395" width="40" height="34"/>
+            <use href="#payung" x="440" y="110" width="26" height="30"/><use href="#payung" x="500" y="205" width="26" height="30"/>
+            <use href="#payung" x="560" y="300" width="26" height="30"/><use href="#payung" x="620" y="400" width="26" height="30"/>
+          </g>
+
+          <!-- zona homestay -->
+          <path d="M560 40 L760 30 L800 120 L820 260 L760 300 L700 240 L640 160Z" fill="#DDF0E2" stroke="#4E9F6A" stroke-width="3" stroke-dasharray="10 6" stroke-linejoin="round"/>
+          <g>
+            <use href="#rumah" x="600" y="70" width="40" height="38"/><use href="#rumah" x="660" y="60" width="40" height="38"/>
+            <use href="#rumah" x="720" y="80" width="40" height="38"/><use href="#rumah" x="650" y="130" width="40" height="38"/>
+            <use href="#rumah" x="665" y="185" width="40" height="38"/><use href="#rumah" x="760" y="200" width="40" height="38"/>
+            <use href="#rumah" x="740" y="240" width="40" height="38"/>
+            <use href="#pohon" x="770" y="120" width="26" height="26"/><use href="#pohon" x="625" y="120" width="22" height="22"/>
+          </g>
+
+          <!-- kelapa di sepanjang pasir -->
+          <g><use href="#kelapa" x="380" y="20" width="36" height="44"/><use href="#kelapa" x="430" y="170" width="36" height="44"/>
+            <use href="#kelapa" x="505" y="300" width="36" height="44"/><use href="#kelapa" x="575" y="420" width="36" height="44"/>
+            <use href="#kelapa" x="860" y="330" width="40" height="48"/><use href="#kelapa" x="880" y="420" width="40" height="48"/></g>
+
+          <!-- jalur -->
+          <path d="M880 0 C 850 60 790 70 760 130 C 735 180 700 230 690 290" stroke="#C69A5B" stroke-width="16" fill="none" stroke-linecap="round"/>
+          <path d="M880 0 C 850 60 790 70 760 130 C 735 180 700 230 690 290" stroke="#FFF6E3" stroke-width="10" fill="none" stroke-linecap="round"/>
+          <path d="M880 0 C 850 60 790 70 760 130 C 735 180 700 230 690 290" stroke="#C69A5B" stroke-width="2" fill="none" stroke-dasharray="2 12" stroke-linecap="round"/>
+
+          <!-- batas kawasan -->
+          <path d="M300 60 L560 4 L900 4 L900 500 L560 512" stroke="#fff" stroke-width="9" fill="none" stroke-linejoin="round" opacity=".9"/>
+          <path d="M300 60 L560 4 L900 4 L900 500 L560 512" stroke="#DF9232" stroke-width="4.5" fill="none" stroke-dasharray="16 10" stroke-linejoin="round"/>
+
+          <!-- label -->
+          <g font-family="Plus Jakarta Sans, sans-serif" font-weight="800" font-size="15">
+            <g transform="translate(470 470)"><rect x="-6" y="-17" width="168" height="26" rx="13" fill="#fff" opacity=".95"/><text fill="#B5502F">🛍️ Kawasan UMKM</text></g>
+            <g transform="translate(640 22)"><rect x="-6" y="-17" width="168" height="26" rx="13" fill="#fff" opacity=".95"/><text fill="#2F7A4C">🏡 Kawasan Homestay</text></g>
+            <g transform="translate(110 300)"><text fill="#fff" font-size="22" font-family="Yellowtail, cursive" font-weight="400">Samudra Hindia</text></g>
+          </g>
+        </svg>
+      </div>
+      <div class="legend-ill">
+        <div><i style="--c:#FBE3DC;--b:#E0674F"></i><p style="margin:0"><b>Zona UMKM</b><span>Dasar koral muda, lapak beratap belang merah-putih, payung pantai</span></p></div>
+        <div><i style="--c:#DDF0E2;--b:#4E9F6A"></i><p style="margin:0"><b>Zona Homestay</b><span>Dasar hijau muda, rumah beratap genteng, pepohonan</span></p></div>
+        <div><i style="--c:#FFF6E3;--b:#C69A5B"></i><p style="margin:0"><b>Jalur utama</b><span>Jalan setapak krem bertepi cokelat, titik-titik langkah</span></p></div>
+        <div><i style="--c:transparent;--b:#DF9232;border-style:dashed"></i><p style="margin:0"><b>Batas kawasan</b><span>Pita oranye putus-putus berbingkai putih</span></p></div>
+        <div><i style="--c:#F3E3C3"></i><p style="margin:0"><b>Pantai</b><span>Pasir krem bertekstur, garis buih putih</span></p></div>
+        <div><i style="--c:#6FA9D6"></i><p style="margin:0"><b>Laut</b><span>Gradasi biru dengan pola ombak halus</span></p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 07 BAHASA -->
+  <section id="bahasa">
+    <div class="wrap">
+      <div class="sec-head"><div class="no">07</div><h2>Gaya Bahasa</h2>
+        <p class="lead">Ramah seperti warga yang menunjukkan jalan: <b>singkat, jelas, sopan</b>. Utamakan informasi praktis (harga, jarak, jam buka) daripada kata-kata promosi.</p></div>
+      <div class="voice">
+        <div class="card yes"><h4>✓ Begini</h4><ul>
+          <li>"Pantai ± 300 m, sekitar 5 menit jalan kaki."</li>
+          <li>"Bendera kuning: hati-hati, ombak sedang."</li>
+          <li>"Kontak belum tersedia."</li>
+          <li>"Anda berada di luar kawasan Pantai Ciantir."</li>
+        </ul></div>
+        <div class="card no"><h4>✕ Hindari</h4><ul>
+          <li>"Homestay TERBAIK & TERMURAH se-Sawarna!!!"</li>
+          <li>"Error 403: geolocation permission denied"</li>
+          <li>"Silakan hubungi admin."</li>
+          <li>Singkatan yang tidak umum (mis. "KM dlm", "jrk")</li>
+        </ul></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 08 UNDUH -->
+  <section id="unduh">
+    <div class="wrap">
+      <div class="sec-head"><div class="no">08</div><h2>Unduh Aset</h2>
+        <p class="lead">Semua file ada di folder <code>brand/</code> repositori. Token warna &amp; ukuran untuk kode ada di <code>brand/tokens.css</code>.</p></div>
+      <div class="grid g3 dl">
+        <a href="logo/sawarna-logo.png" download><img src="logo/sawarna-logo-web.png" alt=""><span>Logo warna penuh<small>PNG transparan · 1495 px</small></span></a>
+        <a href="logo/sawarna-logo-putih.png" download><img class="dark" src="logo/sawarna-logo-putih-web.png" alt=""><span>Logo putih<small>PNG transparan</small></span></a>
+        <a href="logo/sawarna-logo-biru.png" download><img src="logo/sawarna-logo-biru-web.png" alt=""><span>Logo satu warna biru<small>PNG transparan</small></span></a>
+        <a href="logo/sawarna-logo-gelap.png" download><img src="logo/sawarna-logo-gelap-web.png" alt=""><span>Logo satu warna gelap<small>PNG transparan</small></span></a>
+        <a href="logo/sawarna-mark.png" download><img src="logo/sawarna-mark-web.png" alt=""><span>Simbol<small>PNG transparan</small></span></a>
+        <a href="logo/sawarna-mark-putih.png" download><img class="dark" src="logo/sawarna-mark-putih-web.png" alt=""><span>Simbol putih<small>PNG transparan</small></span></a>
+        <a href="ikon/icon-512.png" download><img src="ikon/icon-192.png" alt=""><span>Ikon aplikasi<small>512 · 192 · maskable</small></span></a>
+        <a href="ikon/favicon.ico" download><img src="ikon/favicon-32.png" alt=""><span>Favicon<small>ICO 16–64 px</small></span></a>
+        <a href="tokens.css" download><img src="ikon/favicon-32.png" alt=""><span>Design tokens<small>CSS variables</small></span></a>
+      </div>
+    </div>
+  </section>
+
+  <footer>Brand Kit Sawarna Smart Guide · KKN Desa Sawarna · logo asli: <a href="logo/sawarna-logo-sumber.jpg">sumber</a></footer>
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const $ = (s) => document.querySelector(s);
+    const toast = (m) => { const t = $('#toast'); t.textContent = m; t.classList.add('show'); clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove('show'), 1600); };
+    document.addEventListener('click', (e) => {
+      const el = e.target.closest('[data-hex]'); if (!el) return;
+      const hex = el.dataset.hex;
+      (navigator.clipboard ? navigator.clipboard.writeText(hex) : Promise.reject()).then(() => toast('Disalin ' + hex), () => toast(hex));
+    });
+
+    // --- kontras WCAG ---
+    const lum = (h) => { const n = parseInt(h.slice(1), 16); return [n >> 16, (n >> 8) & 255, n & 255].map(v => { v /= 255; return v <= .03928 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4; }).reduce((a, v, i) => a + v * [.2126, .7152, .0722][i], 0); };
+    const ratio = (a, b) => { const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p); return (x + .05) / (y + .05); };
+
+    const scale = (id, name, map) => {
+      $(id).innerHTML = Object.entries(map).map(([k, h]) => {
+        const t = ratio(h, '#ffffff') >= 4.5 ? '#fff' : '#17283F';
+        return `<button data-hex="${h}" style="--c:${h};--t:${t}" title="${name}-${k} ${h}">${k}</button>`;
+      }).join('');
+    };
+    scale('#scale-biru', '--sw-biru', { 50:'#EEF4FB',100:'#D9E6F5',200:'#B5CDEA',300:'#86ABD9',400:'#5C8CC6',500:'#4677B4',600:'#375F95',700:'#2C4C78',800:'#22395A',900:'#17283F' });
+    scale('#scale-oranye', '--sw-oranye', { 50:'#FDF5EA',100:'#FAE6CB',200:'#F4CB92',300:'#EDB063',400:'#E69D45',500:'#DF9232',600:'#B8721F',700:'#8F5718',800:'#663E13',900:'#42290E' });
+
+    const sw = (n, h, v, d) => `<button class="sw" data-hex="${h}" style="--c:${h}"><div class="chip"></div><div class="meta"><b>${n}</b><code>${h} · ${v}</code>${d ? `<small>${d}</small>` : ''}</div></button>`;
+    $('#alam').innerHTML = [
+      sw('Pasir Ciantir', '#F3E3C3', '--sw-pasir', 'Pantai pada ilustrasi'),
+      sw('Pasir Terang', '#FBF6EC', '--sw-pasir-terang', 'Latar hangat halaman'),
+      sw('Laut Dangkal', '#7FB3D9', '--sw-laut', 'Laut pada ilustrasi'),
+      sw('Laut Dalam', '#4F8FC4', '--sw-laut-dalam', 'Gradasi laut'),
+      sw('Hijau Kelapa', '#4E9F6A', '--sw-kelapa', 'Vegetasi, homestay'),
+      sw('Koral', '#E0674F', '--sw-koral', 'UMKM, lapak'),
+    ].join('');
+    $('#zona-kat').innerHTML = [
+      sw('Zona UMKM', '#E0674F', '--sw-zona-umkm', 'Isi #FBE3DC'),
+      sw('Zona Homestay', '#4E9F6A', '--sw-zona-homestay', 'Isi #DDF0E2'),
+      sw('Batas kawasan', '#DF9232', '--sw-zona-batas', 'Garis putus-putus'),
+      sw('Jalur utama', '#C69A5B', '--sw-jalur', 'Isi #FFF6E3'),
+    ].join('');
+
+    const kontras = [['Tinta di putih', '#1B2A3D', '#FFFFFF'], ['Putih di Biru 600', '#FFFFFF', '#375F95'], ['Biru 500 di putih', '#4677B4', '#FFFFFF'], ['Biru 900 di Oranye', '#17283F', '#DF9232'], ['Putih di Oranye', '#FFFFFF', '#DF9232'], ['Abu 500 di putih', '#5B6B7F', '#FFFFFF'], ['Putih di WhatsApp', '#FFFFFF', '#178244'], ['Putih di Koral', '#FFFFFF', '#E0674F']];
+    $('#kontras').innerHTML = kontras.map(([n, fg, bg]) => {
+      const r = ratio(fg, bg); const ok = r >= 4.5; const big = r >= 3;
+      return `<div class="card"><div style="background:${bg};color:${fg};padding:18px 16px;font-weight:700;font-size:18px">Aa Pantai</div><div class="cap"><b>${n}</b><span class="ratio ${ok ? 'ok' : 'no'}">${r.toFixed(2)} : 1 · ${ok ? 'AA teks' : big ? 'Hanya teks besar' : 'Jangan untuk teks'}</span></div></div>`;
+    }).join('');
+
+    const kat = [['Homestay', '🏠', '#4E9F6A', 'homestay'], ['Kuliner', '🍜', '#DF9232', 'kuliner'], ['Sewa & Jasa', '🏄', '#2A9DB5', 'sewa'], ['Tiket & Parkir', '🎫', '#7A5FB8', 'fasilitas'], ['Toilet & Ibadah', '🚻', '#6B7A8F', 'dasar'], ['Keselamatan', '⛑️', '#D64545', 'keselamatan'], ['Spot Wisata', '📸', '#D35B9A', 'spot'], ['Akses', '🚪', '#4677B4', 'akses']];
+    $('#pins').innerHTML = kat.map(([n, i, c, k]) => `<div class="pin-demo"><div class="pin" style="--c:${c}"><span>${i}</span></div><div>${n}<br><code>${c}</code></div></div>`).join('');
+  </script>
+</body>
+</html>
