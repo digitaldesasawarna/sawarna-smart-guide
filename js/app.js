@@ -4,11 +4,11 @@
   // ---------- Peta dasar ----------
   const batasGambar = L.latLngBounds(ilustrasi.batas);
   const layarKecil = window.innerWidth < 768;
-  const zoomAwal = layarKecil ? config.zoomAwal - 0.5 : config.zoomAwal;
+  const zoomAwal = layarKecil ? config.zoomAwal - 1 : config.zoomAwal;
   const map = L.map("map", {
     center: config.pusat,
     zoom: zoomAwal,
-    zoomSnap: 0.5,
+    zoomSnap: 1, // tile ilustrasi hanya ada di zoom bulat (16–19); plugin rotasi tidak membulatkan zoom tile
     minZoom: config.zoomMin,
     maxZoom: config.zoomMaks,
     maxBounds: batasGambar,
@@ -24,7 +24,7 @@
 
   // Zoom minimum menyesuaikan layar agar tepi ilustrasi tidak pernah terlihat
   function aturZoomMin() {
-    const z = Math.max(config.zoomMin, Math.ceil(map.getBoundsZoom(batasGambar, true) * 2) / 2);
+    const z = Math.max(config.zoomMin, Math.ceil(map.getBoundsZoom(batasGambar, true)));
     map.setMinZoom(z);
     if (map.getZoom() < z) map.setZoom(z);
   }
@@ -56,13 +56,17 @@
     [Math.min(...batas.map((b) => b[0])) - ilustrasi.marginInti, Math.min(...batas.map((b) => b[1])) - ilustrasi.marginInti],
     [Math.max(...batas.map((b) => b[0])) + ilustrasi.marginInti, Math.max(...batas.map((b) => b[1])) + ilustrasi.marginInti],
   ]);
-  const opsiTile = { bounds: batasGambar, noWrap: true, keepBuffer: 4, className: "ilustrasi", attribution: "Ilustrasi © KKN Sawarna" };
-  const gambar = L.layerGroup([
+  const opsiTile = { arah: 0, bounds: batasGambar, noWrap: true, keepBuffer: 4, className: "ilustrasi", attribution: "Ilustrasi © KKN Sawarna" };
+  const tileIlustrasi = [
     L.tileLayer(ilustrasi.tiles, { ...opsiTile, minNativeZoom: 16, maxNativeZoom: 18, maxZoom: 19 }),
     // detail zoom 19 hanya untuk kawasan inti
-    L.tileLayer(ilustrasi.tiles, { ...opsiTile, bounds: batasInti, minZoom: 18.5, minNativeZoom: 19, maxNativeZoom: 19, maxZoom: 19 }),
-    lapisLabel,
-  ]).addTo(map);
+    L.tileLayer(ilustrasi.tiles, { ...opsiTile, bounds: batasInti, minZoom: 19, minNativeZoom: 19, maxNativeZoom: 19, maxZoom: 19 }),
+  ];
+  // ganti set tile sesuai arah pandang (bangunan selalu tegak menghadap layar)
+  function pakaiTileArah(a) {
+    tileIlustrasi.forEach((t) => { if (t.options.arah !== a) { t.options.arah = a; t.redraw(); } });
+  }
+  const gambar = L.layerGroup([...tileIlustrasi, lapisLabel]).addTo(map);
   const satelit = L.tileLayer(
     "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
     { maxZoom: 19, attribution: "Citra &copy; Esri" }
@@ -305,7 +309,17 @@
       sp.style.transform = `rotate(${a}deg)`;
     });
   }
-  map.on("rotate", perbaruiArah);
+  // arah pandang dikunci per 45° karena ilustrasi digambar untuk 8 arah
+  let tSnap;
+  map.on("rotate", () => {
+    perbaruiArah();
+    clearTimeout(tSnap);
+    tSnap = setTimeout(() => {
+      const a = arahKini(), s = (Math.round(a / 45) * 45) % 360;
+      if (s !== a) setArah(s);
+      pakaiTileArah(s);
+    }, 250);
+  });
   map.on("zoomend moveend", perbaruiArah);
   elRange.addEventListener("input", () => setArah(+elRange.value));
   elPanel.addEventListener("click", (e) => {

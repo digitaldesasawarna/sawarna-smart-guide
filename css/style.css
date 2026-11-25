@@ -48,7 +48,9 @@ body { display: flex; flex-direction: column; overflow: hidden; }
 /* ---------- Map ---------- */
 #map { flex: 1; background: #0b3b4a; }
 #map.mode-ilustrasi { background: #4C93CD; }
-.ilustrasi { image-rendering: auto; }
+/* Leaflet 1.9 memakai mix-blend-mode: plus-lighter pada tile; saat peta diputar itu memunculkan
+   garis terang di sambungan tile. Mode normal + tanpa lapisan GPU per tile = sambungan rapi. */
+.leaflet-layer.ilustrasi img.leaflet-tile { mix-blend-mode: normal; will-change: auto; }
 
 /* Label nama tempat di atas ilustrasi */
 .label-peta { pointer-events: none; }

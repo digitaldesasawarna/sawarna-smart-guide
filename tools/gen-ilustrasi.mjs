@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /*
- * Generator ilustrasi peta Pantai Ciantir → assets/peta-ilustrasi.svg
+ * Generator ilustrasi peta Pantai Ciantir → assets/ilustrasi/peta-{arah}.svg (8 arah pandang)
  *
  *   node tools/gen-ilustrasi.mjs        (lalu: node tools/render-tiles.mjs)
  *
@@ -15,6 +15,7 @@ import path from "node:path";
 import vm from "node:vm";
 import { fileURLToPath } from "node:url";
 import * as S from "./ilustrasi/simbol.mjs";
+import * as SP from "./ilustrasi/sprite.mjs";
 
 const { f1 } = S;
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -164,29 +165,29 @@ const dekatJalan = (p, m) => jalanDesa.some((j) => distLine(p, j) < m) || distLi
 
 // ================================================================ simbol (defs)
 const defs = [S.defsUmum(), S.lainLain()];
-const rumahIds = { limas: [], limasBesar: [], pelana: [], L: [], seng: [] };
-const atapNama = Object.keys(S.ATAP).filter((k) => k !== "seng");
+const ATAPS = Object.keys(S.ATAP).filter((k) => k !== "seng");
+const ids = { rumah: [], rumah2: [], seng: [], pondok: ["pondok"], kios: [], pohon: [], kelapa: [], semak: [], orang: [], mobil: [], payung: [] };
 let k = 0;
-for (const a of atapNama) {
+for (const a of ATAPS) {
   for (let v = 0; v < 2; v++) {
-    const dinding = pick(S.DINDING);
-    defs.push(S.rumahLimas(`rl${k}`, { atap: S.ATAP[a], dinding, jendela: 2, w: rr(26, 32), h: rr(19, 23) })); rumahIds.limas.push(`rl${k}`);
-    defs.push(S.rumahLimas(`rb${k}`, { atap: S.ATAP[a], dinding, jendela: 3, w: rr(36, 42), h: rr(26, 30), wh: 8, pot: true, teras: v === 0 })); rumahIds.limasBesar.push(`rb${k}`);
-    defs.push(S.rumahPelana(`rp${k}`, { atap: S.ATAP[a], dinding: pick(S.DINDING), w: rr(24, 30), h: rr(17, 21) })); rumahIds.pelana.push(`rp${k}`);
+    defs.push(SP.rumah(`r${k}`, { w: rr(24, 32), dd: rr(10, 14), atap: S.ATAP[a], dinding: pick(S.DINDING), dindingSamping: pick(["#D9C8AE", "#CDBB9F", "#D6CABB", "#C9BBA8"]), teras: v === 0 })); ids.rumah.push(`r${k}`);
+    defs.push(SP.rumah(`h${k}`, { w: rr(30, 38), dd: rr(13, 16), lantai: 2, atap: S.ATAP[a], dinding: pick(S.DINDING), balkon: true, teras: true, pagar: v === 1, kayu: v === 1 && rnd() < 0.5 })); ids.rumah2.push(`h${k}`);
     k++;
   }
-  defs.push(S.rumahL(`rL${a}`, { atap: S.ATAP[a], dinding: pick(S.DINDING), pot: true })); rumahIds.L.push(`rL${a}`);
 }
-for (let i = 0; i < 4; i++) { defs.push(S.rumahSeng(`rs${i}`, { dinding: pick(S.DINDING) })); rumahIds.seng.push(`rs${i}`); }
-const lapakIds = S.TENDA.map((t, i) => (defs.push(S.lapak(`lp${i}`, t, { meja: i % 2 === 0 })), `lp${i}`));
-defs.push(S.warungRumbia("wr"), S.saung("saung"));
-const payungIds = S.PAYUNG.flatMap((t, i) => [(defs.push(S.payung(`py${i}`, t)), `py${i}`), (defs.push(S.payung(`pn${i}`, t, { kursi: false })), `pn${i}`)]);
-const pohonIds = [];
-S.DAUN.forEach((c, i) => [11, 15, 19].forEach((r, j) => { defs.push(S.pohonBulat(`pb${i}_${j}`, c, R, r)); pohonIds.push(`pb${i}_${j}`); }));
-const kelapaIds = [0, 1, 2].map((i) => (defs.push(S.kelapa(`kl${i}`, [["#3E8A4E", "#58A563", "#9BD77F"], ["#4A9450", "#62AE62", "#A9DC86"], ["#3A7F48", "#4F985C", "#8CCB78"]][i], R, rr(16, 20))), `kl${i}`));
-defs.push(S.pisang("ps", R), S.cemara("cm0", R, 11), S.cemara("cm1", R, 14));
-defs.push(S.semak("sm0", R, "#E35D8C"), S.semak("sm1", R, "#F2C14E"), S.semak("sm2", R, null), S.semak("sm3", R, "#FFFFFF"));
-const pohonAcak = () => (rnd() < 0.7 ? pick(pohonIds) : rnd() < 0.6 ? pick(kelapaIds) : "ps");
+for (let i = 0; i < 4; i++) { defs.push(SP.rumah(`s${i}`, { w: rr(18, 22), dd: 9, atap: S.ATAP.seng, dinding: pick(S.DINDING) })); ids.seng.push(`s${i}`); }
+defs.push(SP.pondok("pondok"), SP.warung("warung"), SP.gazebo("gazebo"), SP.gapura("gapura"));
+S.TENDA.forEach((t, i) => { defs.push(SP.kios(`k${i}`, t, { lebar: i % 2 ? 24 : 28 })); ids.kios.push(`k${i}`); });
+S.PAYUNG.forEach((t, i) => { defs.push(SP.payung(`u${i}`, t)); ids.payung.push(`u${i}`); });
+S.DAUN.forEach((c, i) => [9, 12, 15].forEach((r, j) => { defs.push(SP.pohon(`p${i}_${j}`, c, R, r)); ids.pohon.push(`p${i}_${j}`); }));
+[["#3E8A4E", "#58A563", "#9BD77F"], ["#4A9450", "#62AE62", "#A9DC86"], ["#3A7F48", "#4F985C", "#8CCB78"]].forEach((c, i) => { defs.push(SP.kelapa(`c${i}`, c, R, rr(26, 34))); ids.kelapa.push(`c${i}`); });
+defs.push(SP.pisang("pisang", R), SP.cemara("cemara", R));
+[["sm0", "#E35D8C"], ["sm1", "#F2C14E"], ["sm2", null], ["sm3", "#FFFFFF"], ["sm4", "#D64545"]].forEach(([id, b]) => { defs.push(SP.semak(id, R, b)); ids.semak.push(id); });
+["#E0674F", "#4677B4", "#F2C14E", "#4E9F6A", "#D35B9A", "#FFFFFF", "#2A9DB5", "#7A5FB8"].forEach((c, i) => { defs.push(SP.orang(`o${i}`, c, pick(["#2D3A4A", "#4677B4", "#8C6A3E", "#2D3A4A"]))); ids.orang.push(`o${i}`); });
+["#E0674F", "#FFFFFF", "#4677B4", "#C3CBD3", "#2D3A4A"].forEach((c, i) => { defs.push(SP.mobil(`m${i}`, c)); ids.mobil.push(`m${i}`); });
+defs.push(SP.motor("motor"), SP.lampu("lampu2"), SP.umbul("umbul"), SP.batu("batu2"), SP.peselancar("selancar"), SP.bananaBoat("banana"), SP.kapal("kapal"), SP.perahu("perahu2"), SP.camar("camar"));
+["#E0674F", "#F2C14E", "#2D3A4A"].forEach((c, i) => defs.push(SP.perenang(`renang${i}`, c)));
+const pohonAcak = () => (rnd() < 0.68 ? pick(ids.pohon) : rnd() < 0.7 ? pick(ids.kelapa) : "pisang");
 
 // pola (pattern) alam
 defs.push(`
@@ -212,8 +213,10 @@ defs.push(`
     <rect width="28" height="14" fill="#fff" opacity=".07"/><path d="M5 20l1.5 -4l1.5 4M18 8l1.5 -4l1.5 4" stroke="#7DB765" stroke-width="1" fill="none" opacity=".6"/>
   </pattern>
   <pattern id="pPaving" width="12" height="8" patternUnits="userSpaceOnUse">
-    <rect width="12" height="8" fill="#F1D9C8"/><path d="M0 0H12M0 4H12M6 0V4M0 4V8M12 4V8" stroke="#D9B8A2" stroke-width=".7"/>
+    <rect width="12" height="8" fill="#F5BFA6"/><path d="M0 0H12M0 4H12M6 0V4M0 4V8M12 4V8" stroke="#E4A184" stroke-width=".7"/>
   </pattern>
+  <pattern id="pPolosSawah" width="40" height="26" patternUnits="userSpaceOnUse" patternTransform="rotate(-8)"><path d="M0 0H40M0 0V26" stroke="#FFFFFF" stroke-width="2" opacity=".8"/></pattern>
+  <pattern id="pPolosHutan" width="34" height="30" patternUnits="userSpaceOnUse"><circle cx="9" cy="9" r="7" fill="#BFD9A2"/><circle cx="26" cy="22" r="8" fill="#BFD9A2"/></pattern>
   <pattern id="pSwMuda" width="4" height="4" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r=".75" fill="#3F8A4A" opacity=".75"/></pattern>
   <pattern id="pSwTumbuh" width="4" height="3.4" patternUnits="userSpaceOnUse"><path d="M0 1.7H4" stroke="#5E9A3C" stroke-width="1.3" opacity=".55"/></pattern>
   <pattern id="pSwMatang" width="4" height="3.4" patternUnits="userSpaceOnUse"><path d="M0 1.7H4" stroke="#B5A43A" stroke-width="1.3" opacity=".55"/></pattern>
@@ -300,11 +303,8 @@ L.push(sawahPetak(lapangan, -4, 52, 32));
 
 // 5. dasar zona (dibatasi daratan, di bawah pasir)
 L.push(`<g clip-path="${cDarat}">
-  <path d="${smooth(zHome, true)}" fill="#CFEBC4"/><path d="${smooth(zHome, true)}" fill="url(#pRumputTaman)"/>
-  <path d="${smooth(zHome, true)}" fill="none" stroke="#4E9F6A" stroke-opacity=".35" stroke-width="10" filter="url(#b4)"/>
+  <path d="${smooth(zHome, true)}" fill="#9ED47C"/><path d="${smooth(zHome, true)}" fill="url(#pRumputTaman)"/>
   <path d="${smooth(zUmkm, true)}" fill="url(#pPaving)"/>
-  <path d="${smooth(zUmkm, true)}" fill="#E0674F" opacity=".08"/>
-  <path d="${smooth(zUmkm, true)}" fill="none" stroke="#E0674F" stroke-opacity=".35" stroke-width="10" filter="url(#b4)"/>
 </g>`);
 
 // 6. pasir & pantai
@@ -337,13 +337,19 @@ L.push(`<g stroke="#5E9A4A" stroke-width="1.2" stroke-linecap="round" opacity=".
 // 8. jalan desa & jalur utama
 for (const j of jalanDesa) {
   L.push(`<path d="${smooth(j)}" stroke="#152638" stroke-width="20" fill="none" stroke-linecap="round" opacity=".18" filter="url(#b4)" transform="translate(3 4)"/>`);
-  L.push(`<path d="${smooth(j)}" stroke="#B7AE9C" stroke-width="17" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`);
-  L.push(`<path d="${smooth(j)}" stroke="#DCD6C8" stroke-width="13" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`);
+  L.push(`<path d="${smooth(j)}" stroke="#FFFFFF" stroke-width="18" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`);
+  L.push(`<path d="${smooth(j)}" stroke="#D9EBC6" stroke-width="12" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`);
 }
 L.push(`<path d="${smooth(jalur)}" stroke="#152638" stroke-width="30" fill="none" stroke-linecap="round" opacity=".18" filter="url(#b4)" transform="translate(3 4)"/>`);
-L.push(`<path d="${smooth(jalur)}" stroke="#B9935C" stroke-width="28" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`);
-L.push(`<path d="${smooth(jalur)}" stroke="#FFF3DA" stroke-width="22" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`);
-L.push(`<path d="${smooth(jalur)}" stroke="#EAD7B2" stroke-width="22" fill="none" stroke-dasharray="1.2 6" stroke-linejoin="round"/>`);
+L.push(`<path d="${smooth(jalur)}" stroke="#FFFFFF" stroke-width="30" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`);
+L.push(`<path d="${smooth(jalur)}" stroke="#E6F3D8" stroke-width="22" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`);
+L.push(`<path d="${smooth(jalur)}" stroke="#C9E3B0" stroke-width="22" fill="none" stroke-dasharray="1.2 7" stroke-linejoin="round"/>`);
+// cincin jalan setapak bertepi putih yang membingkai tiap zona
+for (const z of [zHome, zUmkm]) {
+  L.push(`<g clip-path="${cDarat}"><path d="${smooth(z, true)}" fill="none" stroke="#152638" stroke-width="20" opacity=".14" filter="url(#b4)" transform="translate(3 4)"/>
+    <path d="${smooth(z, true)}" fill="none" stroke="#FFFFFF" stroke-width="17" stroke-linejoin="round"/>
+    <path d="${smooth(z, true)}" fill="none" stroke="#D9EBC6" stroke-width="11" stroke-linejoin="round"/></g>`);
+}
 
 // 9. jembatan gantung di persilangan jalur × sungai
 (function () {
@@ -368,129 +374,171 @@ L.push(`<path d="${smooth(jalur)}" stroke="#EAD7B2" stroke-width="22" fill="none
   }
 })();
 
-// ================================================================ objek (diurutkan atas → bawah)
-const items = [], halaman = [];
-const tambah = (p, svg) => items.push([p[1], svg]);
+// ================================================================ objek berdiri (sprite 2.5D)
+// Setiap objek disimpan sebagai {x, y, id, s}; saat menulis tiap arah pandang, objek diputar
+// agar tegak di layar lalu diurutkan dari belakang ke depan.
+const sprite = [], halaman = [];
+const tambah = (p, id, s = 1) => sprite.push({ x: p[0], y: p[1], id, s });
 const bebas = (p) => !diAir(p) && !diPasir(p) && !dekatJalan(p, 16);
 const luarZona = (p) => !diZona(p) && !diSawah(p) && !diHutan(p);
 const nDesa = noise(520, 77);
-const rumahAcak = () => {
-  const r = rnd();
-  return r < 0.5 ? pick(rumahIds.limas) : r < 0.82 ? pick(rumahIds.pelana) : pick(rumahIds.seng);
-};
+const rumahAcak = () => (rnd() < 0.72 ? pick(ids.rumah) : rnd() < 0.5 ? pick(ids.seng) : pick(ids.rumah2));
 const terpakai = [];
 const kosong = (p, r) => terpakai.every((q) => Math.hypot(q[0] - p[0], q[1] - p[1]) > r);
+const halamanDi = (p, rx, ry, c = "#E3D9B5", op = 0.55) => halaman.push(`<ellipse cx="${f1(p[0])}" cy="${f1(p[1])}" rx="${rx}" ry="${ry}" fill="${c}" opacity="${op}"/>`);
 
 // rumah berderet di tepi jalan desa
 for (const j of jalanDesa) {
-  for (const [x, y, ang] of along(j, 36, rr(0, 20))) {
+  for (const [x, y, ang] of along(j, 44, rr(0, 20))) {
     for (const side of [1, -1]) {
       const a = (ang * Math.PI) / 180, nx = -Math.sin(a), ny = Math.cos(a), off = side * rr(30, 36);
       const p = [x + nx * off, y + ny * off];
-      if (!bebas(p) || !luarZona(p) || !kosong(p, 30) || nDesa(p) < (inside(p, batas) ? 0.55 : 0.32)) continue;
-      terpakai.push(p);
-      halaman.push(`<ellipse cx="${f1(p[0])}" cy="${f1(p[1])}" rx="26" ry="22" fill="#E3D9B5" opacity=".55"/>`);
-      tambah(p, use(rumahAcak(), p[0], p[1], ang + (side > 0 ? 180 : 0) + rr(-4, 4)));
+      if (!bebas(p) || !luarZona(p) || !kosong(p, 36) || nDesa(p) < (inside(p, batas) ? 0.55 : 0.32)) continue;
+      terpakai.push(p); halamanDi(p, 26, 22); tambah(p, rumahAcak());
+      if (rnd() < 0.35) { const q = [p[0] + rr(-20, 20), p[1] + rr(10, 20)]; if (bebas(q)) tambah(q, pick(ids.semak)); }
     }
   }
 }
-// rumah berkelompok di luar jalan
+// rumah berkelompok & kebun di luar jalan
 for (const p of poisson(rect, 40, (p) => bebas(p) && luarZona(p) && distLine(p, garisPantai) > 40)) {
   const n = nDesa(p) + Math.max(0, 1 - distLine(p, sungai) / 500) * 0.25;
-  if (n > (inside(p, batas) ? 0.93 : 0.78) && kosong(p, 34)) {
-    terpakai.push(p);
-    halaman.push(`<ellipse cx="${f1(p[0])}" cy="${f1(p[1])}" rx="24" ry="20" fill="#E3D9B5" opacity=".5"/>`);
-    tambah(p, use(rumahAcak(), p[0], p[1], rr(-15, 15)));
-  } else if (n > 0.4 && rnd() < 0.5 && kosong(p, 18)) tambah(p, use(pohonAcak(), p[0], p[1], rr(0, 360), rr(0.85, 1.25)));
+  if (n > (inside(p, batas) ? 0.93 : 0.78) && kosong(p, 38)) { terpakai.push(p); halamanDi(p, 24, 20); tambah(p, rumahAcak()); }
+  else if (n > 0.4 && rnd() < 0.55 && kosong(p, 16)) tambah(p, pohonAcak(), rr(0.85, 1.2));
 }
 
-// zona homestay
-for (const p of poisson(zHome, 52, (p) => bebas(p) && distLine(p, zHome.concat([zHome[0]])) > 20 && kosong(p, 40))) {
-  terpakai.push(p);
-  halaman.push(`<ellipse cx="${f1(p[0])}" cy="${f1(p[1])}" rx="30" ry="26" fill="#EAF6DF" opacity=".8"/>`);
-  const ang = rr(-8, 8) + (distLine(p, jalur) < 70 ? 0 : 0);
-  tambah(p, use(pick(rumahIds.limasBesar), p[0], p[1], ang));
-  for (let i = 0; i < 2; i++) {
-    const q = [p[0] + rr(-34, 34), p[1] + rr(18, 30)];
-    if (bebas(q) && inside(q, zHome)) tambah(q, use(pick(["sm0", "sm1", "sm2", "sm3"]), q[0], q[1], rr(0, 360), rr(0.8, 1.2)));
+// zona homestay: rumah 2 lantai berbalkon, pondok kayu, taman bunga
+for (const p of poisson(zHome, 56, (p) => bebas(p) && distLine(p, zHome.concat([zHome[0]])) > 22 && kosong(p, 44))) {
+  terpakai.push(p); halamanDi(p, 32, 26, "#EAF6DF", 0.85);
+  const r = rnd();
+  tambah(p, r < 0.6 ? pick(ids.rumah2) : r < 0.82 ? "pondok" : pick(ids.rumah));
+  for (let i = 0; i < 3; i++) {
+    const q = [p[0] + rr(-34, 34), p[1] + rr(14, 30)];
+    if (bebas(q) && inside(q, zHome)) tambah(q, pick(ids.semak), rr(0.8, 1.15));
   }
 }
-for (const p of poisson(zHome, 30, (p) => bebas(p) && kosong(p, 26)).filter(() => rnd() < 0.45))
-  tambah(p, use(rnd() < 0.6 ? pick(pohonIds) : pick(kelapaIds), p[0], p[1], rr(0, 360), rr(0.8, 1.15)));
-// lampu & bangku di sepanjang jalur
-for (const [x, y, ang] of along(jalur, 46, 20)) {
+for (const p of poisson(zHome, 30, (p) => bebas(p) && kosong(p, 24)).filter(() => rnd() < 0.42)) tambah(p, rnd() < 0.55 ? pick(ids.pohon) : pick(ids.kelapa), rr(0.8, 1.1));
+
+// jalur utama: lampu, umbul-umbul, pejalan kaki, gapura di pintu masuk
+const jalurD = densify(jalur, 10);
+for (const [x, y, ang] of along(jalurD, 48, 24)) {
+  const a = (ang * Math.PI) / 180, nx = -Math.sin(a), ny = Math.cos(a), sisi = Math.round(x + y) % 2 ? 1 : -1;
+  tambah([x + nx * 15 * sisi, y + ny * 15 * sisi], "lampu2");
+  if (rnd() < 0.55) tambah([x + rr(-5, 5), y + rr(-5, 5)], pick(ids.orang));
+}
+for (const [x, y, ang] of along(jalurD, 22, 6).slice(0, 7)) {
   const a = (ang * Math.PI) / 180, nx = -Math.sin(a), ny = Math.cos(a);
-  tambah([x, y], use("lampu", x + nx * 15, y + ny * 15));
-  if (rnd() < 0.35) tambah([x, y], use("bangku", x - nx * 17, y - ny * 17, ang));
+  tambah([x + nx * 16, y + ny * 16], "umbul"); tambah([x - nx * 16, y - ny * 16], "umbul");
+}
+{
+  const [a, b] = jalurD;
+  tambah([jalur[0][0] + (b[0] - a[0]) * 1.6, jalur[0][1] + (b[1] - a[1]) * 1.6], "gapura", 1.15);
 }
 
-// zona UMKM: deret lapak menghadap laut, warung rumbia, saung
+// zona UMKM: deret kios menghadap laut, warung, gazebo, rumah toko di belakang
 const dalamUmkm = (p) => inside(p, zUmkm);
-for (const [dist, gap, jenis] of [[-34, 42, "lapak"], [-80, 56, "campur"], [-122, 64, "saung"], [-205, 50, "rumah"]]) {
-  for (const [x, y, ang] of along(offset(dalamD, dist), gap, rr(0, gap))) {
+for (const [dist, gap, jenis] of [[-34, 38, "kios"], [-82, 50, "campur"], [-124, 60, "gazebo"], [-205, 46, "rumah"]]) {
+  for (const [x, y] of along(offset(dalamD, dist), gap, rr(0, gap))) {
     const p = [x + rr(-3, 3), y + rr(-3, 3)];
-    if (!dalamUmkm(p) || diAir(p) || dekatJalan(p, 18) || !kosong(p, 26)) continue;
+    if (!dalamUmkm(p) || diAir(p) || dekatJalan(p, 18) || !kosong(p, 28)) continue;
     terpakai.push(p);
-    const id = jenis === "lapak" ? pick(lapakIds) : jenis === "campur" ? (rnd() < 0.5 ? "wr" : pick(lapakIds)) : jenis === "saung" ? "saung" : pick(rumahIds.pelana);
-    tambah(p, use(id, p[0], p[1], ang + (jenis === "rumah" ? 180 : 0) + rr(-3, 3)));
+    tambah(p, jenis === "kios" ? pick(ids.kios) : jenis === "campur" ? (rnd() < 0.5 ? "warung" : pick(ids.kios)) : jenis === "gazebo" ? "gazebo" : pick(ids.rumah));
+    if (jenis !== "rumah" && rnd() < 0.6) tambah([p[0] + rr(-14, 14), p[1] + rr(10, 18)], pick(ids.orang));
   }
 }
-// payung + kursi di pasir
-for (const [dist, gap] of [[30, 30], [62, 44]]) {
+// pantai: payung, pengunjung, perenang, peselancar
+for (const [dist, gap] of [[28, 30], [58, 40]]) {
   for (const [x, y] of along(offset(dalamD, dist), gap, rr(0, 10))) {
     const p = [x + rr(-5, 5), y + rr(-5, 5)];
-    if (!inside(p, pasirSelatan) || distLine(p, garisPantai) < 24) continue;
+    if (!inside(p, pasirSelatan) || distLine(p, garisPantai) < 22) continue;
     if (!inside(p, zUmkm) && rnd() < 0.7) continue;
-    tambah(p, use(pick(payungIds), p[0], p[1], rr(-20, 20)));
+    tambah(p, pick(ids.payung));
+    if (rnd() < 0.7) tambah([p[0] + rr(-12, 12), p[1] + rr(4, 14)], pick(ids.orang));
   }
 }
+for (const [x, y] of along(offset(laut, 6), 34, 10)) if (rnd() < 0.45 && inside([x, y], pasirSelatan)) tambah([x, y], pick(ids.orang));
+for (const [x, y] of along(offset(laut, 26), 40, 20).slice(0, 26)) if (rnd() < 0.55) tambah([x + rr(-6, 6), y + rr(-6, 6)], `renang${Math.floor(rnd() * 3)}`);
+for (const [x, y] of along(offset(laut, 75), 90, 40).slice(1, 10)) if (rnd() < 0.7) tambah([x + rr(-14, 14), y + rr(-14, 14)], "selancar");
+
 // kelapa & cemara laut di tepi pantai
 for (const line of [offset(dalamD, -10), offset(spitDalamD, 10)])
-  for (const [x, y] of along(line, 26, 5)) {
+  for (const [x, y] of along(line, 24, 5)) {
     const p = [x + rr(-9, 9), y + rr(-9, 9)];
-    if (diAir(p) || rnd() < 0.2 || !kosong(p, 14)) continue;
-    tambah(p, use(rnd() < 0.7 ? pick(kelapaIds) : rnd() < 0.5 ? "cm0" : "cm1", p[0], p[1], rr(0, 360), rr(0.9, 1.3)));
+    if (diAir(p) || rnd() < 0.2 || !kosong(p, 12)) continue;
+    tambah(p, rnd() < 0.75 ? pick(ids.kelapa) : "cemara", rr(0.9, 1.25));
   }
 
-// pohon di pematang sawah + gubuk
-for (const p of poisson(sawah, 140, (p) => !diAir(p))) tambah(p, use(rnd() < 0.5 ? pick(kelapaIds) : pick(pohonIds), p[0], p[1], rr(0, 360), rr(0.8, 1.1)));
-for (const p of poisson(sawah, 320, (p) => !diAir(p))) tambah(p, use("gubuk", p[0], p[1], rr(-10, 10)));
+// kendaraan di jalan desa
+for (const j of [...jalanKeUtara, ...jalanUtara])
+  for (const [x, y] of along(j, 150, rr(20, 80))) if (rnd() < 0.7) tambah([x, y], rnd() < 0.6 ? pick(ids.mobil) : "motor");
 
-// hutan: kanopi rapat berlapis
-for (const p of poisson(hutan, 17, (p) => !diAir(p)))
-  tambah(p, use(pick(pohonIds), p[0], p[1], rr(0, 360), rr(0.9, 1.5)));
+// sawah: pohon di pematang + gubuk
+for (const p of poisson(sawah, 140, (p) => !diAir(p))) tambah(p, rnd() < 0.5 ? pick(ids.kelapa) : pick(ids.pohon), rr(0.8, 1.05));
+for (const p of poisson(sawah, 320, (p) => !diAir(p))) tambah(p, "gazebo", 0.6);
 
-items.sort((a, b) => a[0] - b[0]);
+// batu di tepi sungai
+for (const side of [1, -1]) for (const [x, y] of along(offset(sungai, side * (LS / 2 + 6)), 70, 30)) if (rnd() < 0.4 && !diPasir([x, y]) && inside([x, y], daratan)) tambah([x, y], "batu2", rr(0.8, 1.3));
+
+// taman di dalam kawasan (di luar zona): pepohonan & semak rimbun ala taman wisata
+for (const p of poisson(batas, 20, (p) => bebas(p) && !diZona(p) && !diSawah(p) && kosong(p, 14) && distLine(p, batas.concat([batas[0]])) > 14))
+  if (rnd() < 0.62) tambah(p, rnd() < 0.62 ? pohonAcak() : pick(ids.semak), rr(0.85, 1.2));
+
+// hutan: pepohonan rapat
+for (const p of poisson(hutan, 15, (p) => !diAir(p))) tambah(p, pick(ids.pohon), rr(1, 1.5));
+
 L.push(`<g>${halaman.join("")}</g>`);
-L.push(`<g>${items.map((i) => i[1]).join("")}</g>`);
 
-// 10. laut: perahu, peselancar, batu karang
-for (const [x, y, ang] of along(offset(garisPantai, 300), 380, 150)) if (x > 40 && y > 40 && x < W - 40 && y < H - 40) L.push(use("perahu", x, y, ang + rr(-30, 30), 0.55));
-for (const [x, y, ang] of along(offset(laut, 80), 110, 50).slice(2, 14)) L.push(use("papan", x + rr(-12, 12), y + rr(-12, 12), ang + rr(-70, 70)));
-for (const ujung of [laut.at(-2)]) {
-  for (let i = 0; i < 6; i++) {
-    const p = [ujung[0] + rr(-40, 30), ujung[1] + rr(-20, 40)];
-    if (inside(p, daratan) && !diPasir(p)) continue;
-    L.push(`<circle cx="${f1(p[0])}" cy="${f1(p[1])}" r="12" fill="none" stroke="#fff" stroke-width="2" opacity=".6"/>`);
-    L.push(use("batu", p[0], p[1], rr(0, 360), rr(0.8, 1.4)));
-  }
+// laut: kapal, perahu, banana boat, camar
+const spriteLaut = [];
+for (const [x, y] of along(offset(garisPantai, 320), 420, 160)) if (x > 40 && y > 40 && x < W - 40 && y < H - 40) spriteLaut.push({ x, y, id: rnd() < 0.5 ? "kapal" : "perahu2", s: 1 });
+for (const [x, y] of along(offset(laut, 150), 400, 120).slice(0, 3)) spriteLaut.push({ x, y, id: "banana", s: 1 });
+for (let i = 0; i < 24; i++) { const [x, y] = pick(along(offset(garisPantai, rr(80, 500)), 60)); spriteLaut.push({ x: x + rr(-30, 30), y: y + rr(-30, 30), id: "camar", s: rr(0.8, 1.3) }); }
+for (const [x, y] of along(offset(densify(spitLaut, 20), -24), 46, 30).slice(-9)) if (inside([x, y], pasirSpit) && rnd() < 0.7) sprite.push({ x, y, id: "perahu2", s: 1 });
+for (const ujung of [laut.at(-2)]) for (let i = 0; i < 6; i++) {
+  const p = [ujung[0] + rr(-40, 30), ujung[1] + rr(-20, 40)];
+  if (inside(p, daratan) && !diPasir(p)) continue;
+  L.push(`<circle cx="${f1(p[0])}" cy="${f1(p[1])}" r="12" fill="none" stroke="#fff" stroke-width="2" opacity=".6"/>`);
+  sprite.push({ x: p[0], y: p[1], id: "batu2", s: rr(1, 1.6) });
 }
 
-// perahu nelayan ditarik ke pasir (spit & dekat muara)
-for (const [x, y, ang] of along(offset(densify(spitLaut, 20), -24), 46, 30).slice(-9)) {
-  if (!inside([x, y], pasirSpit) || rnd() < 0.3) continue;
-  L.push(use("perahu", x, y, ang + 90 + rr(-15, 15), 0.5));
-}
+// ================================================================ tulis: satu SVG per arah pandang
+// ---------- luar kawasan dibuat polos (gaya peta taman wisata)
+const diKawasan = (o) => inside([o.x, o.y], batas);
+const luar = [];
+const cLuar = `M0 0H${f1(W)}V${f1(H)}H0Z ${dz(batas)}`;
+luar.push(`<clipPath id="cLuarDarat"><path d="${daratD}"/></clipPath>`);
+luar.push(`<g clip-path="url(#cLuarDarat)"><path d="${cLuar}" fill-rule="evenodd" fill="#F3E5CE"/>`);
+luar.push(`<clipPath id="cLuar"><path d="${cLuar}" clip-rule="evenodd"/></clipPath><g clip-path="url(#cLuar)">`);
+luar.push(`<path d="${smooth(hutan, true)}" fill="#CFE3B5"/><path d="${smooth(hutan, true)}" fill="url(#pPolosHutan)"/>`);
+for (const sw of [sawah, sawahU, lapangan]) luar.push(`<path d="${smooth(sw, true)}" fill="#E4EDC9"/><path d="${smooth(sw, true)}" fill="url(#pPolosSawah)"/>`);
+for (const poly of [pasirSpit, pasirSelatan]) luar.push(`<path d="${dz(poly)}" fill="#F7EBD3"/>`);
+// petak rumah sederhana
+for (const o of sprite) if (!diKawasan(o) && /^(r|h|s)\d|^pondok$/.test(o.id)) luar.push(`<rect x="${f1(o.x - 11)}" y="${f1(o.y - 8)}" width="22" height="16" rx="2" fill="#E8D3B5" stroke="#D6BC98" stroke-width="1.2"/>`);
+for (const j of jalanDesa) luar.push(`<path d="${smooth(j)}" stroke="#FFFFFF" stroke-width="12" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`);
+luar.push(`<path d="${smooth(sungai)}" stroke="#FFFFFF" stroke-width="${LS + 8}" fill="none" stroke-linecap="round"/><path d="${smooth(sungai)}" stroke="#9FD0EE" stroke-width="${LS - 2}" fill="none" stroke-linecap="round"/>`);
+luar.push(`</g></g>`);
+// bingkai kawasan: jalan setapak lebar bertepi putih (hanya di darat)
+luar.push(`<g clip-path="url(#cLuarDarat)"><path d="${dz(batas)}" fill="none" stroke="#152638" stroke-width="26" opacity=".14" filter="url(#b4)" transform="translate(3 4)"/>
+  <path d="${dz(batas)}" fill="none" stroke="#FFFFFF" stroke-width="22" stroke-linejoin="round"/><path d="${dz(batas)}" fill="none" stroke="#CFE6B8" stroke-width="14" stroke-linejoin="round"/></g>`);
+const spriteDalam = sprite.filter(diKawasan);
 
-// 11. tabir lembut di luar kawasan (daratan saja)
-L.push(`<path d="M0 0H${f1(W)}V${f1(H)}H0Z ${dz(batas)}" fill="#F3F6EE" fill-rule="evenodd" opacity=".3" clip-path="${cDarat}"/>`);
-
-// ================================================================ tulis
-const svg = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 ${f1(W)} ${f1(H)}" width="${Math.round(W)}" height="${Math.round(H)}">
-<!-- Dibuat oleh tools/gen-ilustrasi.mjs, jangan edit manual. Batas: ${JSON.stringify(B)} -->
+const ARAH = process.argv[2] ? [Number(process.argv[2])] : [0, 45, 90, 135, 180, 225, 270, 315];
+const DIR = path.join(ROOT, "assets/ilustrasi");
+fs.mkdirSync(DIR, { recursive: true });
+const tabir = `<path d="M0 0H${f1(W)}V${f1(H)}H0Z ${dz(batas)}" fill="#F3F6EE" fill-rule="evenodd" opacity=".3" clip-path="${cDarat}"/>`;
+const dasar = L.join("\n");
+for (const a of ARAH) {
+  const r = (a * Math.PI) / 180, sn = Math.sin(r), cs = Math.cos(r);
+  const urut = (arr) => arr.map((o) => [-o.x * sn + o.y * cs, o]).sort((p, q) => p[0] - q[0]).map(([, o]) =>
+    `<use href="#${o.id}" transform="translate(${f1(o.x)} ${f1(o.y)})${a ? ` rotate(${a})` : ""}${o.s !== 1 ? ` scale(${Math.round(o.s * 100) / 100})` : ""}"/>`).join("");
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 ${f1(W)} ${f1(H)}" width="${Math.round(W)}" height="${Math.round(H)}">
+<!-- Dibuat oleh tools/gen-ilustrasi.mjs, jangan edit manual. Arah pandang ${a}°. Batas: ${JSON.stringify(B)} -->
 <defs>${defs.join("\n")}</defs>
-${L.join("\n")}
+${dasar}
+<g>${urut(spriteLaut)}</g>
+${luar.join("\n")}
+<g>${urut(spriteDalam)}</g>
 </svg>`;
-fs.mkdirSync(path.join(ROOT, "assets"), { recursive: true });
-fs.writeFileSync(path.join(ROOT, "assets/peta-ilustrasi.svg"), svg);
-console.log(`assets/peta-ilustrasi.svg  ${Math.round(W)}×${Math.round(H)}  ${(svg.length / 1024).toFixed(0)} KB  ${items.length} objek`);
+  fs.writeFileSync(path.join(DIR, `peta-${a}.svg`), svg);
+  console.log(`assets/ilustrasi/peta-${a}.svg  ${(svg.length / 1024).toFixed(0)} KB`);
+}
+console.log(`${sprite.length + spriteLaut.length} objek, ${Math.round(W)}×${Math.round(H)}`);
