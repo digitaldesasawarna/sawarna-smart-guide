@@ -141,6 +141,16 @@
 
     <!-- FLOATING MAP CONTROLS -->
     <aside class="map-controls">
+      <!-- Kalibrasi Presisi Peta vs Google Maps -->
+      <button id="btn-calibrate" class="control-btn" title="Kalibrasi Presisi Posisi Peta (Sesuaikan dengan Google Maps)" aria-label="Buka Kalibrasi Presisi Peta">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="22" y1="12" x2="18" y2="12"></line>
+          <line x1="6" y1="12" x2="2" y2="12"></line>
+          <line x1="12" y1="6" x2="12" y2="2"></line>
+          <line x1="12" y1="22" x2="12" y2="18"></line>
+        </svg>
+      </button>
       <!-- Layer Toggle (Ilustrasi / Hybrid / Google Satelit) -->
       <button id="btn-toggle-layer" class="control-btn" title="Mode: Peta Ilustrasi Pantai Ciantir (Klik untuk ganti mode ke Hybrid / Satelit Google)" aria-label="Ganti Lapisan Peta">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -176,6 +186,94 @@
         </svg>
       </button>
     </aside>
+
+    <!-- FLOATING CALIBRATION DOCK -->
+    <div id="calibrate-panel" class="calibrate-panel" aria-hidden="true">
+      <div class="calibrate-header">
+        <div class="calibrate-title-wrap">
+          <span class="calibrate-dot"></span>
+          <div>
+            <h3 class="calibrate-title">Kalibrasi Presisi Peta</h3>
+            <span class="calibrate-sub">Penyelarasan Overlay vs Citra Satelit</span>
+          </div>
+        </div>
+        <button id="calibrate-close-btn" class="sheet-close-btn" aria-label="Tutup panel kalibrasi">✕</button>
+      </div>
+
+      <div class="calibrate-body">
+        <p class="calibrate-hint">
+          Sesuaikan posisi gambar ilustrasi dengan menekan tombol arah atau mengubah skala agar jembatan gantung, muara sungai, dan garis pantai menimpa persis citra satelit Google Maps di bawahnya.
+        </p>
+
+        <!-- Transparansi Overlay -->
+        <div class="calibrate-section">
+          <div class="calibrate-label-row">
+            <span class="calibrate-label">Transparansi Peta Ilustrasi:</span>
+            <span id="label-opacity" class="calibrate-val-badge">55%</span>
+          </div>
+          <input type="range" id="input-opacity" min="0" max="100" value="55" class="calibrate-range" aria-label="Pengatur Transparansi Peta">
+        </div>
+
+        <!-- Geser Posisi D-Pad -->
+        <div class="calibrate-section">
+          <div class="calibrate-label-row">
+            <span class="calibrate-label">Geser Posisi (Pan):</span>
+            <div class="step-select-row">
+              <button class="step-chip active" data-step="0.0002" title="Geser ~20 meter">20m</button>
+              <button class="step-chip" data-step="0.0006" title="Geser ~65 meter">65m</button>
+              <button class="step-chip" data-step="0.0015" title="Geser ~160 meter">160m</button>
+            </div>
+          </div>
+          <div class="dpad-wrap">
+            <button class="dpad-btn dpad-up" data-dir="up" title="Geser ke Utara (Atas)">▲</button>
+            <div class="dpad-mid-row">
+              <button class="dpad-btn dpad-left" data-dir="left" title="Geser ke Barat (Kiri)">◄</button>
+              <div class="dpad-center-mark">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/></svg>
+              </div>
+              <button class="dpad-btn dpad-right" data-dir="right" title="Geser ke Timur (Kanan)">►</button>
+            </div>
+            <button class="dpad-btn dpad-down" data-dir="down" title="Geser ke Selatan (Bawah)">▼</button>
+          </div>
+        </div>
+
+        <!-- Skala Ukuran -->
+        <div class="calibrate-section">
+          <span class="calibrate-label">Skala Ukuran (Stretch &amp; Scale):</span>
+          <div class="scale-btn-grid">
+            <button class="scale-btn" data-scale="width-inc" title="Melebarkan rentang Timur-Barat">+ Lebar (X)</button>
+            <button class="scale-btn" data-scale="width-dec" title="Menyempitkan rentang Timur-Barat">- Lebar (X)</button>
+            <button class="scale-btn" data-scale="height-inc" title="Meninggikan rentang Utara-Selatan">+ Tinggi (Y)</button>
+            <button class="scale-btn" data-scale="height-dec" title="Memendekkan rentang Utara-Selatan">- Tinggi (Y)</button>
+          </div>
+        </div>
+
+        <!-- Tampilan Koordinat -->
+        <div class="calibrate-section">
+          <span class="calibrate-label">Batas Koordinat Geografis Saat Ini:</span>
+          <div class="coords-display">
+            <div><small>North:</small> <span id="val-north">-6.97900</span></div>
+            <div><small>South:</small> <span id="val-south">-6.99300</span></div>
+            <div><small>West:</small> <span id="val-west">106.30000</span></div>
+            <div><small>East:</small> <span id="val-east">106.31400</span></div>
+          </div>
+        </div>
+
+        <!-- Tombol Aksi -->
+        <div class="calibrate-actions">
+          <button id="btn-save-calibrate" class="btn-primary" title="Simpan koordinat ini secara permanen">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+            Simpan Kalibrasi
+          </button>
+          <button id="btn-copy-calibrate" class="btn-secondary" title="Salin koordinat JSON ke clipboard">
+            Salin JSON
+          </button>
+          <button id="btn-reset-calibrate" class="btn-secondary" title="Kembalikan ke koordinat default">
+            Reset
+          </button>
+        </div>
+      </div>
+    </div>
   </main>
 
   <!-- BOTTOM SHEET FACILITY DRAWER -->

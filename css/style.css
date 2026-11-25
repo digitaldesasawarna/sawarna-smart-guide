@@ -1041,8 +1041,288 @@ html, body {
 }
 
 /* ========================================================
+   FLOATING CALIBRATION DOCK (PRECISE GEOREFERENCING)
+   ======================================================== */
+.control-btn.active {
+  background: var(--color-ocean-dark);
+  color: #ffffff;
+  border-color: var(--color-ocean);
+  box-shadow: 0 0 0 3px rgba(40, 120, 184, 0.35);
+}
+
+.calibrate-panel {
+  position: fixed;
+  bottom: 1.5rem;
+  left: 1rem;
+  right: 1rem;
+  max-width: 380px;
+  max-height: 85vh;
+  background: var(--color-surface-translucent);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  z-index: 1050;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(20px) scale(0.96);
+  transition: all var(--duration-normal) var(--ease-spring);
+}
+
+.calibrate-panel.open {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0) scale(1);
+}
+
+.calibrate-header {
+  padding: 1rem 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(40, 120, 184, 0.12);
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.calibrate-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.calibrate-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--color-alert);
+  box-shadow: 0 0 0 3px rgba(232, 162, 58, 0.3);
+  animation: logoPulse 2s infinite ease-in-out;
+}
+
+.calibrate-title {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--color-ocean-deep);
+  line-height: 1.2;
+}
+
+.calibrate-sub {
+  font-size: 0.72rem;
+  color: var(--color-text-muted);
+  font-weight: 600;
+  display: block;
+}
+
+.calibrate-body {
+  padding: 1rem 1.25rem 1.25rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.95rem;
+  font-size: 0.82rem;
+}
+
+.calibrate-hint {
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+  line-height: 1.45;
+  background: rgba(40, 120, 184, 0.06);
+  padding: 0.6rem 0.85rem;
+  border-radius: var(--radius-sm);
+  border-left: 3px solid var(--color-ocean-dark);
+}
+
+.calibrate-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.calibrate-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.calibrate-label {
+  font-weight: 700;
+  color: var(--color-ocean-deep);
+  font-size: 0.8rem;
+}
+
+.calibrate-val-badge {
+  background: var(--color-ocean-deep);
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.15rem 0.5rem;
+  border-radius: var(--radius-full);
+}
+
+.calibrate-range {
+  width: 100%;
+  accent-color: var(--color-ocean-dark);
+  cursor: pointer;
+  height: 6px;
+  border-radius: 3px;
+}
+
+/* D-Pad Pan Controls */
+.dpad-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  margin: 0.3rem 0;
+}
+
+.dpad-mid-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.dpad-center-mark {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-light);
+}
+
+.dpad-btn {
+  width: 44px;
+  height: 34px;
+  background: #ffffff;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-ocean-deep);
+  font-size: 0.85rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  transition: all var(--duration-fast);
+}
+
+.dpad-btn:hover {
+  background: var(--color-ocean-dark);
+  color: #ffffff;
+  border-color: var(--color-ocean-dark);
+}
+
+.dpad-btn:active {
+  transform: scale(0.92);
+}
+
+.step-select-row {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.step-chip {
+  background: #f0f4f7;
+  border: 1px solid transparent;
+  color: var(--color-text-muted);
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 0.18rem 0.5rem;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: all var(--duration-fast);
+}
+
+.step-chip.active {
+  background: var(--color-ocean-dark);
+  color: #ffffff;
+}
+
+/* Scale Buttons */
+.scale-btn-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.4rem;
+}
+
+.scale-btn {
+  background: #ffffff;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-ocean-deep);
+  font-size: 0.74rem;
+  font-weight: 700;
+  padding: 0.45rem 0.6rem;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  transition: all var(--duration-fast);
+  text-align: center;
+}
+
+.scale-btn:hover {
+  background: #eef6fb;
+  border-color: var(--color-ocean);
+  color: var(--color-ocean-dark);
+}
+
+.scale-btn:active {
+  transform: scale(0.95);
+}
+
+/* Coords Display */
+.coords-display {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.3rem 0.6rem;
+  background: rgba(24, 59, 80, 0.05);
+  border-radius: var(--radius-sm);
+  padding: 0.55rem 0.75rem;
+  font-family: monospace;
+  font-size: 0.75rem;
+  color: var(--color-ocean-deep);
+}
+
+.coords-display small {
+  color: var(--color-text-muted);
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-weight: 600;
+}
+
+.calibrate-actions {
+  display: flex;
+  gap: 0.45rem;
+  margin-top: 0.25rem;
+}
+
+.calibrate-actions .btn-primary {
+  flex: 1.5;
+  padding: 0.65rem 0.85rem;
+  font-size: 0.78rem;
+}
+
+.calibrate-actions .btn-secondary {
+  flex: 1;
+  padding: 0.65rem 0.6rem;
+  font-size: 0.75rem;
+}
+
+/* ========================================================
    RESPONSIVE DESKTOP DOCK
    ======================================================== */
+@media (min-width: 768px) {
+  .calibrate-panel {
+    bottom: 2rem;
+    left: auto;
+    right: 4.8rem;
+    width: 360px;
+  }
+}
 @media (min-width: 768px) {
   .app-header {
     padding: 1.25rem 2rem;

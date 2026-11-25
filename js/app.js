@@ -94,10 +94,36 @@
   const searchClearBtn = document.getElementById('search-clear-btn');
   const searchDropdown = document.getElementById('search-dropdown');
 
+  const btnCalibrate = document.getElementById('btn-calibrate');
+  const calibratePanel = document.getElementById('calibrate-panel');
+  const calibrateCloseBtn = document.getElementById('calibrate-close-btn');
+  const inputOpacity = document.getElementById('input-opacity');
+  const labelOpacity = document.getElementById('label-opacity');
+  const valNorth = document.getElementById('val-north');
+  const valSouth = document.getElementById('val-south');
+  const valWest = document.getElementById('val-west');
+  const valEast = document.getElementById('val-east');
+  const btnSaveCalibrate = document.getElementById('btn-save-calibrate');
+  const btnCopyCalibrate = document.getElementById('btn-copy-calibrate');
+  const btnResetCalibrate = document.getElementById('btn-reset-calibrate');
+
   const btnHelp = document.getElementById('btn-help');
   const btnLegend = document.getElementById('btn-legend');
   const helpModal = document.getElementById('help-modal');
   const legendModal = document.getElementById('legend-modal');
+
+  let calibratedBounds = null;
+  let calibrateStep = 0.0002;
+
+  // --- COMPUTE REAL LAT/LNG DARI KOORDINAT SVG (1400 x 900) ---
+  function computeLatLng(x, y, bounds) {
+    const b = bounds || calibratedBounds || mapConfig.geoBounds;
+    const u = x / 1400.0;
+    const v = y / 900.0;
+    const lat = b.north - v * (b.north - b.south);
+    const lng = b.west + u * (b.east - b.west);
+    return [lat, lng];
+  }
 
   // --- INIT APPLICATION ---
   async function initApp() {
@@ -118,6 +144,7 @@
       renderAllMarkers();
       updateLODVisibility();
       setupSearch();
+      setupCalibration();
       setupEventHandlers();
 
     } catch (error) {
@@ -131,20 +158,33 @@
     }
   }
 
-  // --- SETUP GEOGRAPHIC LEAFLET MAP WITH GOOGLE MAPS BASELINE + TILE OVERLAY ---
+  // --- SETUP GEOGRAPHIC LEAFLET MAP WITH GOOGLE MAPS BASELINE & CALIBRATED OVERLAY ---
   function setupGeographicMap() {
     const { geoBounds, view } = mapConfig;
 
-    // Batas Geografis Kawasan Pantai Ciantir
+    // Load saved calibration bounds from localStorage if available
+    calibratedBounds = { ...geoBounds };
+    try {
+      const saved = localStorage.getItem('pantai_ciantir_calibrated_bounds');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.north && parsed.south && parsed.west && parsed.east) {
+          calibratedBounds = parsed;
+          console.log('Memuat koordinat kalibrasi tersimpan:', calibratedBounds);
+        }
+      }
+    } catch (e) {
+      console.warn('Gagal membaca kalibrasi lokal:', e);
+    }
+
     const illustrationBounds = L.latLngBounds(
-      [geoBounds.south, geoBounds.west],
-      [geoBounds.north, geoBounds.east]
+      [calibratedBounds.south, calibratedBounds.west],
+      [calibratedBounds.north, calibratedBounds.east]
     );
 
-    // Batas maksimum navigasi (sedikit lebih luas dari ilustrasi)
     const maxBounds = L.latLngBounds(
-      [geoBounds.south - 0.002, geoBounds.west - 0.002],
-      [geoBounds.north + 0.002, geoBounds.east + 0.002]
+      [calibratedBounds.south - 0.005, calibratedBounds.west - 0.005],
+      [calibratedBounds.north + 0.005, calibratedBounds.east + 0.005]
     );
 
     map = L.map('map', {
@@ -165,27 +205,14 @@
       alt: 'Google Maps Baseline'
     }).addTo(map);
 
-    // 2. OVERLAY A: Tile Pyramid Ilustrasi (jika tiles sudah digenerate)
-    //    Fallback ke single imageOverlay jika tile tidak tersedia
-    if (mapConfig.tilesPath) {
-      illustrationTileLayer = L.tileLayer(mapConfig.tilesPath + '/{z}/{x}/{y}.png', {
-        tms: true,
-        opacity: 0.92,
-        maxZoom: view.maxZoom,
-        minZoom: view.minZoom,
-        bounds: illustrationBounds,
-        zIndex: 10,
-        errorTileUrl: ''
-      }).addTo(map);
-    } else {
-      // Fallback: single SVG ImageOverlay
-      illustrationOverlay = L.imageOverlay(mapConfig.image, illustrationBounds, {
-        alt: mapConfig.name,
-        interactive: true,
-        opacity: 0.92,
-        zIndex: 10
-      }).addTo(map);
-    }
+    // 2. OVERLAY LAYER: Peta Ilustrasi Vektor Kawasan Pantai Ciantir
+    // Menggunakan L.imageOverlay dengan GPU acceleration agar vector tajam & bounds dapat dikalibrasi real-time
+    illustrationOverlay = L.imageOverlay(mapConfig.image, illustrationBounds, {
+      alt: mapConfig.name,
+      interactive: true,
+      opacity: 0.92,
+      zIndex: 10
+    }).addTo(map);
 
     map.fitBounds(illustrationBounds);
 
@@ -198,14 +225,19 @@
     });
   }
 
-  // Helper: get active overlay reference (tile layer or image overlay)
+  // Helper: get active overlay reference
   function getActiveOverlay() {
-    return illustrationTileLayer || illustrationOverlay;
+    return illustrationOverlay;
   }
 
   // --- RENDER ALL MARKERS (REAL GEOGRAPHIC LAT/LNG) ---
   function renderAllMarkers() {
     facilitiesData.forEach((fac) => {
+      if (fac.x != null && fac.y != null) {
+        const [cLat, cLng] = computeLatLng(fac.x, fac.y, calibratedBounds);
+        fac.lat = cLat;
+        fac.lng = cLng;
+      }
       const latLng = [fac.lat, fac.lng];
       const iconSvg = getIconSvg(fac.icon, fac.category);
       let markerIcon;
@@ -619,6 +651,205 @@
 
   function closeModal(modalEl) {
     modalEl.classList.remove('open');
+  }
+
+  // --- REAL-TIME CALIBRATION & GEOREFERENCING ENGINE ---
+  function setupCalibration() {
+    if (!btnCalibrate || !calibratePanel) return;
+
+    btnCalibrate.addEventListener('click', () => {
+      const isOpen = calibratePanel.classList.contains('open');
+      if (isOpen) {
+        closeCalibration();
+      } else {
+        openCalibration();
+      }
+    });
+
+    if (calibrateCloseBtn) {
+      calibrateCloseBtn.addEventListener('click', closeCalibration);
+    }
+
+    // Step Chips (20m, 65m, 160m)
+    const stepChips = calibratePanel.querySelectorAll('.step-chip');
+    stepChips.forEach(chip => {
+      chip.addEventListener('click', () => {
+        stepChips.forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+        calibrateStep = parseFloat(chip.getAttribute('data-step')) || 0.0002;
+      });
+    });
+
+    // Opacity Slider
+    if (inputOpacity) {
+      inputOpacity.addEventListener('input', (e) => {
+        const val = parseInt(e.target.value, 10);
+        if (labelOpacity) labelOpacity.textContent = `${val}%`;
+        if (illustrationOverlay) {
+          illustrationOverlay.setOpacity(val / 100);
+        }
+      });
+    }
+
+    // D-Pad Pan Directions
+    const dpadBtns = calibratePanel.querySelectorAll('.dpad-btn');
+    dpadBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const dir = btn.getAttribute('data-dir');
+        panOverlay(dir);
+      });
+    });
+
+    // Scale Stretch Buttons
+    const scaleBtns = calibratePanel.querySelectorAll('.scale-btn');
+    scaleBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const action = btn.getAttribute('data-scale');
+        scaleOverlay(action);
+      });
+    });
+
+    // Save Button
+    if (btnSaveCalibrate) {
+      btnSaveCalibrate.addEventListener('click', () => {
+        try {
+          localStorage.setItem('pantai_ciantir_calibrated_bounds', JSON.stringify(calibratedBounds));
+          alert('✓ Kalibrasi berhasil disimpan! Peta akan otomatis menggunakan koordinat ini setiap kali dibuka.');
+        } catch (e) {
+          console.error(e);
+        }
+      });
+    }
+
+    // Copy JSON Button
+    if (btnCopyCalibrate) {
+      btnCopyCalibrate.addEventListener('click', () => {
+        const jsonStr = JSON.stringify(calibratedBounds, null, 2);
+        if (navigator.clipboard) {
+          navigator.clipboard.writeText(jsonStr).then(() => {
+            alert('✓ Koordinat JSON berhasil disalin ke clipboard:\n' + jsonStr);
+          });
+        } else {
+          prompt('Salin koordinat berikut:', jsonStr);
+        }
+      });
+    }
+
+    // Reset Button
+    if (btnResetCalibrate) {
+      btnResetCalibrate.addEventListener('click', () => {
+        if (confirm('Kembalikan koordinat overlay ke nilai default awal?')) {
+          localStorage.removeItem('pantai_ciantir_calibrated_bounds');
+          applyCalibratedBounds(mapConfig.geoBounds);
+          if (illustrationOverlay) illustrationOverlay.setOpacity(0.92);
+          if (inputOpacity) inputOpacity.value = 92;
+          if (labelOpacity) labelOpacity.textContent = '92%';
+        }
+      });
+    }
+
+    updateCalibrationDisplay();
+  }
+
+  function openCalibration() {
+    closeBottomSheet();
+    calibratePanel.classList.add('open');
+    btnCalibrate.classList.add('active');
+    // Set opacity to 55% so Google Maps satellite is visible underneath
+    if (illustrationOverlay) illustrationOverlay.setOpacity(0.55);
+    if (inputOpacity) inputOpacity.value = 55;
+    if (labelOpacity) labelOpacity.textContent = '55%';
+    updateCalibrationDisplay();
+  }
+
+  function closeCalibration() {
+    calibratePanel.classList.remove('open');
+    btnCalibrate.classList.remove('active');
+  }
+
+  function panOverlay(direction) {
+    if (!calibratedBounds) calibratedBounds = { ...mapConfig.geoBounds };
+    const step = calibrateStep;
+
+    if (direction === 'up') {
+      calibratedBounds.north += step;
+      calibratedBounds.south += step;
+    } else if (direction === 'down') {
+      calibratedBounds.north -= step;
+      calibratedBounds.south -= step;
+    } else if (direction === 'left') {
+      calibratedBounds.west -= step;
+      calibratedBounds.east -= step;
+    } else if (direction === 'right') {
+      calibratedBounds.west += step;
+      calibratedBounds.east += step;
+    }
+
+    applyCalibratedBounds(calibratedBounds);
+  }
+
+  function scaleOverlay(action) {
+    if (!calibratedBounds) calibratedBounds = { ...mapConfig.geoBounds };
+    const factor = 0.02; // 2% change
+    const centerLng = (calibratedBounds.west + calibratedBounds.east) / 2;
+    const widthSpan = calibratedBounds.east - calibratedBounds.west;
+    const centerLat = (calibratedBounds.north + calibratedBounds.south) / 2;
+    const heightSpan = calibratedBounds.north - calibratedBounds.south;
+
+    if (action === 'width-inc') {
+      const newWidth = widthSpan * (1 + factor);
+      calibratedBounds.west = centerLng - newWidth / 2;
+      calibratedBounds.east = centerLng + newWidth / 2;
+    } else if (action === 'width-dec') {
+      const newWidth = widthSpan * (1 - factor);
+      calibratedBounds.west = centerLng - newWidth / 2;
+      calibratedBounds.east = centerLng + newWidth / 2;
+    } else if (action === 'height-inc') {
+      const newHeight = heightSpan * (1 + factor);
+      calibratedBounds.north = centerLat + newHeight / 2;
+      calibratedBounds.south = centerLat - newHeight / 2;
+    } else if (action === 'height-dec') {
+      const newHeight = heightSpan * (1 - factor);
+      calibratedBounds.north = centerLat + newHeight / 2;
+      calibratedBounds.south = centerLat - newHeight / 2;
+    }
+
+    applyCalibratedBounds(calibratedBounds);
+  }
+
+  function applyCalibratedBounds(bounds) {
+    calibratedBounds = { ...bounds };
+    const latLngBounds = L.latLngBounds(
+      [bounds.south, bounds.west],
+      [bounds.north, bounds.east]
+    );
+
+    if (illustrationOverlay) {
+      illustrationOverlay.setBounds(latLngBounds);
+    }
+
+    // Sync all 22 markers with the new bounds!
+    facilitiesData.forEach(fac => {
+      if (fac.x != null && fac.y != null) {
+        const [lat, lng] = computeLatLng(fac.x, fac.y, bounds);
+        fac.lat = lat;
+        fac.lng = lng;
+        if (markersLayer[fac.id] && markersLayer[fac.id].marker) {
+          markersLayer[fac.id].marker.setLatLng([lat, lng]);
+          markersLayer[fac.id].latLng = [lat, lng];
+        }
+      }
+    });
+
+    updateCalibrationDisplay();
+  }
+
+  function updateCalibrationDisplay() {
+    const b = calibratedBounds || mapConfig.geoBounds;
+    if (valNorth) valNorth.textContent = b.north.toFixed(5);
+    if (valSouth) valSouth.textContent = b.south.toFixed(5);
+    if (valWest) valWest.textContent = b.west.toFixed(5);
+    if (valEast) valEast.textContent = b.east.toFixed(5);
   }
 
   // --- EVENT HANDLERS ---
