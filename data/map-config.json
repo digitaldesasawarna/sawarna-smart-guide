@@ -2,29 +2,32 @@
   "mapId": "pantai-ciantir-sawarna",
   "name": "Kawasan Wisata Pantai Ciantir Sawarna",
   "subtitle": "Peta Kawasan Pesisir, Homestay Desa, & Sentra UMKM",
-  "version": "1.2.0-ciantir",
+  "version": "2.0.0-geographic-baseline",
   "image": "assets/maps/pantai-ciantir-map.svg",
   "dimensions": {
     "width": 1400,
     "height": 900
   },
+  "geoBounds": {
+    "north": -6.9790,
+    "south": -6.9930,
+    "west": 106.3000,
+    "east": 106.3140
+  },
   "view": {
-    "initialCenter": [450, 700],
-    "initialZoom": -0.2,
-    "minZoom": -0.8,
-    "maxZoom": 2.5,
-    "maxBoundsViscosity": 0.85
+    "center": [-6.9860, 106.3070],
+    "initialZoom": 16,
+    "minZoom": 15,
+    "maxZoom": 19,
+    "maxBoundsViscosity": 0.95
   },
   "entrance": {
     "id": "jembatan-gantung",
     "name": "Jembatan Gantung Cisawarna & Pos Tiket",
+    "lat": -6.981878,
+    "lng": 106.3038,
     "x": 380,
-    "y": 190,
+    "y": 185,
     "label": "Akses Masuk Utama (Pejalan Kaki & Motor)"
-  },
-  "zoomLevels": {
-    "macro": -0.8,
-    "detail": 0.2,
-    "micro": 0.9
   }
 }

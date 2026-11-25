@@ -123,6 +123,14 @@
 
     <!-- FLOATING MAP CONTROLS -->
     <aside class="map-controls">
+      <!-- Layer Toggle (Ilustrasi / Hybrid / Google Satelit) -->
+      <button id="btn-toggle-layer" class="control-btn" title="Mode: Peta Ilustrasi Pantai Ciantir (Klik untuk ganti mode ke Hybrid / Satelit Google)" aria-label="Ganti Lapisan Peta">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+          <polyline points="2 17 12 22 22 17"></polyline>
+          <polyline points="2 12 12 17 22 12"></polyline>
+        </svg>
+      </button>
       <!-- Fullscreen Toggle -->
       <button id="btn-fullscreen" class="control-btn" title="Layar Penuh (Fullscreen)" aria-label="Toggle Fullscreen">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -185,6 +193,12 @@
           </svg>
           Tunjukkan Jalur dari Jembatan Gantung
         </button>
+        <a id="btn-open-gmaps" class="btn-secondary" target="_blank" rel="noopener noreferrer" title="Buka rute menuju titik lokasi di Google Maps">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="3 11 22 2 13 21 11 13 3 11"></polygon>
+          </svg>
+          Buka di Google Maps ↗
+        </a>
       </div>
     </div>
   </section>
