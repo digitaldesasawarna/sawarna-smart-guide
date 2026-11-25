@@ -255,7 +255,7 @@ L.push(`<rect width="${f1(W)}" height="${f1(H)}" fill="url(#pRumput)" clip-path=
 L.push(`<path d="${smooth(hutan, true)}" fill="#3F7F4C" filter="url(#b8)"/>`);
 
 // 4. sawah
-const nSw = noise(380, 5);
+const nSw = noise(190, 5);
 function sawahPetak(poly, ang, cw, ch) {
   const xs = poly.map((p) => p[0]), ys = poly.map((p) => p[1]);
   const cx = (Math.min(...xs) + Math.max(...xs)) / 2, cy = (Math.min(...ys) + Math.max(...ys)) / 2;
@@ -285,7 +285,8 @@ function sawahPetak(poly, ang, cw, ch) {
       if (!inside([wx, wy], poly) && Math.min(...poly.map((pp) => Math.hypot(pp[0] - wx, pp[1] - wy))) > cw * 2) { if (lebar === 2) i; continue; }
       const inset = q.map(([x, y]) => [mx + (x - mx) * 0.9, my + (y - my) * 0.9]);
       const n = nSw([wx, wy]) + rr(-0.07, 0.07);
-      const [fill, pat] = n < 0.22 ? ["#CDB27A", "pSwPanen"] : n < 0.36 ? ["#9FCDC2", "pSwMuda"] : n < 0.62 ? ["#8CC65C", "pSwTumbuh"] : n < 0.78 ? ["#A9D46A", "pSwTumbuh"] : ["#D9CF66", "pSwMatang"];
+      // dominan hijau (padi tumbuh), sesekali baru tanam / menguning / panen
+      const [fill, pat] = n < 0.12 ? ["#CDB27A", "pSwPanen"] : n < 0.22 ? ["#9FD0BE", "pSwMuda"] : n < 0.5 ? ["#7DBE4F", "pSwTumbuh"] : n < 0.78 ? ["#94CC5E", "pSwTumbuh"] : n < 0.9 ? ["#A9D46A", "pSwTumbuh"] : ["#D3D069", "pSwMatang"];
       const rot = rr(-12, 12), dd = smooth(inset, true);
       s += `<path d="${dd}" fill="${fill}"/><g transform="rotate(${f1(rot)} ${f1(mx)} ${f1(my)})"><path d="${dd}" fill="url(#${pat})" transform="rotate(${f1(-rot)} ${f1(mx)} ${f1(my)})"/></g>`;
       if (pat === "pSwMuda" && rnd() < 0.6) s += `<path d="${dd}" fill="url(#pSwAir)"/>`;
@@ -501,25 +502,39 @@ for (const ujung of [laut.at(-2)]) for (let i = 0; i < 6; i++) {
 }
 
 // ================================================================ tulis: satu SVG per arah pandang
-// ---------- luar kawasan dibuat polos (gaya peta taman wisata)
+// ---------- luar kawasan: pemandangan hijau (sawah terasering, perbukitan, desa)
 const diKawasan = (o) => inside([o.x, o.y], batas);
 const luar = [];
 const cLuar = `M0 0H${f1(W)}V${f1(H)}H0Z ${dz(batas)}`;
-luar.push(`<clipPath id="cLuarDarat"><path d="${daratD}"/></clipPath>`);
-luar.push(`<g clip-path="url(#cLuarDarat)"><path d="${cLuar}" fill-rule="evenodd" fill="#F3E5CE"/>`);
-luar.push(`<clipPath id="cLuar"><path d="${cLuar}" clip-rule="evenodd"/></clipPath><g clip-path="url(#cLuar)">`);
-luar.push(`<path d="${smooth(hutan, true)}" fill="#CFE3B5"/><path d="${smooth(hutan, true)}" fill="url(#pPolosHutan)"/>`);
-for (const sw of [sawah, sawahU, lapangan]) luar.push(`<path d="${smooth(sw, true)}" fill="#E4EDC9"/><path d="${smooth(sw, true)}" fill="url(#pPolosSawah)"/>`);
-for (const poly of [pasirSpit, pasirSelatan]) luar.push(`<path d="${dz(poly)}" fill="#F7EBD3"/>`);
-// petak rumah sederhana
-for (const o of sprite) if (!diKawasan(o) && /^(r|h|s)\d|^pondok$/.test(o.id)) luar.push(`<rect x="${f1(o.x - 11)}" y="${f1(o.y - 8)}" width="22" height="16" rx="2" fill="#E8D3B5" stroke="#D6BC98" stroke-width="1.2"/>`);
-for (const j of jalanDesa) luar.push(`<path d="${smooth(j)}" stroke="#FFFFFF" stroke-width="12" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`);
-luar.push(`<path d="${smooth(sungai)}" stroke="#FFFFFF" stroke-width="${LS + 8}" fill="none" stroke-linecap="round"/><path d="${smooth(sungai)}" stroke="#9FD0EE" stroke-width="${LS - 2}" fill="none" stroke-linecap="round"/>`);
-luar.push(`</g></g>`);
+luar.push(`<clipPath id="cLuarDarat"><path d="${daratD}"/></clipPath><clipPath id="cLuar"><path d="${cLuar}" clip-rule="evenodd"/></clipPath>`);
+
+// sawah tambahan di lahan terbuka (jauh dari desa, sungai, jalan, pantai, hutan)
+const nLahan = noise(520, 77);
+let masker = "";
+const sel = 34;
+for (let x = sel / 2; x < W; x += sel) for (let y = sel / 2; y < H; y += sel) {
+  const p = [x, y];
+  if (inside(p, batas) || !inside(p, daratan) || diPasir(p) || diHutan(p) || inside(p, sawah) || inside(p, sawahU)) continue;
+  if (distLine(p, sungai) < 60 || dekatJalan(p, 34) || distLine(p, garisPantai) < 90) continue;
+  if (nLahan(p) > 0.6 || terpakai.some((q) => Math.hypot(q[0] - p[0], q[1] - p[1]) < 46)) continue;
+  masker += `<circle cx="${f1(x)}" cy="${f1(y)}" r="${sel * 0.78}"/>`;
+}
+luar.push(`<clipPath id="cSawahLuar">${masker}</clipPath>`);
+luar.push(`<g clip-path="url(#cLuar)"><g clip-path="url(#cSawahLuar)">${sawahPetak(rect, -6, 64, 40)}</g></g>`);
+
+// perbukitan: bayangan lembut berbentuk bukit di hutan & lahan timur
+let bukit = "";
+const pusatBukit = poisson(hutan, 260, () => true);
+for (const [x, y] of pusatBukit) {
+  const rx = rr(170, 280), ry = rx * rr(0.55, 0.75);
+  bukit += `<ellipse cx="${f1(x + rx * 0.18)}" cy="${f1(y + ry * 0.22)}" rx="${f1(rx)}" ry="${f1(ry)}" fill="#1E4F2E" opacity=".34"/>`;
+  bukit += `<ellipse cx="${f1(x - rx * 0.12)}" cy="${f1(y - ry * 0.18)}" rx="${f1(rx * 0.72)}" ry="${f1(ry * 0.62)}" fill="#D6F2B5" opacity=".34"/>`;
+}
+luar.push(`<g clip-path="url(#cLuarDarat)"><g filter="url(#b20)">${bukit}</g></g>`);
 // bingkai kawasan: jalan setapak lebar bertepi putih (hanya di darat)
 luar.push(`<g clip-path="url(#cLuarDarat)"><path d="${dz(batas)}" fill="none" stroke="#152638" stroke-width="26" opacity=".14" filter="url(#b4)" transform="translate(3 4)"/>
   <path d="${dz(batas)}" fill="none" stroke="#FFFFFF" stroke-width="22" stroke-linejoin="round"/><path d="${dz(batas)}" fill="none" stroke="#CFE6B8" stroke-width="14" stroke-linejoin="round"/></g>`);
-const spriteDalam = sprite.filter(diKawasan);
+const spriteDalam = sprite; // semua objek berdiri ditampilkan (dalam & luar kawasan)
 
 const ARAH = process.argv[2] ? [Number(process.argv[2])] : [0, 45, 90, 135, 180, 225, 270, 315];
 const DIR = path.join(ROOT, "assets/ilustrasi");

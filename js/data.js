@@ -30,7 +30,7 @@ window.PETA = {
     { teks: "Kawasan UMKM Pantai", lokasi: [-6.9876, 106.3085], tipe: "zona", warna: "#E0674F", zoomMin: 16 },
     { teks: "Kawasan Homestay", lokasi: [-6.98235, 106.3088], tipe: "zona", warna: "#4E9F6A", zoomMin: 16 },
     { teks: "Persawahan", lokasi: [-6.9822, 106.3135], tipe: "alam", zoomMin: 17 },
-    { teks: "Hutan", lokasi: [-6.9905, 106.3135], tipe: "alam", zoomMin: 17 },
+    { teks: "Perbukitan", lokasi: [-6.9905, 106.3135], tipe: "alam", zoomMin: 17 },
   ],
 
   // Kategori layanan: warna pin + ikon + label filter
