@@ -204,8 +204,8 @@
       rotateControl: false
     });
 
-    // 1. BASELINE LAYER: Google Maps Hybrid (Satelit + Label Jalan)
-    googleBaseTileLayer = L.tileLayer('https://mt{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+    // 1. BASELINE LAYER: Google Maps Hybrid (Satelit + Label Jalan, Bersih Tanpa Titik POI Bawaan)
+    googleBaseTileLayer = L.tileLayer('https://mt{s}.google.com/vt/lyrs=y&apistyle=s.t:33|p.v:off&x={x}&y={y}&z={z}', {
       maxZoom: 20,
       subdomains: ['0', '1', '2', '3'],
       alt: 'Google Maps Baseline'
@@ -493,23 +493,23 @@
       googleMapMode = 'satellite';
       googleBaseTileLayer.setUrl('https://mt{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}');
       if (layerToggleBtn) {
-        layerToggleBtn.setAttribute('title', 'Mode: Satelit Google Murni');
+        layerToggleBtn.setAttribute('title', 'Mode: Satelit Google Murni (Tanpa Label & POI)');
         layerToggleBtn.classList.add('mode-google');
         layerToggleBtn.classList.remove('mode-hybrid');
       }
     } else if (googleMapMode === 'satellite') {
       googleMapMode = 'roadmap';
-      googleBaseTileLayer.setUrl('https://mt{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}');
+      googleBaseTileLayer.setUrl('https://mt{s}.google.com/vt/lyrs=m&apistyle=s.t:33|p.v:off&x={x}&y={y}&z={z}');
       if (layerToggleBtn) {
-        layerToggleBtn.setAttribute('title', 'Mode: Peta Jalan (Roadmap)');
+        layerToggleBtn.setAttribute('title', 'Mode: Peta Jalan / Roadmap (Bersih Tanpa Titik POI)');
         layerToggleBtn.classList.add('mode-hybrid');
         layerToggleBtn.classList.remove('mode-google');
       }
     } else {
       googleMapMode = 'hybrid';
-      googleBaseTileLayer.setUrl('https://mt{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}');
+      googleBaseTileLayer.setUrl('https://mt{s}.google.com/vt/lyrs=y&apistyle=s.t:33|p.v:off&x={x}&y={y}&z={z}');
       if (layerToggleBtn) {
-        layerToggleBtn.setAttribute('title', 'Mode: Google Hybrid (Satelit + Jalan)');
+        layerToggleBtn.setAttribute('title', 'Mode: Google Hybrid (Satelit + Jalan, Bersih Tanpa Titik POI)');
         layerToggleBtn.classList.remove('mode-hybrid', 'mode-google');
       }
     }
