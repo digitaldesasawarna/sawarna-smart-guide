@@ -1,7 +1,7 @@
 /* ========================================================
    SAWARNA SMART GUIDE - CSS STYLESHEET (PANTAI CIANTIR)
-   Design System: Coastal Minimalist, Mobile-First, Fullscreen
-   Hierarchical LOD (Level of Detail) + Micro-Interactions
+   Standar: Tanpa Emoticon, 100% SVG Vector Icons Buatan Sendiri
+   Level of Detail (LOD): Macro Icon Badges & Detail Pins
    ======================================================== */
 
 :root {
@@ -15,7 +15,6 @@
   --color-wood: #C5A47E;
   --color-alert: #E8A23A;
   --color-danger: #C94747;
-  --color-homestay: #d97746;
 
   /* UI Tokens */
   --color-bg-app: #183B50;
@@ -45,7 +44,7 @@
   --duration-normal: 0.32s;
 }
 
-/* Reset & Fullscreen Setup */
+/* Reset & Fullscreen Base */
 * {
   box-sizing: border-box;
   margin: 0;
@@ -228,7 +227,7 @@ html, body {
   box-shadow: var(--shadow-sm);
   display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
+  gap: 0.45rem;
   transition: all var(--duration-fast) ease;
 }
 
@@ -243,6 +242,19 @@ html, body {
   border-color: var(--color-ocean-deep);
   box-shadow: 0 4px 12px rgba(24, 59, 80, 0.25);
   transform: translateY(-1px);
+}
+
+.chip-svg-wrap {
+  width: 16px;
+  height: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.chip-svg-wrap svg {
+  width: 100%;
+  height: 100%;
 }
 
 /* ========================================================
@@ -290,7 +302,7 @@ html, body {
   height: 20px;
 }
 
-/* Zoom Level Hint Banner */
+/* Zoom Level Hint */
 .zoom-hint {
   position: absolute;
   bottom: 1.5rem;
@@ -302,7 +314,7 @@ html, body {
   color: #ffffff;
   font-size: 0.75rem;
   font-weight: 600;
-  padding: 0.35rem 0.85rem;
+  padding: 0.35rem 0.95rem;
   border-radius: var(--radius-full);
   box-shadow: var(--shadow-md);
   pointer-events: none;
@@ -311,59 +323,94 @@ html, body {
 }
 
 /* ========================================================
-   HIERARCHICAL MARKERS: MACRO BADGES vs DETAIL PINS
+   LOCATION MARKERS: PURE THEMED SVG ICONS (NO EMOJIS)
    ======================================================== */
 
-/* 1. MACRO BADGE (Zoom Out - Overview Mode) */
-.macro-badge-wrap {
+/* 1. MACRO ICON BADGES (Zoom Out Mode - Clean Round Icon Badge) */
+.macro-icon-wrap {
   pointer-events: auto;
 }
 
 .macro-badge {
-  background: rgba(24, 59, 80, 0.94);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  color: #ffffff;
-  padding: 0.4rem 0.85rem;
-  border-radius: var(--radius-full);
-  font-size: 0.78rem;
-  font-weight: 700;
-  box-shadow: 0 4px 16px rgba(24, 59, 80, 0.38);
-  border: 2px solid rgba(86, 184, 208, 0.8);
-  display: inline-flex;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--color-ocean-deep);
+  border: 2.5px solid #ffffff;
+  box-shadow: 0 6px 18px rgba(24, 59, 80, 0.45);
+  display: flex;
   align-items: center;
-  gap: 0.45rem;
-  white-space: nowrap;
+  justify-content: center;
+  position: relative;
   cursor: pointer;
   transition: all var(--duration-fast) var(--ease-spring);
+  color: #ffffff;
+}
+
+.macro-pulse {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  border: 2px solid var(--color-ocean);
+  animation: macroPulseAnim 2.2s infinite ease-out;
+  pointer-events: none;
+}
+
+@keyframes macroPulseAnim {
+  0% { transform: scale(1); opacity: 0.9; }
+  100% { transform: scale(1.6); opacity: 0; }
+}
+
+.macro-icon-inner {
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+}
+
+.macro-icon-inner svg {
+  width: 100%;
+  height: 100%;
 }
 
 .macro-badge:hover {
-  transform: scale(1.1) translateY(-2px);
-  background: var(--color-ocean-deep);
-  border-color: #ffffff;
-  box-shadow: 0 8px 22px rgba(24, 59, 80, 0.45);
+  transform: scale(1.15) translateY(-3px);
+  box-shadow: 0 10px 24px rgba(24, 59, 80, 0.55);
 }
 
 .macro-badge.active {
-  transform: scale(1.15) translateY(-3px);
+  transform: scale(1.22) translateY(-4px);
   border-color: var(--color-alert);
 }
 
-/* 2. DETAIL PIN (Zoom In - Detail Mode) */
+/* Category Colors for Macro Badges */
+.macro-badge.cat-access { background: #C94747; }
+.macro-badge.cat-attraction { background: #2878B8; }
+.macro-badge.cat-homestay { background: #d97746; }
+.macro-badge.cat-culinary { background: #E8A23A; }
+.macro-badge.cat-umkm { background: #8e44ad; }
+.macro-badge.cat-transport { background: #75553a; }
+.macro-badge.cat-worship { background: #27ae60; }
+.macro-badge.cat-sanitation { background: #16a085; }
+.macro-badge.cat-safety { background: #c0392b; }
+
+/* 2. DETAIL FACILITY PINS (Zoom In Mode - Teardrop Bubble with SVG Icon) */
 .custom-pin {
   cursor: pointer;
   position: relative;
-  transition: transform var(--duration-normal) var(--ease-spring), opacity 0.25s ease;
+  transition: transform var(--duration-normal) var(--ease-spring);
 }
 
 .custom-pin:hover {
-  transform: scale(1.18) translateY(-4px);
+  transform: scale(1.2) translateY(-4px);
   z-index: 1000 !important;
 }
 
 .custom-pin.active {
-  transform: scale(1.24) translateY(-6px);
+  transform: scale(1.28) translateY(-6px);
   z-index: 1000 !important;
 }
 
@@ -375,32 +422,39 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #ffffff;
-  border: 2px solid var(--color-ocean-dark);
-  box-shadow: 0 4px 14px rgba(24, 59, 80, 0.28);
+  background: var(--color-ocean-dark);
+  border: 2px solid #ffffff;
+  box-shadow: 0 4px 14px rgba(24, 59, 80, 0.3);
   position: relative;
 }
 
 .pin-icon {
   transform: rotate(45deg);
-  width: 18px;
-  height: 18px;
+  width: 19px;
+  height: 19px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 15px;
+  color: #ffffff;
 }
 
-/* Category Colors */
-.pin-access .pin-bubble { background: #C94747; border-color: #ffffff; color: #ffffff; }
-.pin-attraction .pin-bubble { background: #2878B8; border-color: #ffffff; color: #ffffff; }
-.pin-homestay .pin-bubble { background: #d97746; border-color: #ffffff; color: #ffffff; }
-.pin-culinary .pin-bubble { background: #E8A23A; border-color: #ffffff; color: #ffffff; }
-.pin-worship .pin-bubble { background: #4a9e52; border-color: #ffffff; color: #ffffff; }
-.pin-sanitation .pin-bubble { background: #4fb3cb; border-color: #ffffff; color: #ffffff; }
-.pin-transport .pin-bubble { background: #75553a; border-color: #ffffff; color: #ffffff; }
-.pin-safety .pin-bubble { background: #dc3545; border-color: #ffffff; color: #ffffff; }
-.pin-umkm .pin-bubble { background: #9059b5; border-color: #ffffff; color: #ffffff; }
+.pin-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* Category Colors for Detail Pins */
+.pin-access .pin-bubble { background: #C94747; }
+.pin-attraction .pin-bubble { background: #2878B8; }
+.pin-homestay .pin-bubble { background: #d97746; }
+.pin-culinary .pin-bubble { background: #E8A23A; }
+.pin-umkm .pin-bubble { background: #8e44ad; }
+.pin-transport .pin-bubble { background: #75553a; }
+.pin-worship .pin-bubble { background: #27ae60; }
+.pin-sanitation .pin-bubble { background: #16a085; }
+.pin-safety .pin-bubble { background: #c0392b; }
+.pin-rest .pin-bubble { background: #b8860b; }
+.pin-cleanliness .pin-bubble { background: #56B8D0; }
 
 /* Entrance Gate Pulsing Beacon */
 .entrance-beacon {
@@ -423,30 +477,6 @@ html, body {
 @keyframes beaconPulse {
   0% { transform: translate(-50%, -50%) scale(0.6); opacity: 0.9; }
   100% { transform: translate(-50%, -50%) scale(1.6); opacity: 0; }
-}
-
-.beacon-label {
-  position: absolute;
-  top: 40px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: rgba(24, 59, 80, 0.94);
-  color: #ffffff;
-  font-size: 0.68rem;
-  font-weight: 700;
-  padding: 0.2rem 0.55rem;
-  border-radius: var(--radius-full);
-  white-space: nowrap;
-  box-shadow: var(--shadow-sm);
-  pointer-events: none;
-  border: 1px solid rgba(86, 184, 208, 0.4);
-}
-
-/* Dimmed Pin state during filtering */
-.custom-pin.dimmed, .macro-badge.dimmed {
-  opacity: 0.18;
-  filter: grayscale(0.85);
-  pointer-events: none;
 }
 
 /* Animated Path Trail from Entrance */
@@ -536,14 +566,26 @@ html, body {
 .sheet-category-badge {
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: 0.45rem;
   background: rgba(40, 120, 184, 0.1);
   color: var(--color-ocean-dark);
-  font-size: 0.75rem;
+  font-size: 0.78rem;
   font-weight: 700;
-  padding: 0.25rem 0.65rem;
+  padding: 0.28rem 0.75rem;
   border-radius: var(--radius-full);
   margin-bottom: 0.4rem;
+}
+
+.sheet-cat-svg {
+  width: 15px;
+  height: 15px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.sheet-cat-svg svg {
+  width: 100%;
+  height: 100%;
 }
 
 .sheet-title {
@@ -645,7 +687,7 @@ html, body {
 }
 
 /* ========================================================
-   MODALS (BANTUAN & LEGENDA)
+   MODALS (BANTUAN & LEGENDA DENGAN VEKTOR)
    ======================================================== */
 .modal-overlay {
   position: fixed;
@@ -725,15 +767,19 @@ html, body {
 }
 
 .legend-icon-badge {
-  width: 28px;
-  height: 28px;
+  width: 30px;
+  height: 30px;
   border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 13px;
   flex-shrink: 0;
   color: #ffffff;
+}
+
+.legend-icon-badge svg {
+  width: 18px;
+  height: 18px;
 }
 
 /* Help Guide Cards */
