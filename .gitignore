@@ -11,6 +11,7 @@ docs/
 *.draft.md
 catatan/
 notes/
+*.backup.json
 
 # --- File Referensi Desain & Mockup Kasar ---
 # Contoh gambar/acuan eksternal agar tidak mengotori repositori publik

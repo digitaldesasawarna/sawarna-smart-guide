@@ -205,14 +205,15 @@
       alt: 'Google Maps Baseline'
     }).addTo(map);
 
-    // 2. OVERLAY LAYER: Peta Ilustrasi Vektor Kawasan Pantai Ciantir
-    // Menggunakan L.imageOverlay dengan GPU acceleration agar vector tajam & bounds dapat dikalibrasi real-time
-    illustrationOverlay = L.imageOverlay(mapConfig.image, illustrationBounds, {
-      alt: mapConfig.name,
-      interactive: true,
-      opacity: 0.92,
-      zIndex: 10
-    }).addTo(map);
+    // 2. OVERLAY LAYER: Peta Ilustrasi Vektor Kawasan Pantai Ciantir (Jika tersedia)
+    if (mapConfig.image && mapConfig.image.trim() !== '') {
+      illustrationOverlay = L.imageOverlay(mapConfig.image, illustrationBounds, {
+        alt: mapConfig.name,
+        interactive: true,
+        opacity: 0.92,
+        zIndex: 10
+      }).addTo(map);
+    }
 
     map.fitBounds(illustrationBounds);
 
@@ -450,31 +451,59 @@
   }
 
   // --- TOGGLE LAYER BASELINE & OVERLAY ---
-  function toggleLayerMode() {
-    const overlay = illustrationTileLayer || illustrationOverlay;
-    if (!overlay) return;
+  let googleMapMode = 'hybrid'; // 'hybrid', 'satellite', 'roadmap'
 
-    if (currentLayerMode === 'illustration') {
-      currentLayerMode = 'hybrid';
-      overlay.setOpacity(0.55);
-      if (layerToggleBtn) {
-        layerToggleBtn.setAttribute('title', 'Mode: Hybrid (Ilustrasi + Satelit Google)');
-        layerToggleBtn.classList.add('mode-hybrid');
-        layerToggleBtn.classList.remove('mode-google');
+  function toggleLayerMode() {
+    if (illustrationOverlay) {
+      if (currentLayerMode === 'illustration') {
+        currentLayerMode = 'hybrid';
+        illustrationOverlay.setOpacity(0.55);
+        if (layerToggleBtn) {
+          layerToggleBtn.setAttribute('title', 'Mode: Hybrid (Ilustrasi + Satelit Google)');
+          layerToggleBtn.classList.add('mode-hybrid');
+          layerToggleBtn.classList.remove('mode-google');
+        }
+      } else if (currentLayerMode === 'hybrid') {
+        currentLayerMode = 'google';
+        illustrationOverlay.setOpacity(0.05);
+        if (layerToggleBtn) {
+          layerToggleBtn.setAttribute('title', 'Mode: Satelit Google Maps Asli');
+          layerToggleBtn.classList.add('mode-google');
+          layerToggleBtn.classList.remove('mode-hybrid');
+        }
+      } else {
+        currentLayerMode = 'illustration';
+        illustrationOverlay.setOpacity(0.92);
+        if (layerToggleBtn) {
+          layerToggleBtn.setAttribute('title', 'Mode: Peta Ilustrasi Pantai Ciantir');
+          layerToggleBtn.classList.remove('mode-hybrid', 'mode-google');
+        }
       }
-    } else if (currentLayerMode === 'hybrid') {
-      currentLayerMode = 'google';
-      overlay.setOpacity(0.05);
+      return;
+    }
+
+    // Ketika overlay ilustrasi tidak ada, alihkan mode tampilan Google Maps
+    if (googleMapMode === 'hybrid') {
+      googleMapMode = 'satellite';
+      googleBaseTileLayer.setUrl('https://mt{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}');
       if (layerToggleBtn) {
-        layerToggleBtn.setAttribute('title', 'Mode: Satelit Google Maps Asli');
+        layerToggleBtn.setAttribute('title', 'Mode: Satelit Google Murni');
         layerToggleBtn.classList.add('mode-google');
         layerToggleBtn.classList.remove('mode-hybrid');
       }
-    } else {
-      currentLayerMode = 'illustration';
-      overlay.setOpacity(0.92);
+    } else if (googleMapMode === 'satellite') {
+      googleMapMode = 'roadmap';
+      googleBaseTileLayer.setUrl('https://mt{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}');
       if (layerToggleBtn) {
-        layerToggleBtn.setAttribute('title', 'Mode: Peta Ilustrasi Pantai Ciantir');
+        layerToggleBtn.setAttribute('title', 'Mode: Peta Jalan (Roadmap)');
+        layerToggleBtn.classList.add('mode-hybrid');
+        layerToggleBtn.classList.remove('mode-google');
+      }
+    } else {
+      googleMapMode = 'hybrid';
+      googleBaseTileLayer.setUrl('https://mt{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}');
+      if (layerToggleBtn) {
+        layerToggleBtn.setAttribute('title', 'Mode: Google Hybrid (Satelit + Jalan)');
         layerToggleBtn.classList.remove('mode-hybrid', 'mode-google');
       }
     }
