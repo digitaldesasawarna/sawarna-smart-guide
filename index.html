@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Sawarna Smart Guide — Peta Panduan Wisata Interaktif</title>
-  <meta name="description" content="Peta ilustrasi kawasan wisata interaktif Desa Sawarna. Temukan mushola, toilet, warung kuliner, spot foto karang, dan fasilitas penting tanpa perlu instal aplikasi.">
+  <title>Pantai Ciantir — Sawarna Smart Guide</title>
+  <meta name="description" content="Peta ilustrasi interaktif kawasan Pantai Ciantir Desa Sawarna: Jembatan gantung, kantong parkir mobil/motor, kawasan homestay desa, warung kuliner, dan sentra UMKM pesisir.">
   <meta name="theme-color" content="#183B50">
 
   <!-- Google Fonts: Plus Jakarta Sans -->
@@ -20,14 +20,14 @@
 </head>
 <body>
 
-  <!-- APP HEADER (FLOAT OVER MAP) -->
+  <!-- FULLSCREEN APP HEADER -->
   <header class="app-header">
     <div class="header-top">
       <div class="brand-badge">
         <div class="brand-logo-dot"></div>
         <div>
-          <h1 class="brand-title">Sawarna Smart Guide</h1>
-          <p class="brand-sub">Peta Panduan Wisata Digital</p>
+          <h1 class="brand-title">Pantai Ciantir</h1>
+          <p class="brand-sub">Sawarna Smart Guide &bull; Peta Kawasan</p>
         </div>
       </div>
 
@@ -55,50 +55,67 @@
       </div>
     </div>
 
-    <!-- HORIZONTAL FILTER BAR -->
-    <nav class="filter-bar" aria-label="Filter Kategori Fasilitas">
+    <!-- HORIZONTAL FILTER BAR (CHIPS) -->
+    <nav class="filter-bar" aria-label="Filter Kategori Kawasan Ciantir">
       <button class="filter-chip active" data-category="all">
         <span>Semua</span>
       </button>
       <button class="filter-chip" data-category="attraction">
-        <span>📍 Spot Wisata</span>
+        <span>🏖️ Pantai & Surfing</span>
+      </button>
+      <button class="filter-chip" data-category="homestay">
+        <span>🏡 Homestay Desa</span>
       </button>
       <button class="filter-chip" data-category="culinary">
         <span>🍽️ Kuliner & Kelapa</span>
       </button>
-      <button class="filter-chip" data-category="worship">
-        <span>🕌 Ibadah</span>
-      </button>
-      <button class="filter-chip" data-category="sanitation">
-        <span>🚻 Sanitasi & Bilas</span>
+      <button class="filter-chip" data-category="umkm">
+        <span>🛍️ UMKM & Sewa Papan</span>
       </button>
       <button class="filter-chip" data-category="transport">
-        <span>🅿️ Parkir</span>
+        <span>🚗 Parkir Mobil & Motor</span>
       </button>
-      <button class="filter-chip" data-category="umkm">
-        <span>🛍️ UMKM & Oleh-oleh</span>
+      <button class="filter-chip" data-category="sanitation">
+        <span>🚻 Kamar Bilas</span>
+      </button>
+      <button class="filter-chip" data-category="worship">
+        <span>🕌 Mushola</span>
       </button>
     </nav>
   </header>
 
-  <!-- MAP CONTAINER -->
+  <!-- FULLSCREEN MAP CONTAINER -->
   <main id="map-container">
     <div id="map"></div>
 
+    <!-- ZOOM LEVEL / LOD HINT PILL -->
+    <div id="zoom-hint" class="zoom-hint" aria-live="polite">
+      🔎 Tampilan Keseluruhan (Perbesar untuk melihat detail fasilitas)
+    </div>
+
     <!-- FLOATING MAP CONTROLS -->
     <aside class="map-controls">
+      <!-- Fullscreen Toggle -->
+      <button id="btn-fullscreen" class="control-btn" title="Layar Penuh (Fullscreen)" aria-label="Toggle Fullscreen">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path>
+        </svg>
+      </button>
+      <!-- Zoom In -->
       <button id="btn-zoom-in" class="control-btn" title="Perbesar Peta" aria-label="Zoom in">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
           <line x1="12" y1="5" x2="12" y2="19"></line>
           <line x1="5" y1="12" x2="19" y2="12"></line>
         </svg>
       </button>
+      <!-- Zoom Out -->
       <button id="btn-zoom-out" class="control-btn" title="Perkecil Peta" aria-label="Zoom out">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
           <line x1="5" y1="12" x2="19" y2="12"></line>
         </svg>
       </button>
-      <button id="btn-reset-view" class="control-btn" title="Tampilan Semula (Reset)" aria-label="Reset tampilan awal">
+      <!-- Reset View -->
+      <button id="btn-reset-view" class="control-btn" title="Tampilan Keseluruhan (Reset)" aria-label="Reset tampilan awal">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="12" cy="12" r="10"></circle>
           <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon>
@@ -127,7 +144,7 @@
         <span class="sheet-meta-item" style="color:#2878B8;font-weight:700;">✓ Tervalidasi</span>
       </div>
 
-      <p id="sheet-desc" class="sheet-desc">Deskripsi informasi lengkap fasilitas wisata.</p>
+      <p id="sheet-desc" class="sheet-desc">Deskripsi informasi lengkap fasilitas wisata Pantai Ciantir.</p>
 
       <div id="sheet-tags" class="sheet-tags">
         <!-- Tag items injected via JS -->
@@ -138,7 +155,7 @@
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="9 18 15 12 9 6"></polyline>
           </svg>
-          Tunjukkan Jalur dari Pintu Masuk
+          Tunjukkan Jalur dari Jembatan Gantung
         </button>
       </div>
     </div>
@@ -148,39 +165,39 @@
   <div id="help-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="help-modal-title">
     <div class="modal-dialog">
       <div class="modal-header">
-        <h3 id="help-modal-title" class="modal-title">Cara Menggunakan Peta</h3>
+        <h3 id="help-modal-title" class="modal-title">Panduan Peta Pantai Ciantir</h3>
         <button class="modal-close-btn sheet-close-btn" aria-label="Tutup panduan">✕</button>
       </div>
       <div class="modal-body">
         <div class="help-step-item">
           <div class="help-step-num">1</div>
           <div class="help-step-text">
-            <h4>Geser & Perbesar Peta</h4>
-            <p>Sentuh dan geser layar untuk mengeksplorasi kawasan pantai. Gunakan dua jari (pinch) atau tombol +/- di kanan bawah untuk zoom in/out.</p>
+            <h4>Tampilan Keseluruhan vs Detail (LOD)</h4>
+            <p>Saat peta di-<strong>zoom out</strong>, Anda melihat badge kawasan umum (Kawasan Pantai, Homestay, Parkir Mobil, UMKM). <strong>Perbesar (zoom in)</strong> untuk menampilkan marker detail masing-masing penginapan, warung, kamar bilas, dan pos keselamatan.</p>
           </div>
         </div>
 
         <div class="help-step-item">
           <div class="help-step-num">2</div>
           <div class="help-step-text">
-            <h4>Pilih Ikon Fasilitas</h4>
-            <p>Tekan simbol fasilitas (mushola, toilet, warung makan, spot karang) untuk melihat jam buka, deskripsi, dan info lokal.</p>
+            <h4>Kebijakan Akses Kendaraan</h4>
+            <p>Mobil wajib parkir di <strong>Kantong Parkir Mobil Utama</strong> di sisi luar jembatan. Pengunjung melanjutkan perjalanan jalan kaki atau motor melintasi <strong>Jembatan Gantung Cisawarna</strong> (tiket masuk Rp5.000/orang).</p>
           </div>
         </div>
 
         <div class="help-step-item">
           <div class="help-step-num">3</div>
           <div class="help-step-text">
-            <h4>Panduan Rute Visual</h4>
-            <p>Tekan tombol <em>"Tunjukkan Jalur dari Pintu Masuk"</em> untuk melihat garis arah dari gerbang kedatangan menuju fasilitas tujuan.</p>
+            <h4>Panduan Rute Jalan Desa</h4>
+            <p>Tekan tombol <em>"Tunjukkan Jalur dari Jembatan Gantung"</em> pada detail fasilitas untuk melihat panduan garis jalan desa melewati pemukiman Cikaung menuju pantai.</p>
           </div>
         </div>
 
         <div class="help-step-item">
           <div class="help-step-num">4</div>
           <div class="help-step-text">
-            <h4>Privasi & Hemat Kuota</h4>
-            <p>Sistem ini merupakan peta ilustrasi digital tanpa meminta izin GPS dan tanpa registrasi akun, ringan serta ramah sinyal minim.</p>
+            <h4>Layar Penuh (Fullscreen)</h4>
+            <p>Gunakan tombol kotak di pojok kanan bawah untuk mengaktifkan mode layar penuh agar eksplorasi peta lebih leluasa.</p>
           </div>
         </div>
       </div>
@@ -191,46 +208,50 @@
   <div id="legend-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="legend-modal-title">
     <div class="modal-dialog">
       <div class="modal-header">
-        <h3 id="legend-modal-title" class="modal-title">Legenda Simbol Fasilitas</h3>
+        <h3 id="legend-modal-title" class="modal-title">Legenda Kawasan Pantai Ciantir</h3>
         <button class="modal-close-btn sheet-close-btn" aria-label="Tutup legenda">✕</button>
       </div>
       <div class="modal-body">
         <div class="legend-list">
           <div class="legend-item">
             <div class="legend-icon-badge" style="background:#C94747;">🚪</div>
-            <span>Pintu Masuk & Loket</span>
+            <span>Jembatan Gantung & Masuk</span>
           </div>
           <div class="legend-item">
-            <div class="legend-icon-badge" style="background:#2878B8;">📍</div>
-            <span>Spot Wisata & Karang</span>
+            <div class="legend-icon-badge" style="background:#2878B8;">🏖️</div>
+            <span>Pasir Putih & Surfing</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-icon-badge" style="background:#d97746;">🏡</div>
+            <span>Homestay & Penginapan</span>
           </div>
           <div class="legend-item">
             <div class="legend-icon-badge" style="background:#E8A23A;">🍽️</div>
-            <span>Kuliner & Kelapa</span>
-          </div>
-          <div class="legend-item">
-            <div class="legend-icon-badge" style="background:#4a9e52;">🕌</div>
-            <span>Mushola / Ibadah</span>
-          </div>
-          <div class="legend-item">
-            <div class="legend-icon-badge" style="background:#4fb3cb;">🚻</div>
-            <span>Toilet & Kamar Bilas</span>
-          </div>
-          <div class="legend-item">
-            <div class="legend-icon-badge" style="background:#75553a;">🅿️</div>
-            <span>Area Parkir</span>
+            <span>Warung Kuliner & Kelapa</span>
           </div>
           <div class="legend-item">
             <div class="legend-icon-badge" style="background:#9059b5;">🛍️</div>
-            <span>Kios UMKM & Oleh-oleh</span>
+            <span>UMKM & Sewa Papan</span>
           </div>
           <div class="legend-item">
-            <div class="legend-icon-badge" style="background:#C5A47E;">🛖</div>
-            <span>Saung / Gazebo</span>
+            <div class="legend-icon-badge" style="background:#75553a;">🅿️</div>
+            <span>Parkir Mobil & Motor</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-icon-badge" style="background:#4a9e52;">🕌</div>
+            <span>Mushola</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-icon-badge" style="background:#4fb3cb;">🚻</div>
+            <span>Kamar Bilas Air Tawar</span>
           </div>
           <div class="legend-item">
             <div class="legend-icon-badge" style="background:#dc3545;">🛟</div>
-            <span>Pos Pantau / Keselamatan</span>
+            <span>Pos Balawista Lifeguard</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-icon-badge" style="background:#C5A47E;">🛖</div>
+            <span>Saung Gazebo Bambu</span>
           </div>
           <div class="legend-item">
             <div class="legend-icon-badge" style="background:#56B8D0;">🗑️</div>

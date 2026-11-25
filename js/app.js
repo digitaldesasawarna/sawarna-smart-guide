@@ -1,13 +1,14 @@
 /**
- * SAWARNA SMART GUIDE - MAIN APPLICATION (FASE 1 MVP)
+ * SAWARNA SMART GUIDE - PANTAI CIANTIR (FASE 1 - PROGRESSIVE ZOOM LOD)
  * Technology: Vanilla JavaScript + Leaflet.js (CRS.Simple)
- * Architecture: Static Web App, zero-backend, mobile-first
+ * Features: Level of Detail (LOD) zoom-dependent markers, Fullscreen mode,
+ *           Ciantir mapping (Jembatan, Homestay, UMKM, Pantai), Visual Trail
  */
 
 (function () {
   'use strict';
 
-  // --- STATE ---
+  // --- APPLICATION STATE ---
   let map = null;
   let mapConfig = null;
   let facilitiesData = [];
@@ -16,12 +17,19 @@
   let currentActivePolyline = null;
   let currentFilter = 'all';
 
+  // Zoom Threshold for Level of Detail (LOD)
+  // zoom < 0.15 = Overview Macro Mode (Show macro zone badges)
+  // zoom >= 0.15 = Detail Facility Mode (Show detailed facility pins)
+  const LOD_ZOOM_THRESHOLD = 0.15;
+
   // --- DOM ELEMENTS ---
   const mapElement = document.getElementById('map');
   const filterChips = document.querySelectorAll('.filter-chip');
   const resetViewBtn = document.getElementById('btn-reset-view');
   const zoomInBtn = document.getElementById('btn-zoom-in');
   const zoomOutBtn = document.getElementById('btn-zoom-out');
+  const fullscreenBtn = document.getElementById('btn-fullscreen');
+  const zoomHint = document.getElementById('zoom-hint');
 
   // Bottom Sheet Elements
   const bottomSheet = document.getElementById('bottom-sheet');
@@ -40,45 +48,40 @@
   const helpModal = document.getElementById('help-modal');
   const legendModal = document.getElementById('legend-modal');
 
-  // Category Icon & Label Dictionary
+  // Category Dictionary
   const CATEGORY_MAP = {
     all: { label: 'Semua', icon: '📍', color: '#183B50' },
-    access: { label: 'Akses Masuk', icon: '🚪', color: '#C94747' },
-    transport: { label: 'Parkir', icon: '🅿️', color: '#75553a' },
-    info: { label: 'Informasi', icon: 'ℹ️', color: '#2878B8' },
+    access: { label: 'Akses & Pintu Masuk', icon: '🚪', color: '#C94747' },
+    transport: { label: 'Parkir Kendaraan', icon: '🅿️', color: '#75553a' },
+    homestay: { label: 'Homestay & Penginapan', icon: '🏡', color: '#d97746' },
+    culinary: { label: 'Kuliner & Warung', icon: '🍽️', color: '#E8A23A' },
+    attraction: { label: 'Pantai & Wisata', icon: '🏖️', color: '#2878B8' },
     worship: { label: 'Ibadah', icon: '🕌', color: '#4a9e52' },
-    sanitation: { label: 'Sanitasi', icon: '🚻', color: '#4fb3cb' },
-    culinary: { label: 'Kuliner', icon: '🍽️', color: '#E8A23A' },
-    umkm: { label: 'UMKM', icon: '🛍️', color: '#9059b5' },
-    attraction: { label: 'Spot Wisata', icon: '📍', color: '#2878B8' },
-    rest: { label: 'Istirahat', icon: '🛖', color: '#C5A47E' },
+    sanitation: { label: 'Bilas & Toilet', icon: '🚻', color: '#4fb3cb' },
     safety: { label: 'Keselamatan', icon: '🛟', color: '#dc3545' },
+    umkm: { label: 'UMKM & Sewa Alat', icon: '🛍️', color: '#9059b5' },
+    rest: { label: 'Saung / Gazebo', icon: '🛖', color: '#C5A47E' },
     cleanliness: { label: 'Kebersihan', icon: '🗑️', color: '#56B8D0' }
   };
 
   // --- INITIALIZATION ---
   async function initApp() {
     try {
-      // 1. Fetch Configuration & Data
       const [configRes, facilitiesRes] = await Promise.all([
         fetch('data/map-config.json'),
         fetch('data/facilities.json')
       ]);
 
       if (!configRes.ok || !facilitiesRes.ok) {
-        throw new Error('Gagal memuat berkas konfigurasi peta atau data fasilitas.');
+        throw new Error('Gagal memuat konfigurasi peta atau data fasilitas.');
       }
 
       mapConfig = await configRes.json();
       facilitiesData = await facilitiesRes.json();
 
-      // 2. Setup Leaflet Map
       setupMap();
-
-      // 3. Render Markers
-      renderMarkers();
-
-      // 4. Bind Events & Modals
+      renderAllMarkers();
+      updateLODVisibility();
       setupEventHandlers();
 
     } catch (error) {
@@ -86,56 +89,69 @@
       mapElement.innerHTML = `
         <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;text-align:center;padding:2rem;color:#183B50;">
           <h2 style="margin-bottom:0.5rem;font-weight:800;">Gagal Memuat Peta</h2>
-          <p style="font-size:0.9rem;max-width:400px;color:#536e7e;">Terjadi kendala saat membaca data peta. Silakan pastikan server lokal atau hosting aktif.</p>
+          <p style="font-size:0.9rem;max-width:400px;color:#536e7e;">Terjadi kendala saat membaca data peta Pantai Ciantir. Silakan muat ulang halaman.</p>
         </div>
       `;
     }
   }
 
-  // --- SETUP LEAFLET MAP ---
+  // --- SETUP LEAFLET FULLSCREEN MAP ---
   function setupMap() {
     const { width, height } = mapConfig.dimensions;
 
-    // Leaflet CRS.Simple Map setup
     map = L.map('map', {
       crs: L.CRS.Simple,
       minZoom: mapConfig.view.minZoom,
       maxZoom: mapConfig.view.maxZoom,
       zoomControl: false,
       attributionControl: false,
-      maxBoundsViscosity: mapConfig.view.maxBoundsViscosity || 0.8
+      maxBoundsViscosity: mapConfig.view.maxBoundsViscosity || 0.85
     });
 
-    // Image Bounds: [[latMin, lngMin], [latMax, lngMax]] -> [[0, 0], [height, width]]
     const bounds = [[0, 0], [height, width]];
     map.setMaxBounds(bounds);
 
-    // Add SVG/Image Overlay
     L.imageOverlay(mapConfig.image, bounds, {
       alt: mapConfig.name,
       interactive: true
     }).addTo(map);
 
-    // Initial View
     map.fitBounds(bounds);
+
+    // Zoom-dependent LOD Event
+    map.on('zoomend', () => {
+      updateLODVisibility();
+    });
   }
 
-  // Helper: Convert SVG coordinates (x from left, y from top) to Leaflet CRS.Simple [lat, lng]
+  // Helper: Convert SVG coordinates to Leaflet CRS.Simple [lat, lng]
   function toLatLng(x, y) {
     const { height } = mapConfig.dimensions;
     return [height - y, x];
   }
 
-  // --- RENDER MARKERS ---
-  function renderMarkers() {
+  // --- RENDER ALL MARKERS (MACRO & DETAIL) ---
+  function renderAllMarkers() {
     facilitiesData.forEach((fac) => {
       const latLng = toLatLng(fac.x, fac.y);
       const catInfo = CATEGORY_MAP[fac.category] || CATEGORY_MAP.all;
-
       let markerIcon;
 
-      if (fac.isEntrance) {
-        // Special Entrance Gate Marker with Pulsing Ring
+      if (fac.lodLevel === 'macro') {
+        // Macro Zone Badge (Shown when zoomed out)
+        markerIcon = L.divIcon({
+          className: 'macro-badge-wrap',
+          html: `
+            <div class="macro-badge" id="pin-${fac.id}">
+              <span>${catInfo.icon}</span>
+              <span>${fac.name}</span>
+            </div>
+          `,
+          iconSize: [160, 36],
+          iconAnchor: [80, 18]
+        });
+      } else if (fac.isEntrance) {
+        // Entrance Gate Beacon
         markerIcon = L.divIcon({
           className: 'entrance-beacon-wrap',
           html: `
@@ -144,14 +160,14 @@
               <div class="pin-bubble" style="background:#C94747;border-color:#ffffff;">
                 <span class="pin-icon">🚪</span>
               </div>
-              <div class="beacon-label">Pintu Masuk Utama</div>
+              <div class="beacon-label">Jembatan Gantung</div>
             </div>
           `,
-          iconSize: [40, 40],
-          iconAnchor: [20, 20]
+          iconSize: [42, 42],
+          iconAnchor: [21, 21]
         });
       } else {
-        // Standard Themed Facility Pin
+        // Detailed Facility Pin
         markerIcon = L.divIcon({
           className: 'custom-pin-wrap',
           html: `
@@ -161,8 +177,8 @@
               </div>
             </div>
           `,
-          iconSize: [38, 38],
-          iconAnchor: [19, 38]
+          iconSize: [36, 36],
+          iconAnchor: [18, 36]
         });
       }
 
@@ -172,9 +188,12 @@
         title: fac.name
       }).addTo(map);
 
-      // Handle Marker Click
       marker.on('click', (e) => {
         L.DomEvent.stopPropagation(e);
+        if (fac.lodLevel === 'macro') {
+          // If macro badge is clicked, zoom into that cluster!
+          map.setView(latLng, Math.max(map.getZoom(), 0.6), { animate: true });
+        }
         selectFacility(fac);
       });
 
@@ -186,29 +205,67 @@
     });
   }
 
-  // --- SELECT & OPEN FACILITY BOTTOM SHEET ---
+  // --- DYNAMIC LEVEL OF DETAIL (LOD) CONTROLLER ---
+  function updateLODVisibility() {
+    const currentZoom = map.getZoom();
+    const isOverview = currentZoom < LOD_ZOOM_THRESHOLD;
+
+    if (zoomHint) {
+      if (isOverview) {
+        zoomHint.textContent = '🔎 Tampilan Keseluruhan (Perbesar untuk melihat detail fasilitas)';
+      } else {
+        zoomHint.textContent = '📍 Mode Detail Kawasan Pantai Ciantir';
+      }
+    }
+
+    Object.keys(markersLayer).forEach(id => {
+      const item = markersLayer[id];
+      const pinEl = document.getElementById(`pin-${id}`);
+      if (!pinEl) return;
+
+      const isMacro = item.data.lodLevel === 'macro';
+
+      // 1. Zoom Hierarchy Check
+      let shouldShow = false;
+      if (isOverview) {
+        // Zoom out: only show macro zone markers
+        shouldShow = isMacro;
+      } else {
+        // Zoom in: show detailed facility markers, hide macro badges
+        shouldShow = !isMacro;
+      }
+
+      // 2. Category Filter Check
+      if (shouldShow && currentFilter !== 'all') {
+        const matchesCat = item.data.category === currentFilter;
+        const matchesEntrance = currentFilter === 'access' && item.data.isEntrance;
+        shouldShow = matchesCat || matchesEntrance;
+      }
+
+      // Apply visibility
+      pinEl.style.display = shouldShow ? 'inline-flex' : 'none';
+    });
+  }
+
+  // --- SELECT & OPEN BOTTOM SHEET ---
   function selectFacility(fac) {
     currentActiveMarkerId = fac.id;
 
-    // Reset active pin styles
-    document.querySelectorAll('.custom-pin').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.custom-pin, .macro-badge').forEach(el => el.classList.remove('active'));
     const activeEl = document.getElementById(`pin-${fac.id}`);
     if (activeEl) {
       activeEl.classList.add('active');
     }
 
-    // Smooth pan to facility location
     const latLng = toLatLng(fac.x, fac.y);
-    map.panTo(latLng, { animate: true, duration: 0.4 });
+    map.panTo(latLng, { animate: true, duration: 0.35 });
 
-    // Populate Bottom Sheet details
     const catInfo = CATEGORY_MAP[fac.category] || CATEGORY_MAP.all;
     sheetCategory.innerHTML = `${catInfo.icon} ${fac.categoryLabel || catInfo.label}`;
     sheetTitle.textContent = fac.name;
-    sheetHours.textContent = fac.hours ? `Jam: ${fac.hours}` : 'Jam: Mengikuti jam buka kawasan';
+    sheetHours.textContent = fac.hours ? `🕒 ${fac.hours}` : '🕒 Buka setiap hari';
     sheetDesc.textContent = fac.details || fac.shortDesc;
 
-    // Render Tags
     sheetTags.innerHTML = '';
     if (fac.tags && fac.tags.length > 0) {
       fac.tags.forEach(tag => {
@@ -219,21 +276,18 @@
       });
     }
 
-    // Configure "Jalur dari Gerbang" button
-    if (fac.isEntrance) {
+    if (fac.isEntrance || fac.id === 'macro-jembatan-akses') {
       btnShowTrail.style.display = 'none';
     } else {
       btnShowTrail.style.display = 'inline-flex';
       btnShowTrail.onclick = () => drawTrailFromEntrance(fac);
     }
 
-    // Open Bottom Sheet
     openBottomSheet();
   }
 
-  // --- DRAW VISUAL TRAIL FROM ENTRANCE GATE ---
+  // --- DRAW VISUAL TRAIL FROM JEMBATAN GANTUNG ---
   function drawTrailFromEntrance(targetFac) {
-    // Clear previous polyline
     if (currentActivePolyline) {
       map.removeLayer(currentActivePolyline);
       currentActivePolyline = null;
@@ -243,44 +297,45 @@
     const startPoint = toLatLng(entrance.x, entrance.y);
     const endPoint = toLatLng(targetFac.x, targetFac.y);
 
-    // Natural curved intermediary waypoint along coastal path
-    const midX = (entrance.x + targetFac.x) / 2 + 30;
-    const midY = (entrance.y + targetFac.y) / 2 - 20;
-    const midPoint = toLatLng(midX, midY);
+    // Realistic village path waypoints through Cikaung
+    const wp1 = toLatLng(460, 380); // Cikaung village junction
+    const wp2 = toLatLng(660, 510); // Beach transition path
 
-    const latLngs = [startPoint, midPoint, endPoint];
+    let latLngs = [];
+    if (targetFac.y > 520) {
+      // Destination is at the beach/UMKM area: go through village route
+      latLngs = [startPoint, wp1, wp2, endPoint];
+    } else {
+      // Destination is in the village / homestay area
+      latLngs = [startPoint, wp1, endPoint];
+    }
 
-    // Animated dashed trail line
     currentActivePolyline = L.polyline(latLngs, {
       color: '#E8A23A',
-      weight: 4.5,
-      opacity: 0.9,
+      weight: 5,
+      opacity: 0.95,
       className: 'animated-trail',
       lineCap: 'round',
       lineJoin: 'round'
     }).addTo(map);
 
-    // Fit bounds to show both entrance and target
-    const pathBounds = L.latLngBounds([startPoint, endPoint]).pad(0.35);
+    const pathBounds = L.latLngBounds(latLngs).pad(0.3);
     map.fitBounds(pathBounds, { animate: true });
 
-    // Temporarily minimize bottom sheet on mobile to let user see trail
     if (window.innerWidth < 768) {
       closeBottomSheet();
     }
   }
 
-  // --- CATEGORY FILTERING ---
+  // --- FILTER CHIPS LOGIC ---
   function applyFilter(categoryKey) {
     currentFilter = categoryKey;
 
-    // Clear active trail
     if (currentActivePolyline) {
       map.removeLayer(currentActivePolyline);
       currentActivePolyline = null;
     }
 
-    // Update active filter chip UI
     filterChips.forEach(chip => {
       if (chip.getAttribute('data-category') === categoryKey) {
         chip.classList.add('active');
@@ -289,20 +344,20 @@
       }
     });
 
-    // Dim or show pins
-    Object.keys(markersLayer).forEach(id => {
-      const item = markersLayer[id];
-      const pinEl = document.getElementById(`pin-${id}`);
-      if (!pinEl) return;
+    updateLODVisibility();
+  }
 
-      if (categoryKey === 'all') {
-        pinEl.classList.remove('dimmed');
-      } else if (item.data.category === categoryKey || (categoryKey === 'access' && item.data.isEntrance)) {
-        pinEl.classList.remove('dimmed');
-      } else {
-        pinEl.classList.add('dimmed');
+  // --- FULLSCREEN TOGGLE ---
+  function toggleFullscreen() {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch((err) => {
+        console.warn('Error attempting to enable fullscreen:', err.message);
+      });
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
       }
-    });
+    }
   }
 
   // --- BOTTOM SHEET CONTROLS ---
@@ -314,9 +369,7 @@
   function closeBottomSheet() {
     bottomSheet.classList.remove('open');
     sheetBackdrop.classList.remove('open');
-
-    // Deselect active pins
-    document.querySelectorAll('.custom-pin').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.custom-pin, .macro-badge').forEach(el => el.classList.remove('active'));
     currentActiveMarkerId = null;
   }
 
@@ -332,7 +385,6 @@
 
   // --- EVENT HANDLERS ---
   function setupEventHandlers() {
-    // Filter Chips click
     filterChips.forEach(chip => {
       chip.addEventListener('click', () => {
         const cat = chip.getAttribute('data-category');
@@ -340,9 +392,12 @@
       });
     });
 
-    // Map Controls: Zoom & Reset
     zoomInBtn.addEventListener('click', () => map.zoomIn());
     zoomOutBtn.addEventListener('click', () => map.zoomOut());
+
+    if (fullscreenBtn) {
+      fullscreenBtn.addEventListener('click', toggleFullscreen);
+    }
 
     resetViewBtn.addEventListener('click', () => {
       const { width, height } = mapConfig.dimensions;
@@ -356,11 +411,9 @@
       closeBottomSheet();
     });
 
-    // Close bottom sheet events
     sheetCloseBtn.addEventListener('click', closeBottomSheet);
     sheetBackdrop.addEventListener('click', closeBottomSheet);
 
-    // Help & Legend Modal triggers
     btnHelp.addEventListener('click', () => openModal(helpModal));
     btnLegend.addEventListener('click', () => openModal(legendModal));
 
@@ -373,13 +426,10 @@
 
     document.querySelectorAll('.modal-overlay').forEach(modal => {
       modal.addEventListener('click', (e) => {
-        if (e.target === modal) {
-          closeModal(modal);
-        }
+        if (e.target === modal) closeModal(modal);
       });
     });
 
-    // Close on Map Click
     map.on('click', () => {
       closeBottomSheet();
       if (currentActivePolyline) {
@@ -388,7 +438,6 @@
       }
     });
 
-    // Keyboard Accessibility (Esc to close)
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
         closeBottomSheet();
@@ -398,7 +447,6 @@
     });
   }
 
-  // Run on DOM ready
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initApp);
   } else {

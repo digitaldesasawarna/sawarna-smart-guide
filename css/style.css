@@ -1,11 +1,11 @@
 /* ========================================================
-   SAWARNA SMART GUIDE - CSS STYLESHEET (FASE 1 MVP)
-   Design System: Coastal Minimalist & Mobile-First
-   Tokens from PRD Section 5.3 + Installed Interface Skills
+   SAWARNA SMART GUIDE - CSS STYLESHEET (PANTAI CIANTIR)
+   Design System: Coastal Minimalist, Mobile-First, Fullscreen
+   Hierarchical LOD (Level of Detail) + Micro-Interactions
    ======================================================== */
 
 :root {
-  /* Coastal Palette */
+  /* Coastal Palette PRD Section 5.3 */
   --color-ocean: #56B8D0;
   --color-ocean-dark: #2878B8;
   --color-ocean-deep: #183B50;
@@ -15,9 +15,10 @@
   --color-wood: #C5A47E;
   --color-alert: #E8A23A;
   --color-danger: #C94747;
+  --color-homestay: #d97746;
 
   /* UI Tokens */
-  --color-bg-app: #f2f7f9;
+  --color-bg-app: #183B50;
   --color-surface: #ffffff;
   --color-surface-translucent: rgba(255, 255, 255, 0.94);
   --color-text-main: #183B50;
@@ -27,9 +28,9 @@
 
   /* Elevation Shadows */
   --shadow-sm: 0 2px 8px rgba(24, 59, 80, 0.08);
-  --shadow-md: 0 6px 18px rgba(24, 59, 80, 0.12);
-  --shadow-lg: 0 16px 36px rgba(24, 59, 80, 0.16);
-  --shadow-sheet: 0 -10px 40px rgba(24, 59, 80, 0.2);
+  --shadow-md: 0 6px 18px rgba(24, 59, 80, 0.14);
+  --shadow-lg: 0 16px 36px rgba(24, 59, 80, 0.18);
+  --shadow-sheet: 0 -10px 40px rgba(24, 59, 80, 0.25);
 
   /* Radius */
   --radius-sm: 8px;
@@ -44,7 +45,7 @@
   --duration-normal: 0.32s;
 }
 
-/* Reset & Base */
+/* Reset & Fullscreen Setup */
 * {
   box-sizing: border-box;
   margin: 0;
@@ -52,20 +53,44 @@
   -webkit-tap-highlight-color: transparent;
 }
 
-body {
+html, body {
+  width: 100vw;
+  height: 100vh;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background-color: var(--color-ocean-deep);
   font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   color: var(--color-text-main);
-  background-color: var(--color-bg-app);
-  height: 100vh;
-  width: 100vw;
-  overflow: hidden;
-  position: relative;
-  display: flex;
-  flex-direction: column;
 }
 
 /* ========================================================
-   HEADER & NAVIGATION BAR
+   FULLSCREEN MAP CONTAINER & LEAFLET
+   ======================================================== */
+#map-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  background-color: #3eb0ca;
+}
+
+#map {
+  width: 100%;
+  height: 100%;
+  background-color: transparent !important;
+}
+
+.leaflet-control-attribution {
+  display: none !important;
+}
+
+/* ========================================================
+   APP HEADER & FLOATING CONTROLS
    ======================================================== */
 .app-header {
   position: absolute;
@@ -90,9 +115,9 @@ body {
 .brand-badge {
   pointer-events: auto;
   background: var(--color-surface-translucent);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  padding: 0.5rem 0.95rem;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  padding: 0.45rem 0.95rem;
   border-radius: var(--radius-full);
   border: 1px solid var(--color-border);
   box-shadow: var(--shadow-md);
@@ -104,18 +129,26 @@ body {
 }
 
 .brand-logo-dot {
-  width: 10px;
-  height: 10px;
+  width: 11px;
+  height: 11px;
   background: linear-gradient(135deg, var(--color-ocean), var(--color-ocean-dark));
   border-radius: 50%;
-  box-shadow: 0 0 0 3px rgba(86, 184, 208, 0.3);
+  box-shadow: 0 0 0 3px rgba(86, 184, 208, 0.35);
+  animation: logoPulse 2.5s infinite ease-in-out;
+}
+
+@keyframes logoPulse {
+  0% { transform: scale(0.9); opacity: 0.8; }
+  50% { transform: scale(1.15); opacity: 1; }
+  100% { transform: scale(0.9); opacity: 0.8; }
 }
 
 .brand-title {
-  font-size: 0.925rem;
+  font-size: 0.95rem;
   font-weight: 800;
   color: var(--color-ocean-deep);
-  letter-spacing: -0.01em;
+  letter-spacing: -0.015em;
+  line-height: 1.2;
 }
 
 .brand-sub {
@@ -133,8 +166,8 @@ body {
 
 .icon-btn {
   background: var(--color-surface-translucent);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
   border: 1px solid var(--color-border);
   color: var(--color-ocean-deep);
   width: 38px;
@@ -164,7 +197,7 @@ body {
 }
 
 /* ========================================================
-   CATEGORY FILTER CHIPS BAR
+   CATEGORY FILTER BAR (CHIPS)
    ======================================================== */
 .filter-bar {
   pointer-events: auto;
@@ -182,11 +215,11 @@ body {
 
 .filter-chip {
   background: var(--color-surface-translucent);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-full);
-  padding: 0.4rem 0.85rem;
+  padding: 0.38rem 0.85rem;
   font-size: 0.8rem;
   font-weight: 600;
   color: var(--color-text-main);
@@ -213,29 +246,7 @@ body {
 }
 
 /* ========================================================
-   MAP CONTAINER & LEAFLET CUSTOMIZATION
-   ======================================================== */
-#map-container {
-  flex: 1;
-  width: 100%;
-  height: 100%;
-  position: relative;
-  background-color: #3aaec9;
-}
-
-#map {
-  width: 100%;
-  height: 100%;
-  background-color: transparent !important;
-}
-
-/* Hide default leaflet watermark */
-.leaflet-control-attribution {
-  display: none !important;
-}
-
-/* ========================================================
-   FLOATING MAP CONTROLS
+   FLOATING MAP CONTROLS (RIGHT DOCK)
    ======================================================== */
 .map-controls {
   position: absolute;
@@ -244,15 +255,15 @@ body {
   z-index: 990;
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.55rem;
 }
 
 .control-btn {
   width: 44px;
   height: 44px;
   background: var(--color-surface-translucent);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-full);
   display: flex;
@@ -279,35 +290,93 @@ body {
   height: 20px;
 }
 
+/* Zoom Level Hint Banner */
+.zoom-hint {
+  position: absolute;
+  bottom: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 980;
+  background: rgba(24, 59, 80, 0.88);
+  backdrop-filter: blur(8px);
+  color: #ffffff;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.35rem 0.85rem;
+  border-radius: var(--radius-full);
+  box-shadow: var(--shadow-md);
+  pointer-events: none;
+  opacity: 0.85;
+  transition: opacity 0.3s ease;
+}
+
 /* ========================================================
-   CUSTOM MAP MARKERS
+   HIERARCHICAL MARKERS: MACRO BADGES vs DETAIL PINS
    ======================================================== */
+
+/* 1. MACRO BADGE (Zoom Out - Overview Mode) */
+.macro-badge-wrap {
+  pointer-events: auto;
+}
+
+.macro-badge {
+  background: rgba(24, 59, 80, 0.94);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: #ffffff;
+  padding: 0.4rem 0.85rem;
+  border-radius: var(--radius-full);
+  font-size: 0.78rem;
+  font-weight: 700;
+  box-shadow: 0 4px 16px rgba(24, 59, 80, 0.38);
+  border: 2px solid rgba(86, 184, 208, 0.8);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-spring);
+}
+
+.macro-badge:hover {
+  transform: scale(1.1) translateY(-2px);
+  background: var(--color-ocean-deep);
+  border-color: #ffffff;
+  box-shadow: 0 8px 22px rgba(24, 59, 80, 0.45);
+}
+
+.macro-badge.active {
+  transform: scale(1.15) translateY(-3px);
+  border-color: var(--color-alert);
+}
+
+/* 2. DETAIL PIN (Zoom In - Detail Mode) */
 .custom-pin {
   cursor: pointer;
   position: relative;
-  transition: transform var(--duration-normal) var(--ease-spring);
+  transition: transform var(--duration-normal) var(--ease-spring), opacity 0.25s ease;
 }
 
 .custom-pin:hover {
-  transform: scale(1.15) translateY(-4px);
+  transform: scale(1.18) translateY(-4px);
   z-index: 1000 !important;
 }
 
 .custom-pin.active {
-  transform: scale(1.22) translateY(-6px);
+  transform: scale(1.24) translateY(-6px);
   z-index: 1000 !important;
 }
 
 .pin-bubble {
-  width: 38px;
-  height: 38px;
+  width: 36px;
+  height: 36px;
   border-radius: 50% 50% 50% 4px;
   transform: rotate(-45deg);
   display: flex;
   align-items: center;
   justify-content: center;
   background: #ffffff;
-  border: 2.5px solid var(--color-ocean-dark);
+  border: 2px solid var(--color-ocean-dark);
   box-shadow: 0 4px 14px rgba(24, 59, 80, 0.28);
   position: relative;
 }
@@ -322,54 +391,16 @@ body {
   font-size: 15px;
 }
 
-/* Category Colors for Pins */
-.pin-access .pin-bubble {
-  background: #C94747;
-  border-color: #ffffff;
-  color: #ffffff;
-}
-
-.pin-attraction .pin-bubble {
-  background: #2878B8;
-  border-color: #ffffff;
-  color: #ffffff;
-}
-
-.pin-culinary .pin-bubble {
-  background: #E8A23A;
-  border-color: #ffffff;
-  color: #ffffff;
-}
-
-.pin-worship .pin-bubble {
-  background: #4a9e52;
-  border-color: #ffffff;
-  color: #ffffff;
-}
-
-.pin-sanitation .pin-bubble {
-  background: #4fb3cb;
-  border-color: #ffffff;
-  color: #ffffff;
-}
-
-.pin-transport .pin-bubble {
-  background: #75553a;
-  border-color: #ffffff;
-  color: #ffffff;
-}
-
-.pin-safety .pin-bubble {
-  background: #dc3545;
-  border-color: #ffffff;
-  color: #ffffff;
-}
-
-.pin-umkm .pin-bubble {
-  background: #9059b5;
-  border-color: #ffffff;
-  color: #ffffff;
-}
+/* Category Colors */
+.pin-access .pin-bubble { background: #C94747; border-color: #ffffff; color: #ffffff; }
+.pin-attraction .pin-bubble { background: #2878B8; border-color: #ffffff; color: #ffffff; }
+.pin-homestay .pin-bubble { background: #d97746; border-color: #ffffff; color: #ffffff; }
+.pin-culinary .pin-bubble { background: #E8A23A; border-color: #ffffff; color: #ffffff; }
+.pin-worship .pin-bubble { background: #4a9e52; border-color: #ffffff; color: #ffffff; }
+.pin-sanitation .pin-bubble { background: #4fb3cb; border-color: #ffffff; color: #ffffff; }
+.pin-transport .pin-bubble { background: #75553a; border-color: #ffffff; color: #ffffff; }
+.pin-safety .pin-bubble { background: #dc3545; border-color: #ffffff; color: #ffffff; }
+.pin-umkm .pin-bubble { background: #9059b5; border-color: #ffffff; color: #ffffff; }
 
 /* Entrance Gate Pulsing Beacon */
 .entrance-beacon {
@@ -382,9 +413,9 @@ body {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 50px;
-  height: 50px;
-  background: rgba(201, 71, 71, 0.35);
+  width: 52px;
+  height: 52px;
+  background: rgba(201, 71, 71, 0.4);
   border-radius: 50%;
   animation: beaconPulse 2s infinite ease-out;
 }
@@ -396,24 +427,25 @@ body {
 
 .beacon-label {
   position: absolute;
-  top: 42px;
+  top: 40px;
   left: 50%;
   transform: translateX(-50%);
-  background: rgba(24, 59, 80, 0.92);
+  background: rgba(24, 59, 80, 0.94);
   color: #ffffff;
-  font-size: 0.7rem;
+  font-size: 0.68rem;
   font-weight: 700;
-  padding: 0.25rem 0.6rem;
+  padding: 0.2rem 0.55rem;
   border-radius: var(--radius-full);
   white-space: nowrap;
   box-shadow: var(--shadow-sm);
   pointer-events: none;
+  border: 1px solid rgba(86, 184, 208, 0.4);
 }
 
 /* Dimmed Pin state during filtering */
-.custom-pin.dimmed {
-  opacity: 0.25;
-  filter: grayscale(0.8);
+.custom-pin.dimmed, .macro-badge.dimmed {
+  opacity: 0.18;
+  filter: grayscale(0.85);
   pointer-events: none;
 }
 
@@ -424,9 +456,7 @@ body {
 }
 
 @keyframes dashAnimation {
-  to {
-    stroke-dashoffset: -32;
-  }
+  to { stroke-dashoffset: -32; }
 }
 
 /* ========================================================
@@ -741,7 +771,7 @@ body {
 }
 
 /* ========================================================
-   RESPONSIVE TWEAKS FOR MOBILE & DESKTOP
+   RESPONSIVE DESKTOP DOCK
    ======================================================== */
 @media (min-width: 768px) {
   .app-header {
@@ -765,7 +795,7 @@ body {
     bottom: 2rem;
     left: 2rem;
     right: auto;
-    width: 400px;
+    width: 420px;
     box-shadow: var(--shadow-lg);
     border: 1px solid var(--color-border);
     transform: translateY(120%);

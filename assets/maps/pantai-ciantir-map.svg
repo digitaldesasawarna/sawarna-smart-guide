@@ -1,0 +1,378 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 900" width="1400" height="900">
+  <defs>
+    <!-- Ocean Gradient -->
+    <linearGradient id="ciantirOcean" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#3eb0ca"/>
+      <stop offset="35%" stop-color="#2c89b2"/>
+      <stop offset="100%" stop-color="#18567f"/>
+    </linearGradient>
+
+    <!-- River Gradient -->
+    <linearGradient id="riverGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#5ec4d4"/>
+      <stop offset="50%" stop-color="#73d3e2"/>
+      <stop offset="100%" stop-color="#4aaebf"/>
+    </linearGradient>
+
+    <!-- Sand Gradient -->
+    <linearGradient id="ciantirSand" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#fdf4df"/>
+      <stop offset="40%" stop-color="#F2DEAD"/>
+      <stop offset="100%" stop-color="#dcc18b"/>
+    </linearGradient>
+
+    <!-- Village & Grass Gradient -->
+    <linearGradient id="villageGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#c1e0a2"/>
+      <stop offset="50%" stop-color="#A7C78B"/>
+      <stop offset="100%" stop-color="#8fae72"/>
+    </linearGradient>
+
+    <!-- Shadows -->
+    <filter id="softShadow" x="-10%" y="-10%" width="130%" height="130%">
+      <feDropShadow dx="2" dy="4" stdDeviation="4" flood-color="#183B50" flood-opacity="0.16"/>
+    </filter>
+    <filter id="bridgeShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="3" dy="6" stdDeviation="5" flood-color="#183B50" flood-opacity="0.25"/>
+    </filter>
+  </defs>
+
+  <!-- 1. BASE BACKGROUND: OCEAN AT SOUTH -->
+  <rect width="1400" height="900" fill="url(#ciantirOcean)"/>
+
+  <!-- Ocean Waves & Surf Swells -->
+  <g stroke="#ffffff" stroke-width="2.5" fill="none" opacity="0.6" stroke-linecap="round">
+    <!-- Outer Deep Sea Breakers -->
+    <path d="M 100 850 Q 250 830 400 850 T 700 850 T 1000 850 T 1300 850" stroke-width="3"/>
+    <path d="M 50 810 Q 200 790 350 810 T 650 810 T 950 810 T 1250 810" stroke-width="3.5" opacity="0.75"/>
+    <path d="M 150 760 Q 300 740 450 760 T 750 760 T 1050 760 T 1350 760" stroke-width="4" opacity="0.85"/>
+    
+    <!-- Surfing Swell Curves -->
+    <path d="M 750 780 C 820 740, 920 740, 980 775" stroke="#e8f8fb" stroke-width="5" opacity="0.8"/>
+    <path d="M 780 775 C 840 750, 900 750, 950 775" stroke="#ffffff" stroke-width="2.5"/>
+  </g>
+
+  <!-- Surfer Figure in Water -->
+  <g transform="translate(860, 755) scale(0.85)" opacity="0.9">
+    <!-- Surfboard -->
+    <ellipse cx="20" cy="5" rx="22" ry="5.5" fill="#E8A23A" stroke="#183B50" stroke-width="1.2" transform="rotate(-15, 20, 5)"/>
+    <!-- Surfer silhouette -->
+    <circle cx="16" cy="-4" r="3" fill="#183B50"/>
+    <path d="M 16 -1 L 18 5 L 24 5" stroke="#183B50" stroke-width="2" fill="none"/>
+    <path d="M 12 2 L 18 0 L 22 2" stroke="#183B50" stroke-width="1.8" fill="none"/>
+  </g>
+
+  <!-- 2. PANTAI CIANTIR WIDE SAND BEACH (SOUTHERN SHORELINE) -->
+  <path d="M 0 540 C 250 550, 500 560, 800 550 C 1100 540, 1280 530, 1400 540 L 1400 740 C 1200 745, 950 755, 750 745 C 500 735, 250 750, 0 740 Z" 
+        fill="url(#ciantirSand)" filter="url(#softShadow)"/>
+
+  <!-- Shoreline Foam Lapping Edge -->
+  <path d="M 0 740 C 250 750, 500 735, 750 745 C 950 755, 1200 745, 1400 740" 
+        fill="none" stroke="#ffffff" stroke-width="8" stroke-linecap="round" opacity="0.9"/>
+  <path d="M 0 740 C 250 750, 500 735, 750 745 C 950 755, 1200 745, 1400 740" 
+        fill="none" stroke="#e1f5f8" stroke-width="16" stroke-linecap="round" opacity="0.4"/>
+
+  <!-- 3. MAINLAND & VILLAGE TERRAIN (NORTH TO MID-SOUTH) -->
+  <path d="M 0 0 L 1400 0 L 1400 540 C 1280 530, 1100 540, 800 550 C 500 560, 250 550, 0 540 Z" 
+        fill="url(#villageGrad)"/>
+
+  <!-- 4. SUNGAI CISAWARNA (RIVER CROSSING AT NORTH) -->
+  <g id="sungaiCisawarna">
+    <path d="M 0 140 C 250 120, 500 170, 750 140 C 1000 110, 1250 150, 1400 130 L 1400 210 C 1250 230, 1000 190, 750 220 C 500 250, 250 200, 0 220 Z" 
+          fill="url(#riverGrad)"/>
+    <!-- River Banks Shading -->
+    <path d="M 0 140 C 250 120, 500 170, 750 140 C 1000 110, 1250 150, 1400 130" 
+          fill="none" stroke="#9bc57d" stroke-width="5" opacity="0.7"/>
+    <path d="M 0 220 C 250 200, 500 250, 750 220 C 1000 190, 1250 230, 1400 210" 
+          fill="none" stroke="#8cb86d" stroke-width="6" opacity="0.8"/>
+    <!-- River Water Ripples -->
+    <path d="M 120 175 Q 160 168 200 175" stroke="#ffffff" stroke-width="1.8" fill="none" opacity="0.5"/>
+    <path d="M 520 180 Q 560 172 600 180" stroke="#ffffff" stroke-width="1.8" fill="none" opacity="0.5"/>
+    <path d="M 920 165 Q 960 158 1000 165" stroke="#ffffff" stroke-width="1.8" fill="none" opacity="0.5"/>
+    <path d="M 1220 170 Q 1260 162 1300 170" stroke="#ffffff" stroke-width="1.8" fill="none" opacity="0.5"/>
+  </g>
+
+  <!-- 5. AREA PARKIR MOBIL UTAMA (SEBELUM JEMBATAN / SISI UTARA SUNGAI) -->
+  <g id="areaParkirMobil" transform="translate(180, 40)">
+    <!-- Parking Lot Ground -->
+    <rect x="0" y="0" width="220" height="85" rx="8" fill="#d8c5a8" stroke="#a48c6c" stroke-width="2" filter="url(#softShadow)"/>
+    <text x="12" y="22" font-family="'Plus Jakarta Sans', sans-serif" font-weight="800" font-size="11" fill="#183B50">🅿️ KANTONG PARKIR MOBIL</text>
+    <text x="12" y="36" font-family="'Plus Jakarta Sans', sans-serif" font-weight="600" font-size="8.5" fill="#6c553b">Khusus Mobil / Roda 4 (Batas Akhir)</text>
+
+    <!-- Parking slots & Cars -->
+    <line x1="15" y1="45" x2="15" y2="78" stroke="#ffffff" stroke-width="1.5" stroke-dasharray="3,3"/>
+    <line x1="55" y1="45" x2="55" y2="78" stroke="#ffffff" stroke-width="1.5" stroke-dasharray="3,3"/>
+    <line x1="95" y1="45" x2="95" y2="78" stroke="#ffffff" stroke-width="1.5" stroke-dasharray="3,3"/>
+    <line x1="135" y1="45" x2="135" y2="78" stroke="#ffffff" stroke-width="1.5" stroke-dasharray="3,3"/>
+    <line x1="175" y1="45" x2="175" y2="78" stroke="#ffffff" stroke-width="1.5" stroke-dasharray="3,3"/>
+
+    <!-- Parked Cars -->
+    <rect x="22" y="50" width="24" height="25" rx="4" fill="#2878B8"/>
+    <rect x="62" y="50" width="24" height="25" rx="4" fill="#C94747"/>
+    <rect x="102" y="50" width="24" height="25" rx="4" fill="#183B50"/>
+    <rect x="142" y="50" width="24" height="25" rx="4" fill="#E8A23A"/>
+    <rect x="182" y="50" width="24" height="25" rx="4" fill="#ffffff" stroke="#999" stroke-width="0.5"/>
+  </g>
+
+  <!-- 6. JEMBATAN GANTUNG CISAWARNA (IKONIK AKSES PEJALAN KAKI & MOTOR) -->
+  <g id="jembatanGantung" filter="url(#bridgeShadow)">
+    <!-- Bridge Planks Deck -->
+    <path d="M 365 125 L 395 125 L 395 240 L 365 240 Z" fill="#b38758" stroke="#634524" stroke-width="1.5"/>
+    <!-- Suspension Tower North -->
+    <rect x="358" y="118" width="8" height="18" fill="#C94747" stroke="#183B50" stroke-width="1"/>
+    <rect x="394" y="118" width="8" height="18" fill="#C94747" stroke="#183B50" stroke-width="1"/>
+    <line x1="358" y1="120" x2="402" y2="120" stroke="#C94747" stroke-width="2.5"/>
+    <!-- Suspension Tower South -->
+    <rect x="358" y="232" width="8" height="18" fill="#C94747" stroke="#183B50" stroke-width="1"/>
+    <rect x="394" y="232" width="8" height="18" fill="#C94747" stroke="#183B50" stroke-width="1"/>
+    <line x1="358" y1="248" x2="402" y2="248" stroke="#C94747" stroke-width="2.5"/>
+    <!-- Suspension Steel Cables -->
+    <path d="M 362 120 Q 355 180 362 248" stroke="#444444" stroke-width="2" fill="none"/>
+    <path d="M 398 120 Q 405 180 398 248" stroke="#444444" stroke-width="2" fill="none"/>
+    <!-- Wooden Slats Texture -->
+    <line x1="365" y1="140" x2="395" y2="140" stroke="#5a3d1d" stroke-width="1"/>
+    <line x1="365" y1="155" x2="395" y2="155" stroke="#5a3d1d" stroke-width="1"/>
+    <line x1="365" y1="170" x2="395" y2="170" stroke="#5a3d1d" stroke-width="1"/>
+    <line x1="365" y1="185" x2="395" y2="185" stroke="#5a3d1d" stroke-width="1"/>
+    <line x1="365" y1="200" x2="395" y2="200" stroke="#5a3d1d" stroke-width="1"/>
+    <line x1="365" y1="215" x2="395" y2="215" stroke="#5a3d1d" stroke-width="1"/>
+    <line x1="365" y1="230" x2="395" y2="230" stroke="#5a3d1d" stroke-width="1"/>
+    <!-- Pos Retribusi Loket Tiket -->
+    <g transform="translate(410, 225)">
+      <rect x="0" y="0" width="30" height="22" rx="3" fill="#ffffff" stroke="#183B50" stroke-width="1.2"/>
+      <polygon points="-2,0 15,-8 32,0" fill="#E8A23A" stroke="#183B50" stroke-width="1"/>
+      <rect x="8" y="6" width="14" height="16" fill="#2878B8"/>
+      <circle cx="15" cy="11" r="2" fill="#ffffff"/>
+    </g>
+  </g>
+
+  <!-- 7. NETWORK OF VILLAGE PATHS (JALAN DESA CIKAUNG MENUJU PANTAI) -->
+  <g id="villagePathNetwork" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Main Path from Suspension Bridge down to Beach -->
+    <path d="M 380 240 C 380 300, 420 340, 460 380 C 510 430, 580 470, 660 510 C 720 540, 770 560, 780 580" 
+          fill="none" stroke="#be9a6e" stroke-width="18"/>
+    <path d="M 380 240 C 380 300, 420 340, 460 380 C 510 430, 580 470, 660 510 C 720 540, 770 560, 780 580" 
+          fill="none" stroke="#EFE0C4" stroke-width="12"/>
+
+    <!-- Branch West towards Homestay Cluster 1 & Goa Langir Route -->
+    <path d="M 460 380 C 360 400, 260 410, 160 430 C 90 445, 0 455, 0 460" 
+          fill="none" stroke="#be9a6e" stroke-width="12"/>
+    <path d="M 460 380 C 360 400, 260 410, 160 430 C 90 445, 0 455, 0 460" 
+          fill="none" stroke="#EFE0C4" stroke-width="8"/>
+
+    <!-- Branch East towards Village Center & Homestay Cluster 2 -->
+    <path d="M 580 470 C 700 450, 840 430, 980 420 C 1120 410, 1260 430, 1400 450" 
+          fill="none" stroke="#be9a6e" stroke-width="12"/>
+    <path d="M 580 470 C 700 450, 840 430, 980 420 C 1120 410, 1260 430, 1400 450" 
+          fill="none" stroke="#EFE0C4" stroke-width="8"/>
+
+    <!-- Coastal Walkway along Warung & Saung Line -->
+    <path d="M 80 575 C 300 580, 600 585, 900 575 C 1150 565, 1320 560, 1400 565" 
+          fill="none" stroke="#be9a6e" stroke-width="14"/>
+    <path d="M 80 575 C 300 580, 600 585, 900 575 C 1150 565, 1320 560, 1400 565" 
+          fill="none" stroke="#f6ede0" stroke-width="9" stroke-dasharray="8,4"/>
+
+    <!-- Trail to Tanjung Layar (South-East Arrow Trail) -->
+    <path d="M 1250 570 C 1310 585, 1360 610, 1400 640" 
+          fill="none" stroke="#d5be9b" stroke-width="6" stroke-dasharray="4,5"/>
+  </g>
+
+  <!-- 8. KAWASAN HOMESTAY & PERKAMPUNGAN CIKAUNG (HOUSES & LODGES) -->
+  <g id="kawasanHomestay">
+    <!-- Homestay 1 (Cikaung Utama) -->
+    <g transform="translate(430, 290)">
+      <rect x="0" y="8" width="36" height="24" rx="2" fill="#fff5ea" stroke="#7d5932" stroke-width="1.2"/>
+      <polygon points="-3,8 18,-4 39,8" fill="#b96a4c" stroke="#7d5932" stroke-width="1.2"/>
+      <rect x="12" y="16" width="10" height="16" fill="#2878B8"/>
+      <rect x="4" y="12" width="6" height="6" fill="#88c5dd"/>
+      <rect x="25" y="12" width="6" height="6" fill="#88c5dd"/>
+    </g>
+
+    <!-- Homestay 2 (Penginapan Asri) -->
+    <g transform="translate(490, 330)">
+      <rect x="0" y="10" width="40" height="26" rx="2" fill="#eef6fb" stroke="#486a82" stroke-width="1.2"/>
+      <polygon points="-4,10 20,-3 44,10" fill="#4a7c8f" stroke="#325062" stroke-width="1.2"/>
+      <rect x="14" y="18" width="12" height="18" fill="#8c6d48"/>
+    </g>
+
+    <!-- Homestay 3 (Villa Mutiara Area) -->
+    <g transform="translate(320, 360)">
+      <rect x="0" y="8" width="44" height="26" rx="3" fill="#ffffff" stroke="#5a3d1d" stroke-width="1.2"/>
+      <polygon points="-4,8 22,-5 48,8" fill="#C5A47E" stroke="#5a3d1d" stroke-width="1.2"/>
+      <rect x="16" y="16" width="12" height="18" fill="#2878B8"/>
+      <circle cx="22" cy="5" r="3" fill="#E8A23A"/>
+    </g>
+
+    <!-- Homestay 4 & 5 (Eastern Cluster) -->
+    <g transform="translate(680, 420)">
+      <rect x="0" y="8" width="34" height="22" rx="2" fill="#fcfbf7" stroke="#684f33" stroke-width="1.2"/>
+      <polygon points="-3,8 17,-3 37,8" fill="#a46342" stroke="#684f33" stroke-width="1.2"/>
+    </g>
+    <g transform="translate(730, 400)">
+      <rect x="0" y="8" width="36" height="24" rx="2" fill="#f4f7f2" stroke="#4f6e4a" stroke-width="1.2"/>
+      <polygon points="-3,8 18,-4 39,8" fill="#698f5b" stroke="#4f6e4a" stroke-width="1.2"/>
+    </g>
+
+    <!-- Homestay 6 (Dekat Pantai) -->
+    <g transform="translate(610, 470)">
+      <rect x="0" y="8" width="38" height="24" rx="2" fill="#fff7ec" stroke="#7a5732" stroke-width="1.2"/>
+      <polygon points="-3,8 19,-4 41,8" fill="#cf7f4b" stroke="#7a5732" stroke-width="1.2"/>
+    </g>
+
+    <!-- Mushola Desa Al-Ikhlas -->
+    <g transform="translate(560, 370)">
+      <rect x="4" y="10" width="30" height="24" rx="3" fill="#ffffff" stroke="#183B50" stroke-width="1.5"/>
+      <path d="M 9 10 C 9 -2, 29 -2, 29 10 Z" fill="#529b4e" stroke="#183B50" stroke-width="1.2"/>
+      <circle cx="19" cy="-4" r="2.5" fill="#E8A23A"/>
+      <rect x="14" y="20" width="10" height="14" fill="#2878B8"/>
+    </g>
+  </g>
+
+  <!-- 9. KAWASAN UMKM PESISIR & WARUNG PANTAI CIANTIR -->
+  <g id="kawasanUmkmPantai">
+    <!-- Warung Kelapa & Makan 1 -->
+    <g transform="translate(420, 545)">
+      <rect x="0" y="8" width="28" height="20" fill="#d9b68c" stroke="#5a3d1c" stroke-width="1.2"/>
+      <polygon points="-3,8 14,-2 31,8" fill="#a4713e" stroke="#5a3d1c" stroke-width="1.2"/>
+      <rect x="4" y="13" width="8" height="6" fill="#E8A23A"/>
+      <text x="35" y="20" font-family="'Plus Jakarta Sans', sans-serif" font-size="8" font-weight="700" fill="#5a3d1c">Warung Bu Anah</text>
+    </g>
+
+    <!-- Warung Kelapa & Ikan Bakar 2 (Pusat Kuliner) -->
+    <g transform="translate(620, 545)">
+      <rect x="0" y="8" width="32" height="22" fill="#e2c49f" stroke="#5a3d1c" stroke-width="1.2"/>
+      <polygon points="-3,8 16,-3 35,8" fill="#b9824b" stroke="#5a3d1c" stroke-width="1.2"/>
+      <rect x="6" y="14" width="20" height="8" fill="#ffffff" stroke="#c09e74" stroke-width="0.8"/>
+      <circle cx="12" cy="18" r="2.5" fill="#529b4e"/>
+      <circle cx="18" cy="18" r="2.5" fill="#529b4e"/>
+    </g>
+
+    <!-- Kios Rental Papan Selancar (Surf Rental) -->
+    <g transform="translate(730, 542)">
+      <rect x="0" y="8" width="30" height="22" fill="#ffffff" stroke="#183B50" stroke-width="1.2"/>
+      <polygon points="-3,8 15,-2 33,8" fill="#2878B8" stroke="#183B50" stroke-width="1.2"/>
+      <!-- Tiny Surfboards leaning on kiosk -->
+      <line x1="6" y1="28" x2="10" y2="10" stroke="#E8A23A" stroke-width="3.5" stroke-linecap="round"/>
+      <line x1="12" y1="28" x2="16" y2="10" stroke="#C94747" stroke-width="3.5" stroke-linecap="round"/>
+      <line x1="18" y1="28" x2="22" y2="10" stroke="#56B8D0" stroke-width="3.5" stroke-linecap="round"/>
+    </g>
+
+    <!-- Warung Kopi & Camilan 3 -->
+    <g transform="translate(870, 545)">
+      <rect x="0" y="8" width="28" height="20" fill="#d9b68c" stroke="#5a3d1c" stroke-width="1.2"/>
+      <polygon points="-3,8 14,-2 31,8" fill="#a4713e" stroke="#5a3d1c" stroke-width="1.2"/>
+    </g>
+
+    <!-- Deretan Saung Bambu Gazebo Ciantir -->
+    <g id="saungCiantir">
+      <g transform="translate(340, 595)">
+        <rect x="3" y="6" width="18" height="14" rx="2" fill="#f0dbbe" stroke="#5a3d1c" stroke-width="1"/>
+        <polygon points="0,6 12,-2 24,6" fill="#C5A47E" stroke="#5a3d1c" stroke-width="1"/>
+      </g>
+      <g transform="translate(540, 595)">
+        <rect x="3" y="6" width="18" height="14" rx="2" fill="#f0dbbe" stroke="#5a3d1c" stroke-width="1"/>
+        <polygon points="0,6 12,-2 24,6" fill="#C5A47E" stroke="#5a3d1c" stroke-width="1"/>
+      </g>
+      <g transform="translate(800, 595)">
+        <rect x="3" y="6" width="18" height="14" rx="2" fill="#f0dbbe" stroke="#5a3d1c" stroke-width="1"/>
+        <polygon points="0,6 12,-2 24,6" fill="#C5A47E" stroke="#5a3d1c" stroke-width="1"/>
+      </g>
+      <g transform="translate(980, 590)">
+        <rect x="3" y="6" width="18" height="14" rx="2" fill="#f0dbbe" stroke="#5a3d1c" stroke-width="1"/>
+        <polygon points="0,6 12,-2 24,6" fill="#C5A47E" stroke="#5a3d1c" stroke-width="1"/>
+      </g>
+    </g>
+
+    <!-- Fasilitas Kamar Mandi & Bilas Air Tawar -->
+    <g transform="translate(500, 545)">
+      <rect x="0" y="6" width="26" height="22" rx="3" fill="#ffffff" stroke="#2878B8" stroke-width="1.2"/>
+      <text x="5" y="19" font-family="'Plus Jakarta Sans', sans-serif" font-weight="800" font-size="9" fill="#2878B8">BILAS</text>
+    </g>
+    <g transform="translate(930, 545)">
+      <rect x="0" y="6" width="26" height="22" rx="3" fill="#ffffff" stroke="#2878B8" stroke-width="1.2"/>
+      <text x="5" y="19" font-family="'Plus Jakarta Sans', sans-serif" font-weight="800" font-size="9" fill="#2878B8">BILAS</text>
+    </g>
+  </g>
+
+  <!-- 10. MENARA PANTAU BALAWISTA (LIFEGUARD) PANTAI CIANTIR -->
+  <g id="posBalawista" transform="translate(710, 640)" filter="url(#softShadow)">
+    <!-- Tower Stilt Legs -->
+    <line x1="8" y1="42" x2="12" y2="14" stroke="#183B50" stroke-width="2.2"/>
+    <line x1="30" y1="42" x2="26" y2="14" stroke="#183B50" stroke-width="2.2"/>
+    <line x1="8" y1="28" x2="30" y2="28" stroke="#183B50" stroke-width="1.8"/>
+    <!-- Guard Cabin -->
+    <rect x="8" y="2" width="22" height="16" rx="2" fill="#dc3545" stroke="#183B50" stroke-width="1.2"/>
+    <rect x="12" y="5" width="14" height="7" fill="#ffffff" opacity="0.8"/>
+    <!-- Safety Flag -->
+    <line x1="28" y1="2" x2="28" y2="-12" stroke="#183B50" stroke-width="1.8"/>
+    <polygon points="28,-12 40,-7 28,-2" fill="#E8A23A"/>
+    <text x="-15" y="55" font-family="'Plus Jakarta Sans', sans-serif" font-weight="800" font-size="8.5" fill="#dc3545">POS BALAWISTA</text>
+  </g>
+
+  <!-- 11. PEPODOHONAN KELAPA & VEGETASI PESISIR -->
+  <g id="palmGroves">
+    <!-- Palm Cluster Near River -->
+    <g transform="translate(300, 260) scale(0.85)">
+      <path d="M 10 50 Q 5 25 15 0" stroke="#7a542b" stroke-width="4.5" fill="none" stroke-linecap="round"/>
+      <path d="M 15 0 Q -10 -18 -25 -8" stroke="#4a7c36" stroke-width="3.2" fill="none"/>
+      <path d="M 15 0 Q 30 -22 45 -10" stroke="#5b9643" stroke-width="3.2" fill="none"/>
+      <path d="M 15 0 Q 10 -25 18 -38" stroke="#5b9643" stroke-width="3.2" fill="none"/>
+    </g>
+    <!-- Palm Cluster in Cikaung Village -->
+    <g transform="translate(640, 330) scale(0.9)">
+      <path d="M 10 50 Q 18 25 10 0" stroke="#7a542b" stroke-width="4.5" fill="none" stroke-linecap="round"/>
+      <path d="M 10 0 Q -15 -18 -28 -8" stroke="#4a7c36" stroke-width="3.5" fill="none"/>
+      <path d="M 10 0 Q 25 -22 42 -12" stroke="#5b9643" stroke-width="3.5" fill="none"/>
+      <path d="M 10 0 Q 0 -26 8 -36" stroke="#5b9643" stroke-width="3.5" fill="none"/>
+    </g>
+    <!-- Palm Cluster along Beach Edge -->
+    <g transform="translate(260, 520) scale(0.8)">
+      <path d="M 10 50 Q 8 25 16 0" stroke="#7a542b" stroke-width="4" fill="none"/>
+      <path d="M 16 0 Q -12 -15 -25 -6" stroke="#4a7c36" stroke-width="3" fill="none"/>
+      <path d="M 16 0 Q 28 -20 42 -10" stroke="#5b9643" stroke-width="3" fill="none"/>
+    </g>
+    <g transform="translate(820, 510) scale(0.85)">
+      <path d="M 10 50 Q 5 25 15 0" stroke="#7a542b" stroke-width="4" fill="none"/>
+      <path d="M 15 0 Q -12 -15 -25 -6" stroke="#4a7c36" stroke-width="3" fill="none"/>
+      <path d="M 15 0 Q 28 -20 42 -10" stroke="#5b9643" stroke-width="3" fill="none"/>
+    </g>
+    <g transform="translate(1080, 520) scale(0.9)">
+      <path d="M 10 50 Q 16 25 10 0" stroke="#7a542b" stroke-width="4" fill="none"/>
+      <path d="M 10 0 Q -15 -18 -28 -8" stroke="#4a7c36" stroke-width="3" fill="none"/>
+      <path d="M 10 0 Q 25 -22 42 -12" stroke="#5b9643" stroke-width="3" fill="none"/>
+    </g>
+  </g>
+
+  <!-- 12. DIRECTIONAL SIGNS / CONNECTIVITY -->
+  <!-- Direction to Goa Langir (West) -->
+  <g transform="translate(30, 480)">
+    <rect x="0" y="0" width="130" height="32" rx="6" fill="#183B50" opacity="0.88"/>
+    <text x="12" y="20" font-family="'Plus Jakarta Sans', sans-serif" font-weight="700" font-size="10" fill="#ffffff">⬅️ Arah Goa Langir</text>
+  </g>
+
+  <!-- Direction to Tanjung Layar (East) -->
+  <g transform="translate(1220, 610)">
+    <rect x="0" y="0" width="150" height="32" rx="6" fill="#183B50" opacity="0.88"/>
+    <text x="12" y="20" font-family="'Plus Jakarta Sans', sans-serif" font-weight="700" font-size="10" fill="#ffffff">Arah Tanjung Layar ➡️</text>
+  </g>
+
+  <!-- Compass Rose Watermark -->
+  <g transform="translate(1330, 80) scale(0.75)" opacity="0.65">
+    <circle cx="0" cy="0" r="32" fill="#ffffff" stroke="#183B50" stroke-width="2"/>
+    <polygon points="0,-28 6,-4 0,0" fill="#C94747"/>
+    <polygon points="0,-28 -6,-4 0,0" fill="#e07272"/>
+    <polygon points="0,28 6,4 0,0" fill="#183B50"/>
+    <polygon points="0,28 -6,4 0,0" fill="#536e7e"/>
+    <polygon points="28,0 4,6 0,0" fill="#183B50"/>
+    <polygon points="-28,0 -4,6 0,0" fill="#536e7e"/>
+    <circle cx="0" cy="0" r="3.5" fill="#E8A23A"/>
+    <text x="-5" y="-32" font-family="'Plus Jakarta Sans', sans-serif" font-weight="bold" font-size="12" fill="#C94747">U</text>
+  </g>
+
+  <!-- MAP TITLE RIBBON -->
+  <g transform="translate(35, 30)">
+    <rect x="0" y="0" width="310" height="68" rx="14" fill="#ffffff" opacity="0.94" stroke="#56B8D0" stroke-width="2" filter="url(#softShadow)"/>
+    <text x="18" y="28" font-family="'Plus Jakarta Sans', sans-serif" font-weight="800" font-size="17" fill="#183B50">Pantai Ciantir Sawarna</text>
+    <text x="18" y="50" font-family="'Plus Jakarta Sans', sans-serif" font-weight="600" font-size="11.5" fill="#2878B8">Peta Pesisir, Homestay Desa, & Sentra UMKM</text>
+  </g>
+</svg>
