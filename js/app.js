@@ -226,7 +226,21 @@
       alt: 'Google Maps Baseline'
     }).addTo(map);
 
-    // 2. OVERLAY LAYER: Peta Ilustrasi Vektor Kawasan Pantai Ciantir (Jika tersedia)
+    // 2. OVERLAY LAYER: Peta Ilustrasi Vektor Kawasan (Tiles Piramida Presisi Web Mercator)
+    illustrationTileLayer = L.tileLayer('assets/maps/tiles/{z}/{x}/{y}.png', {
+      minZoom: 15,
+      maxNativeZoom: 16,
+      maxZoom: 20,
+      tms: false,
+      opacity: 0.92,
+      zIndex: 15
+    }).addTo(map);
+
+    illustrationTileLayer.on('tileerror', function(e) {
+      if (e.tile) e.tile.style.display = 'none';
+    });
+
+    // 3. OVERLAY GAMBAR TUNGGAL (Fallback jika tersedia)
     if (mapConfig.image && mapConfig.image.trim() !== '') {
       illustrationOverlay = L.imageOverlay(mapConfig.image, illustrationBounds, {
         alt: mapConfig.name,
@@ -479,28 +493,33 @@
   let googleMapMode = 'hybrid'; // 'hybrid', 'satellite', 'roadmap'
 
   function toggleLayerMode() {
-    if (illustrationOverlay) {
-      if (currentLayerMode === 'illustration') {
-        currentLayerMode = 'hybrid';
-        illustrationOverlay.setOpacity(0.55);
+    const activeOverlay = illustrationTileLayer || illustrationOverlay;
+
+    if (activeOverlay) {
+      if (currentLayerMode === 'hybrid') {
+        currentLayerMode = 'satellite';
+        googleBaseTileLayer.setUrl('https://mt{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}');
+        activeOverlay.setOpacity(0.92);
         if (layerToggleBtn) {
-          layerToggleBtn.setAttribute('title', 'Mode: Hybrid (Ilustrasi + Satelit Google)');
-          layerToggleBtn.classList.add('mode-hybrid');
-          layerToggleBtn.classList.remove('mode-google');
-        }
-      } else if (currentLayerMode === 'hybrid') {
-        currentLayerMode = 'google';
-        illustrationOverlay.setOpacity(0.05);
-        if (layerToggleBtn) {
-          layerToggleBtn.setAttribute('title', 'Mode: Satelit Google Maps Asli');
+          layerToggleBtn.setAttribute('title', 'Mode: Satelit Google + Ilustrasi');
           layerToggleBtn.classList.add('mode-google');
           layerToggleBtn.classList.remove('mode-hybrid');
         }
-      } else {
-        currentLayerMode = 'illustration';
-        illustrationOverlay.setOpacity(0.92);
+      } else if (currentLayerMode === 'satellite') {
+        currentLayerMode = 'google_only';
+        activeOverlay.setOpacity(0);
+        googleBaseTileLayer.setUrl('https://mt{s}.google.com/vt/lyrs=y&apistyle=s.t:33|p.v:off&x={x}&y={y}&z={z}');
         if (layerToggleBtn) {
-          layerToggleBtn.setAttribute('title', 'Mode: Peta Ilustrasi Pantai Ciantir');
+          layerToggleBtn.setAttribute('title', 'Mode: Google Maps Murni (Ilustrasi Disembunyikan)');
+          layerToggleBtn.classList.add('mode-hybrid');
+          layerToggleBtn.classList.remove('mode-google');
+        }
+      } else {
+        currentLayerMode = 'hybrid';
+        activeOverlay.setOpacity(0.92);
+        googleBaseTileLayer.setUrl('https://mt{s}.google.com/vt/lyrs=y&apistyle=s.t:33|p.v:off&x={x}&y={y}&z={z}');
+        if (layerToggleBtn) {
+          layerToggleBtn.setAttribute('title', 'Mode: Google Hybrid + Ilustrasi Pantai Ciantir');
           layerToggleBtn.classList.remove('mode-hybrid', 'mode-google');
         }
       }
