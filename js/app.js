@@ -54,11 +54,13 @@
   let facilitiesData = [];
   let markersLayer = {};
   let illustrationOverlay = null;
+  let illustrationTileLayer = null;  // Tile pyramid overlay
   let googleBaseTileLayer = null;
   let currentActiveMarkerId = null;
   let currentActivePolyline = null;
   let currentFilter = 'all';
   let currentLayerMode = 'illustration'; // 'illustration', 'hybrid', 'google'
+  let searchDebounceTimer = null;
 
   // Threshold Zoom Level di koordinat geografis
   // zoom < 16.5 = Tampilan Keseluruhan Makro (Kawasan)
@@ -85,6 +87,12 @@
   const sheetTags = document.getElementById('sheet-tags');
   const btnShowTrail = document.getElementById('btn-show-trail');
   const btnOpenGmaps = document.getElementById('btn-open-gmaps');
+  const sheetThumbnailWrap = document.getElementById('sheet-thumbnail-wrap');
+  const sheetThumbnailImg = document.getElementById('sheet-thumbnail');
+
+  const searchInput = document.getElementById('search-input');
+  const searchClearBtn = document.getElementById('search-clear-btn');
+  const searchDropdown = document.getElementById('search-dropdown');
 
   const btnHelp = document.getElementById('btn-help');
   const btnLegend = document.getElementById('btn-legend');
@@ -109,6 +117,7 @@
       setupGeographicMap();
       renderAllMarkers();
       updateLODVisibility();
+      setupSearch();
       setupEventHandlers();
 
     } catch (error) {
@@ -122,21 +131,20 @@
     }
   }
 
-  // --- SETUP GEOGRAPHIC LEAFLET MAP WITH GOOGLE MAPS BASELINE ---
+  // --- SETUP GEOGRAPHIC LEAFLET MAP WITH GOOGLE MAPS BASELINE + TILE OVERLAY ---
   function setupGeographicMap() {
     const { geoBounds, view } = mapConfig;
 
     // Batas Geografis Kawasan Pantai Ciantir
-    // South-West: [south, west], North-East: [north, east]
-    const bounds = L.latLngBounds(
+    const illustrationBounds = L.latLngBounds(
       [geoBounds.south, geoBounds.west],
       [geoBounds.north, geoBounds.east]
     );
 
-    // Padding batas agar eksplorasi tetap nyaman namun tidak keluar kawasan
+    // Batas maksimum navigasi (sedikit lebih luas dari ilustrasi)
     const maxBounds = L.latLngBounds(
-      [geoBounds.south - 0.0025, geoBounds.west - 0.0025],
-      [geoBounds.north + 0.0025, geoBounds.east + 0.0025]
+      [geoBounds.south - 0.002, geoBounds.west - 0.002],
+      [geoBounds.north + 0.002, geoBounds.east + 0.002]
     );
 
     map = L.map('map', {
@@ -150,22 +158,36 @@
       maxBoundsViscosity: view.maxBoundsViscosity || 0.95
     });
 
-    // 1. BASELINE LAYER: Google Maps Hybrid (Satelit + Jalan Resmi)
-    googleBaseTileLayer = L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+    // 1. BASELINE LAYER: Google Maps Hybrid (Satelit + Label Jalan)
+    googleBaseTileLayer = L.tileLayer('https://mt{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
       maxZoom: 20,
-      subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
+      subdomains: ['0', '1', '2', '3'],
       alt: 'Google Maps Baseline'
     }).addTo(map);
 
-    // 2. OVERLAY LAYER: Peta Ilustrasi Vektor Kawasan Pantai Ciantir
-    illustrationOverlay = L.imageOverlay(mapConfig.image, bounds, {
-      alt: mapConfig.name,
-      interactive: true,
-      opacity: 0.94,
-      zIndex: 10
-    }).addTo(map);
+    // 2. OVERLAY A: Tile Pyramid Ilustrasi (jika tiles sudah digenerate)
+    //    Fallback ke single imageOverlay jika tile tidak tersedia
+    if (mapConfig.tilesPath) {
+      illustrationTileLayer = L.tileLayer(mapConfig.tilesPath + '/{z}/{x}/{y}.png', {
+        tms: true,
+        opacity: 0.92,
+        maxZoom: view.maxZoom,
+        minZoom: view.minZoom,
+        bounds: illustrationBounds,
+        zIndex: 10,
+        errorTileUrl: ''
+      }).addTo(map);
+    } else {
+      // Fallback: single SVG ImageOverlay
+      illustrationOverlay = L.imageOverlay(mapConfig.image, illustrationBounds, {
+        alt: mapConfig.name,
+        interactive: true,
+        opacity: 0.92,
+        zIndex: 10
+      }).addTo(map);
+    }
 
-    map.fitBounds(bounds);
+    map.fitBounds(illustrationBounds);
 
     setTimeout(() => {
       map.invalidateSize();
@@ -174,6 +196,11 @@
     map.on('zoomend', () => {
       updateLODVisibility();
     });
+  }
+
+  // Helper: get active overlay reference (tile layer or image overlay)
+  function getActiveOverlay() {
+    return illustrationTileLayer || illustrationOverlay;
   }
 
   // --- RENDER ALL MARKERS (REAL GEOGRAPHIC LAT/LNG) ---
@@ -301,6 +328,25 @@
     const iconSvg = getIconSvg(fac.icon, fac.category);
     const catInfo = CATEGORY_MAP[fac.category] || CATEGORY_MAP.all;
 
+    // --- THUMBNAIL ---
+    const sheetThumbnailWrap = document.getElementById('sheet-thumbnail-wrap');
+    const sheetThumbnailImg = document.getElementById('sheet-thumbnail');
+    if (sheetThumbnailWrap && sheetThumbnailImg && fac.thumbnail) {
+      sheetThumbnailImg.src = fac.thumbnail;
+      sheetThumbnailImg.alt = fac.name;
+      sheetThumbnailImg.onerror = () => {
+        // If thumbnail fails to load, hide the wrap gracefully
+        sheetThumbnailWrap.hidden = true;
+      };
+      sheetThumbnailImg.onload = () => {
+        sheetThumbnailWrap.hidden = false;
+      };
+      // Start loading
+      sheetThumbnailWrap.hidden = true; // hide until loaded
+    } else if (sheetThumbnailWrap) {
+      sheetThumbnailWrap.hidden = true;
+    }
+
     sheetCategory.innerHTML = `<span class="sheet-cat-svg">${iconSvg}</span><span>${fac.categoryLabel || catInfo.label}</span>`;
     sheetTitle.textContent = fac.name;
     sheetHours.textContent = fac.hours ? fac.hours : 'Buka setiap hari';
@@ -373,33 +419,152 @@
 
   // --- TOGGLE LAYER BASELINE & OVERLAY ---
   function toggleLayerMode() {
+    const overlay = illustrationTileLayer || illustrationOverlay;
+    if (!overlay) return;
+
     if (currentLayerMode === 'illustration') {
-      // Beralih ke Mode Hybrid (Ilustrasi semi-transparan di atas Google Satelit)
       currentLayerMode = 'hybrid';
-      illustrationOverlay.setOpacity(0.55);
+      overlay.setOpacity(0.55);
       if (layerToggleBtn) {
         layerToggleBtn.setAttribute('title', 'Mode: Hybrid (Ilustrasi + Satelit Google)');
         layerToggleBtn.classList.add('mode-hybrid');
         layerToggleBtn.classList.remove('mode-google');
       }
     } else if (currentLayerMode === 'hybrid') {
-      // Beralih ke Mode Google Satelit murni
       currentLayerMode = 'google';
-      illustrationOverlay.setOpacity(0.05);
+      overlay.setOpacity(0.05);
       if (layerToggleBtn) {
         layerToggleBtn.setAttribute('title', 'Mode: Satelit Google Maps Asli');
         layerToggleBtn.classList.add('mode-google');
         layerToggleBtn.classList.remove('mode-hybrid');
       }
     } else {
-      // Kembali ke Mode Peta Ilustrasi utama
       currentLayerMode = 'illustration';
-      illustrationOverlay.setOpacity(0.94);
+      overlay.setOpacity(0.92);
       if (layerToggleBtn) {
         layerToggleBtn.setAttribute('title', 'Mode: Peta Ilustrasi Pantai Ciantir');
         layerToggleBtn.classList.remove('mode-hybrid', 'mode-google');
       }
     }
+  }
+
+  // --- SEARCH FUNCTIONALITY ---
+  function setupSearch() {
+    if (!searchInput) return;
+
+    searchInput.addEventListener('input', () => {
+      clearTimeout(searchDebounceTimer);
+      const q = searchInput.value.trim();
+      if (searchClearBtn) searchClearBtn.hidden = q.length === 0;
+      if (q.length < 2) {
+        hideSearchDropdown();
+        return;
+      }
+      searchDebounceTimer = setTimeout(() => performSearch(q), 180);
+    });
+
+    searchInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        clearSearch();
+      } else if (e.key === 'Enter') {
+        const firstItem = searchDropdown && searchDropdown.querySelector('li[role="option"]');
+        if (firstItem) firstItem.click();
+      } else if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        const items = searchDropdown ? searchDropdown.querySelectorAll('li[role="option"]') : [];
+        if (items.length > 0) items[0].focus();
+      }
+    });
+
+    if (searchClearBtn) {
+      searchClearBtn.addEventListener('click', clearSearch);
+    }
+
+    // Click outside to close
+    document.addEventListener('click', (e) => {
+      if (searchInput && !searchInput.contains(e.target) && searchDropdown && !searchDropdown.contains(e.target)) {
+        hideSearchDropdown();
+      }
+    });
+  }
+
+  function performSearch(query) {
+    const q = query.toLowerCase();
+    const results = facilitiesData.filter(fac => {
+      return (
+        fac.name.toLowerCase().includes(q) ||
+        fac.shortDesc.toLowerCase().includes(q) ||
+        (fac.categoryLabel && fac.categoryLabel.toLowerCase().includes(q)) ||
+        (fac.tags && fac.tags.some(t => t.toLowerCase().includes(q)))
+      );
+    }).slice(0, 7);
+
+    renderSearchDropdown(results, query);
+  }
+
+  function renderSearchDropdown(results, query) {
+    if (!searchDropdown) return;
+    searchDropdown.innerHTML = '';
+
+    if (results.length === 0) {
+      const li = document.createElement('li');
+      li.className = 'search-no-result';
+      li.textContent = `Fasilitas "${query}" tidak ditemukan`;
+      searchDropdown.appendChild(li);
+    } else {
+      results.forEach(fac => {
+        const li = document.createElement('li');
+        li.setAttribute('role', 'option');
+        li.setAttribute('tabindex', '0');
+        li.className = 'search-result-item';
+
+        const catInfo = CATEGORY_MAP[fac.category] || CATEGORY_MAP.all;
+        const iconSvg = getIconSvg(fac.icon, fac.category);
+
+        li.innerHTML = `
+          <span class="search-result-icon" style="background:${catInfo.color};">${iconSvg}</span>
+          <span class="search-result-text">
+            <span class="search-result-name">${highlightMatch(fac.name, query)}</span>
+            <span class="search-result-cat">${fac.categoryLabel || catInfo.label}</span>
+          </span>
+        `;
+
+        const handleSelect = () => {
+          clearSearch();
+          closeBottomSheet();
+          // Pan and zoom to the facility
+          const targetZoom = fac.lodLevel === 'macro' ? 17 : 18;
+          map.setView([fac.lat, fac.lng], targetZoom, { animate: true });
+          setTimeout(() => selectFacility(fac), 350);
+        };
+
+        li.addEventListener('click', handleSelect);
+        li.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleSelect(); }
+          if (e.key === 'ArrowDown') { e.preventDefault(); const next = li.nextElementSibling; if (next) next.focus(); }
+          if (e.key === 'ArrowUp') { e.preventDefault(); const prev = li.previousElementSibling; if (prev) prev.focus(); else searchInput.focus(); }
+        });
+
+        searchDropdown.appendChild(li);
+      });
+    }
+
+    searchDropdown.hidden = false;
+  }
+
+  function highlightMatch(text, query) {
+    const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return text.replace(new RegExp(`(${escaped})`, 'gi'), '<mark>$1</mark>');
+  }
+
+  function hideSearchDropdown() {
+    if (searchDropdown) searchDropdown.hidden = true;
+  }
+
+  function clearSearch() {
+    if (searchInput) searchInput.value = '';
+    if (searchClearBtn) searchClearBtn.hidden = true;
+    hideSearchDropdown();
   }
 
   // --- FILTER CHIPS LOGIC ---

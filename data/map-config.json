@@ -2,8 +2,9 @@
   "mapId": "pantai-ciantir-sawarna",
   "name": "Kawasan Wisata Pantai Ciantir Sawarna",
   "subtitle": "Peta Kawasan Pesisir, Homestay Desa, & Sentra UMKM",
-  "version": "2.0.0-geographic-baseline",
+  "version": "3.0.0-tile-pyramid",
   "image": "assets/maps/pantai-ciantir-map.svg",
+  "tilesPath": "assets/maps/tiles",
   "dimensions": {
     "width": 1400,
     "height": 900

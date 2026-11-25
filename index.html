@@ -55,6 +55,24 @@
       </div>
     </div>
 
+    <!-- SEARCH BAR -->
+    <div class="search-bar-wrap" role="search">
+      <div class="search-input-row">
+        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <input id="search-input" type="search" class="search-input" placeholder="Cari fasilitas, homestay, warung..." autocomplete="off" aria-label="Cari fasilitas wisata Pantai Ciantir" inputmode="search">
+        <button id="search-clear-btn" class="search-clear-btn" aria-label="Hapus pencarian" hidden>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+      <ul id="search-dropdown" class="search-dropdown" role="listbox" aria-label="Hasil pencarian" hidden></ul>
+    </div>
+
     <!-- HORIZONTAL FILTER BAR (CHIPS DENGAN SVG VECTOR) -->
     <nav class="filter-bar" aria-label="Filter Kategori Kawasan Ciantir">
       <button class="filter-chip active" data-category="all">
@@ -166,6 +184,11 @@
     <div class="sheet-drag-area">
       <div class="sheet-handle"></div>
     </div>
+    <!-- THUMBNAIL HERO IMAGE -->
+    <div id="sheet-thumbnail-wrap" class="sheet-thumbnail-wrap" hidden>
+      <img id="sheet-thumbnail" class="sheet-thumbnail" src="" alt="" loading="lazy">
+      <div class="sheet-thumbnail-overlay"></div>
+    </div>
     <div class="sheet-content">
       <div class="sheet-header">
         <div>
@@ -214,21 +237,29 @@
         <div class="help-step-item">
           <div class="help-step-num">1</div>
           <div class="help-step-text">
-            <h4>Tampilan Keseluruhan vs Detail</h4>
-            <p>Saat peta di-<strong>zoom out</strong>, Anda melihat ikon penanda kawasan umum. <strong>Perbesar (zoom in)</strong> untuk menampilkan ikon detail masing-masing penginapan, warung, kamar bilas, dan pos keselamatan.</p>
+            <h4>Cari Fasilitas (Search)</h4>
+            <p>Ketik nama homestay, warung, atau fasilitas di <strong>kotak pencarian</strong> di bagian atas. Peta akan otomatis bergerak ke titik yang dipilih dan membuka panel informasinya.</p>
           </div>
         </div>
 
         <div class="help-step-item">
           <div class="help-step-num">2</div>
           <div class="help-step-text">
-            <h4>Kebijakan Akses Kendaraan</h4>
-            <p>Mobil wajib parkir di <strong>Kantong Parkir Mobil Utama</strong> di seberang jembatan. Pengunjung melanjutkan perjalanan jalan kaki atau motor melintasi <strong>Jembatan Gantung Cisawarna</strong> (tiket masuk Rp5.000/orang).</p>
+            <h4>Tampilan Kawasan vs Detail</h4>
+            <p>Saat peta di-<strong>zoom out</strong>, tampil ikon penanda kawasan besar. <strong>Perbesar (zoom in)</strong> untuk menampilkan ikon detail per fasilitas: homestay, warung, kamar bilas, pos keselamatan.</p>
           </div>
         </div>
 
         <div class="help-step-item">
           <div class="help-step-num">3</div>
+          <div class="help-step-text">
+            <h4>Ganti Lapisan Peta</h4>
+            <p>Gunakan tombol <strong>layer</strong> (ikon tumpukan) di kanan bawah untuk beralih antara <em>Peta Ilustrasi</em>, <em>Hybrid (Ilustrasi + Satelit)</em>, dan <em>Google Satelit Murni</em>.</p>
+          </div>
+        </div>
+
+        <div class="help-step-item">
+          <div class="help-step-num">4</div>
           <div class="help-step-text">
             <h4>Panduan Rute Jalan Desa</h4>
             <p>Tekan tombol <em>"Tunjukkan Jalur dari Jembatan Gantung"</em> pada detail fasilitas untuk melihat panduan rute jalan desa melewati pemukiman Cikaung menuju pantai.</p>
@@ -236,10 +267,10 @@
         </div>
 
         <div class="help-step-item">
-          <div class="help-step-num">4</div>
+          <div class="help-step-num">5</div>
           <div class="help-step-text">
-            <h4>Layar Penuh (Fullscreen)</h4>
-            <p>Gunakan tombol kotak di pojok kanan bawah untuk mengaktifkan mode layar penuh agar eksplorasi peta lebih leluasa.</p>
+            <h4>Kebijakan Akses Kendaraan</h4>
+            <p>Mobil wajib parkir di <strong>Kantong Parkir Mobil Utama</strong> di seberang jembatan. Pengunjung melanjutkan jalan kaki atau motor melalui <strong>Jembatan Gantung Cisawarna</strong> (tiket masuk Rp5.000/orang).</p>
           </div>
         </div>
       </div>
