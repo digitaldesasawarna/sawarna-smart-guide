@@ -1,0 +1,25 @@
+{
+  "mapId": "sawarna-pilot-beach",
+  "name": "Kawasan Wisata Pantai Sawarna",
+  "subtitle": "Peta Ilustrasi Panduan Wisata Digital",
+  "version": "1.0.0-mvp",
+  "image": "assets/maps/sawarna-pilot-map.svg",
+  "dimensions": {
+    "width": 1200,
+    "height": 800
+  },
+  "view": {
+    "initialCenter": [380, 580],
+    "initialZoom": 0,
+    "minZoom": -0.8,
+    "maxZoom": 2.2,
+    "maxBoundsViscosity": 0.85
+  },
+  "entrance": {
+    "id": "gate-main",
+    "name": "Pintu Masuk & Loket Utama",
+    "x": 260,
+    "y": 660,
+    "label": "Anda Memulai dari Sini"
+  }
+}

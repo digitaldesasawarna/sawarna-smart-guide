@@ -1,0 +1,777 @@
+/* ========================================================
+   SAWARNA SMART GUIDE - CSS STYLESHEET (FASE 1 MVP)
+   Design System: Coastal Minimalist & Mobile-First
+   Tokens from PRD Section 5.3 + Installed Interface Skills
+   ======================================================== */
+
+:root {
+  /* Coastal Palette */
+  --color-ocean: #56B8D0;
+  --color-ocean-dark: #2878B8;
+  --color-ocean-deep: #183B50;
+  --color-sand: #F2DEAD;
+  --color-sand-dark: #dfc58e;
+  --color-vegetation: #A7C78B;
+  --color-wood: #C5A47E;
+  --color-alert: #E8A23A;
+  --color-danger: #C94747;
+
+  /* UI Tokens */
+  --color-bg-app: #f2f7f9;
+  --color-surface: #ffffff;
+  --color-surface-translucent: rgba(255, 255, 255, 0.94);
+  --color-text-main: #183B50;
+  --color-text-muted: #536e7e;
+  --color-text-light: #899fae;
+  --color-border: rgba(40, 120, 184, 0.16);
+
+  /* Elevation Shadows */
+  --shadow-sm: 0 2px 8px rgba(24, 59, 80, 0.08);
+  --shadow-md: 0 6px 18px rgba(24, 59, 80, 0.12);
+  --shadow-lg: 0 16px 36px rgba(24, 59, 80, 0.16);
+  --shadow-sheet: 0 -10px 40px rgba(24, 59, 80, 0.2);
+
+  /* Radius */
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-full: 9999px;
+
+  /* Motion Curves (better-motion) */
+  --ease-spring: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  --ease-smooth: cubic-bezier(0.25, 1, 0.5, 1);
+  --duration-fast: 0.18s;
+  --duration-normal: 0.32s;
+}
+
+/* Reset & Base */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  color: var(--color-text-main);
+  background-color: var(--color-bg-app);
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ========================================================
+   HEADER & NAVIGATION BAR
+   ======================================================== */
+.app-header {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  padding: 0.75rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  pointer-events: none;
+}
+
+.header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.brand-badge {
+  pointer-events: auto;
+  background: var(--color-surface-translucent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  padding: 0.5rem 0.95rem;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-md);
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  text-decoration: none;
+  color: inherit;
+}
+
+.brand-logo-dot {
+  width: 10px;
+  height: 10px;
+  background: linear-gradient(135deg, var(--color-ocean), var(--color-ocean-dark));
+  border-radius: 50%;
+  box-shadow: 0 0 0 3px rgba(86, 184, 208, 0.3);
+}
+
+.brand-title {
+  font-size: 0.925rem;
+  font-weight: 800;
+  color: var(--color-ocean-deep);
+  letter-spacing: -0.01em;
+}
+
+.brand-sub {
+  font-size: 0.725rem;
+  color: var(--color-ocean-dark);
+  font-weight: 600;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  pointer-events: auto;
+}
+
+.icon-btn {
+  background: var(--color-surface-translucent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--color-border);
+  color: var(--color-ocean-deep);
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  transition: transform var(--duration-fast) var(--ease-spring), background var(--duration-fast);
+}
+
+.icon-btn:hover {
+  transform: translateY(-2px);
+  background: #ffffff;
+  color: var(--color-ocean-dark);
+}
+
+.icon-btn:active {
+  transform: scale(0.92);
+}
+
+.icon-btn svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* ========================================================
+   CATEGORY FILTER CHIPS BAR
+   ======================================================== */
+.filter-bar {
+  pointer-events: auto;
+  display: flex;
+  gap: 0.45rem;
+  overflow-x: auto;
+  padding: 0.2rem 0.2rem 0.4rem;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.filter-bar::-webkit-scrollbar {
+  display: none;
+}
+
+.filter-chip {
+  background: var(--color-surface-translucent);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  padding: 0.4rem 0.85rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-text-main);
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: var(--shadow-sm);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  transition: all var(--duration-fast) ease;
+}
+
+.filter-chip:hover {
+  background: #ffffff;
+  color: var(--color-ocean-dark);
+}
+
+.filter-chip.active {
+  background: var(--color-ocean-deep);
+  color: #ffffff;
+  border-color: var(--color-ocean-deep);
+  box-shadow: 0 4px 12px rgba(24, 59, 80, 0.25);
+  transform: translateY(-1px);
+}
+
+/* ========================================================
+   MAP CONTAINER & LEAFLET CUSTOMIZATION
+   ======================================================== */
+#map-container {
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  position: relative;
+  background-color: #3aaec9;
+}
+
+#map {
+  width: 100%;
+  height: 100%;
+  background-color: transparent !important;
+}
+
+/* Hide default leaflet watermark */
+.leaflet-control-attribution {
+  display: none !important;
+}
+
+/* ========================================================
+   FLOATING MAP CONTROLS
+   ======================================================== */
+.map-controls {
+  position: absolute;
+  right: 1rem;
+  bottom: 2rem;
+  z-index: 990;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.control-btn {
+  width: 44px;
+  height: 44px;
+  background: var(--color-surface-translucent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-ocean-deep);
+  cursor: pointer;
+  box-shadow: var(--shadow-md);
+  transition: all var(--duration-fast) var(--ease-spring);
+}
+
+.control-btn:hover {
+  background: #ffffff;
+  transform: translateY(-2px);
+  color: var(--color-ocean-dark);
+}
+
+.control-btn:active {
+  transform: scale(0.9);
+}
+
+.control-btn svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* ========================================================
+   CUSTOM MAP MARKERS
+   ======================================================== */
+.custom-pin {
+  cursor: pointer;
+  position: relative;
+  transition: transform var(--duration-normal) var(--ease-spring);
+}
+
+.custom-pin:hover {
+  transform: scale(1.15) translateY(-4px);
+  z-index: 1000 !important;
+}
+
+.custom-pin.active {
+  transform: scale(1.22) translateY(-6px);
+  z-index: 1000 !important;
+}
+
+.pin-bubble {
+  width: 38px;
+  height: 38px;
+  border-radius: 50% 50% 50% 4px;
+  transform: rotate(-45deg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #ffffff;
+  border: 2.5px solid var(--color-ocean-dark);
+  box-shadow: 0 4px 14px rgba(24, 59, 80, 0.28);
+  position: relative;
+}
+
+.pin-icon {
+  transform: rotate(45deg);
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+}
+
+/* Category Colors for Pins */
+.pin-access .pin-bubble {
+  background: #C94747;
+  border-color: #ffffff;
+  color: #ffffff;
+}
+
+.pin-attraction .pin-bubble {
+  background: #2878B8;
+  border-color: #ffffff;
+  color: #ffffff;
+}
+
+.pin-culinary .pin-bubble {
+  background: #E8A23A;
+  border-color: #ffffff;
+  color: #ffffff;
+}
+
+.pin-worship .pin-bubble {
+  background: #4a9e52;
+  border-color: #ffffff;
+  color: #ffffff;
+}
+
+.pin-sanitation .pin-bubble {
+  background: #4fb3cb;
+  border-color: #ffffff;
+  color: #ffffff;
+}
+
+.pin-transport .pin-bubble {
+  background: #75553a;
+  border-color: #ffffff;
+  color: #ffffff;
+}
+
+.pin-safety .pin-bubble {
+  background: #dc3545;
+  border-color: #ffffff;
+  color: #ffffff;
+}
+
+.pin-umkm .pin-bubble {
+  background: #9059b5;
+  border-color: #ffffff;
+  color: #ffffff;
+}
+
+/* Entrance Gate Pulsing Beacon */
+.entrance-beacon {
+  position: relative;
+  cursor: pointer;
+}
+
+.beacon-pulse {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 50px;
+  height: 50px;
+  background: rgba(201, 71, 71, 0.35);
+  border-radius: 50%;
+  animation: beaconPulse 2s infinite ease-out;
+}
+
+@keyframes beaconPulse {
+  0% { transform: translate(-50%, -50%) scale(0.6); opacity: 0.9; }
+  100% { transform: translate(-50%, -50%) scale(1.6); opacity: 0; }
+}
+
+.beacon-label {
+  position: absolute;
+  top: 42px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(24, 59, 80, 0.92);
+  color: #ffffff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.25rem 0.6rem;
+  border-radius: var(--radius-full);
+  white-space: nowrap;
+  box-shadow: var(--shadow-sm);
+  pointer-events: none;
+}
+
+/* Dimmed Pin state during filtering */
+.custom-pin.dimmed {
+  opacity: 0.25;
+  filter: grayscale(0.8);
+  pointer-events: none;
+}
+
+/* Animated Path Trail from Entrance */
+.animated-trail {
+  stroke-dasharray: 8, 8;
+  animation: dashAnimation 1.5s linear infinite;
+}
+
+@keyframes dashAnimation {
+  to {
+    stroke-dashoffset: -32;
+  }
+}
+
+/* ========================================================
+   BOTTOM SHEET DRAWER (MODERN UX)
+   ======================================================== */
+.bottom-sheet-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(24, 59, 80, 0.35);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 1100;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--duration-normal) ease;
+}
+
+.bottom-sheet-backdrop.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.bottom-sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1110;
+  background: var(--color-surface);
+  border-radius: 24px 24px 0 0;
+  box-shadow: var(--shadow-sheet);
+  border-top: 1px solid rgba(86, 184, 208, 0.25);
+  transform: translateY(105%);
+  transition: transform var(--duration-normal) var(--ease-spring);
+  max-height: 82vh;
+  display: flex;
+  flex-direction: column;
+  max-width: 620px;
+  margin: 0 auto;
+}
+
+.bottom-sheet.open {
+  transform: translateY(0);
+}
+
+.sheet-drag-area {
+  padding: 0.85rem 0 0.5rem;
+  display: flex;
+  justify-content: center;
+  cursor: grab;
+}
+
+.sheet-handle {
+  width: 44px;
+  height: 5px;
+  background: #d8e2e8;
+  border-radius: var(--radius-full);
+}
+
+.sheet-content {
+  padding: 0 1.5rem 1.75rem;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.sheet-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.sheet-category-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: rgba(40, 120, 184, 0.1);
+  color: var(--color-ocean-dark);
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.25rem 0.65rem;
+  border-radius: var(--radius-full);
+  margin-bottom: 0.4rem;
+}
+
+.sheet-title {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--color-ocean-deep);
+  line-height: 1.3;
+}
+
+.sheet-close-btn {
+  background: #f0f4f7;
+  border: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all var(--duration-fast);
+}
+
+.sheet-close-btn:hover {
+  background: #e2eaf0;
+  color: var(--color-ocean-deep);
+}
+
+.sheet-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  margin-bottom: 1rem;
+}
+
+.sheet-meta-item {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.sheet-desc {
+  font-size: 0.925rem;
+  color: var(--color-text-main);
+  line-height: 1.55;
+  margin-bottom: 1.25rem;
+}
+
+.sheet-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-bottom: 1.5rem;
+}
+
+.sheet-tag-item {
+  background: #f4f8fa;
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.3rem 0.65rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(86, 184, 208, 0.15);
+}
+
+.sheet-actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.btn-primary {
+  flex: 1;
+  background: linear-gradient(135deg, var(--color-ocean-dark) 0%, #1e5e8e 100%);
+  color: #ffffff;
+  border: none;
+  border-radius: var(--radius-md);
+  padding: 0.85rem 1rem;
+  font-size: 0.9rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(40, 120, 184, 0.3);
+  transition: all var(--duration-fast) var(--ease-spring);
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(40, 120, 184, 0.4);
+}
+
+.btn-primary:active {
+  transform: scale(0.97);
+}
+
+/* ========================================================
+   MODALS (BANTUAN & LEGENDA)
+   ======================================================== */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(24, 59, 80, 0.45);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  z-index: 1200;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--duration-normal) ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem;
+}
+
+.modal-overlay.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.modal-dialog {
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--color-border);
+  width: 100%;
+  max-width: 480px;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transform: scale(0.92);
+  transition: transform var(--duration-normal) var(--ease-spring);
+}
+
+.modal-overlay.open .modal-dialog {
+  transform: scale(1);
+}
+
+.modal-header {
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid rgba(86, 184, 208, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.modal-title {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--color-ocean-deep);
+}
+
+.modal-body {
+  padding: 1.25rem 1.5rem;
+  overflow-y: auto;
+}
+
+.legend-list {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.85rem;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  font-size: 0.825rem;
+  font-weight: 600;
+  color: var(--color-text-main);
+}
+
+.legend-icon-badge {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  flex-shrink: 0;
+  color: #ffffff;
+}
+
+/* Help Guide Cards */
+.help-step-item {
+  display: flex;
+  gap: 0.85rem;
+  margin-bottom: 1rem;
+}
+
+.help-step-num {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(40, 120, 184, 0.12);
+  color: var(--color-ocean-dark);
+  font-weight: 800;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.help-step-text h4 {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--color-ocean-deep);
+  margin-bottom: 0.2rem;
+}
+
+.help-step-text p {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  line-height: 1.45;
+}
+
+/* ========================================================
+   RESPONSIVE TWEAKS FOR MOBILE & DESKTOP
+   ======================================================== */
+@media (min-width: 768px) {
+  .app-header {
+    padding: 1.25rem 2rem;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .filter-bar {
+    padding: 0;
+  }
+
+  .map-controls {
+    right: 2rem;
+    bottom: 2.5rem;
+  }
+
+  .bottom-sheet {
+    border-radius: 24px;
+    bottom: 2rem;
+    left: 2rem;
+    right: auto;
+    width: 400px;
+    box-shadow: var(--shadow-lg);
+    border: 1px solid var(--color-border);
+    transform: translateY(120%);
+  }
+
+  .bottom-sheet.open {
+    transform: translateY(0);
+  }
+}

@@ -2,423 +2,248 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sawarna Smart Guide — Dalam Pengembangan</title>
-  <meta name="description" content="Sawarna Smart Guide — Peta Ilustrasi Kawasan Wisata Interaktif Berbasis Web untuk Desa Sawarna. Sedang dalam tahap pengembangan.">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Sawarna Smart Guide — Peta Panduan Wisata Interaktif</title>
+  <meta name="description" content="Peta ilustrasi kawasan wisata interaktif Desa Sawarna. Temukan mushola, toilet, warung kuliner, spot foto karang, dan fasilitas penting tanpa perlu instal aplikasi.">
+  <meta name="theme-color" content="#183B50">
+
+  <!-- Google Fonts: Plus Jakarta Sans -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <style>
-    :root {
-      --color-ocean: #56B8D0;
-      --color-ocean-dark: #2878B8;
-      --color-sand: #F2DEAD;
-      --color-vegetation: #A7C78B;
-      --color-wood: #C5A47E;
-      --color-dark: #183B50;
-      --color-text-muted: #536e7e;
-      --color-bg-card: rgba(255, 255, 255, 0.94);
-      --color-border: rgba(86, 184, 208, 0.25);
-      --color-accent-amber: #E8A23A;
-      --shadow-sm: 0 4px 12px rgba(24, 59, 80, 0.08);
-      --shadow-lg: 0 20px 40px rgba(24, 59, 80, 0.12);
-    }
 
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
 
-    body {
-      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      color: var(--color-dark);
-      background: linear-gradient(175deg, #eaf6fa 0%, #f7f3e8 50%, #eff7ea 100%);
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      position: relative;
-      overflow-x: hidden;
-      line-height: 1.6;
-    }
-
-    /* Ambient background wave patterns */
-    .bg-decorations {
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      pointer-events: none;
-      overflow: hidden;
-      z-index: 0;
-    }
-
-    .circle-glow {
-      position: absolute;
-      border-radius: 50%;
-      filter: blur(80px);
-      opacity: 0.55;
-    }
-
-    .glow-ocean {
-      top: -100px;
-      right: -80px;
-      width: 380px;
-      height: 380px;
-      background: var(--color-ocean);
-    }
-
-    .glow-sand {
-      bottom: 10%;
-      left: -120px;
-      width: 420px;
-      height: 420px;
-      background: var(--color-sand);
-    }
-
-    .glow-green {
-      top: 45%;
-      right: -100px;
-      width: 300px;
-      height: 300px;
-      background: var(--color-vegetation);
-      opacity: 0.35;
-    }
-
-    /* Main Container */
-    .wrapper {
-      position: relative;
-      z-index: 1;
-      max-width: 820px;
-      margin: 0 auto;
-      padding: 3rem 1.25rem 2.5rem;
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-    }
-
-    /* Status Badge */
-    .status-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-      background: #ffffff;
-      border: 1px solid rgba(86, 184, 208, 0.4);
-      padding: 0.45rem 1rem;
-      border-radius: 9999px;
-      font-size: 0.85rem;
-      font-weight: 600;
-      color: var(--color-ocean-dark);
-      box-shadow: var(--shadow-sm);
-      margin-bottom: 1.75rem;
-      backdrop-filter: blur(8px);
-    }
-
-    .status-pulse {
-      width: 9px;
-      height: 9px;
-      background: var(--color-accent-amber);
-      border-radius: 50%;
-      position: relative;
-      animation: pulse 2s infinite ease-in-out;
-    }
-
-    @keyframes pulse {
-      0% {
-        box-shadow: 0 0 0 0 rgba(232, 162, 58, 0.6);
-      }
-      70% {
-        box-shadow: 0 0 0 10px rgba(232, 162, 58, 0);
-      }
-      100% {
-        box-shadow: 0 0 0 0 rgba(232, 162, 58, 0);
-      }
-    }
-
-    /* Main Card */
-    .hero-card {
-      background: var(--color-bg-card);
-      border: 1px solid var(--color-border);
-      border-radius: 24px;
-      padding: 2.75rem 2.25rem;
-      text-align: center;
-      box-shadow: var(--shadow-lg);
-      backdrop-filter: blur(12px);
-      width: 100%;
-    }
-
-    .icon-container {
-      width: 76px;
-      height: 76px;
-      margin: 0 auto 1.5rem;
-      background: linear-gradient(135deg, #56B8D0 0%, #2878B8 100%);
-      border-radius: 22px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 10px 20px rgba(40, 120, 184, 0.3);
-      color: #ffffff;
-    }
-
-    .icon-container svg {
-      width: 40px;
-      height: 40px;
-    }
-
-    /* Main Title requested */
-    .hero-title {
-      font-size: 2rem;
-      font-weight: 800;
-      color: var(--color-dark);
-      letter-spacing: -0.025em;
-      line-height: 1.25;
-      margin-bottom: 0.75rem;
-    }
-
-    .hero-subtitle {
-      font-size: 1.05rem;
-      font-weight: 600;
-      color: var(--color-ocean-dark);
-      margin-bottom: 1rem;
-    }
-
-    .hero-desc {
-      font-size: 0.975rem;
-      color: var(--color-text-muted);
-      max-width: 580px;
-      margin: 0 auto 2rem;
-    }
-
-    /* Divider */
-    .divider {
-      height: 1px;
-      background: linear-gradient(90deg, transparent, rgba(86, 184, 208, 0.35), transparent);
-      margin: 2rem 0;
-    }
-
-    /* Preview Feature Cards */
-    .features-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 1.25rem;
-      text-align: left;
-    }
-
-    .feature-item {
-      background: rgba(255, 255, 255, 0.7);
-      border: 1px solid rgba(86, 184, 208, 0.2);
-      border-radius: 16px;
-      padding: 1.25rem 1rem;
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
-    }
-
-    .feature-item:hover {
-      transform: translateY(-2px);
-      box-shadow: var(--shadow-sm);
-      background: #ffffff;
-    }
-
-    .feature-icon-badge {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 36px;
-      height: 36px;
-      border-radius: 10px;
-      background: rgba(86, 184, 208, 0.15);
-      color: var(--color-ocean-dark);
-      margin-bottom: 0.75rem;
-    }
-
-    .feature-icon-badge svg {
-      width: 20px;
-      height: 20px;
-    }
-
-    .feature-item h3 {
-      font-size: 0.925rem;
-      font-weight: 700;
-      color: var(--color-dark);
-      margin-bottom: 0.35rem;
-    }
-
-    .feature-item p {
-      font-size: 0.8rem;
-      color: var(--color-text-muted);
-      line-height: 1.45;
-    }
-
-    /* Program Meta Box */
-    .meta-box {
-      margin-top: 1.75rem;
-      padding: 1rem 1.5rem;
-      background: #ffffff;
-      border-radius: 14px;
-      border: 1px dashed rgba(40, 120, 184, 0.3);
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      justify-content: space-around;
-      gap: 1rem;
-      font-size: 0.825rem;
-      color: var(--color-text-muted);
-    }
-
-    .meta-item {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-
-    .meta-item strong {
-      color: var(--color-dark);
-    }
-
-    /* Footer */
-    footer {
-      position: relative;
-      z-index: 1;
-      text-align: center;
-      padding: 1.5rem 1rem;
-      font-size: 0.8rem;
-      color: var(--color-text-muted);
-      border-top: 1px solid rgba(86, 184, 208, 0.15);
-    }
-
-    footer p + p {
-      margin-top: 0.25rem;
-      font-size: 0.75rem;
-      opacity: 0.85;
-    }
-
-    /* Responsive adjustments */
-    @media (max-width: 720px) {
-      .hero-card {
-        padding: 2rem 1.25rem;
-      }
-
-      .hero-title {
-        font-size: 1.55rem;
-      }
-
-      .hero-subtitle {
-        font-size: 0.95rem;
-      }
-
-      .features-grid {
-        grid-template-columns: 1fr;
-        gap: 0.85rem;
-      }
-
-      .meta-box {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 0.6rem;
-      }
-    }
-  </style>
+  <!-- Custom Stylesheet -->
+  <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-  <!-- Ambient background elements -->
-  <div class="bg-decorations" aria-hidden="true">
-    <div class="circle-glow glow-ocean"></div>
-    <div class="circle-glow glow-sand"></div>
-    <div class="circle-glow glow-green"></div>
-  </div>
 
-  <main class="wrapper">
-    <!-- Status Badge -->
-    <div class="status-badge">
-      <span class="status-pulse"></span>
-      Tahap Perencanaan & Pengembangan MVP
+  <!-- APP HEADER (FLOAT OVER MAP) -->
+  <header class="app-header">
+    <div class="header-top">
+      <div class="brand-badge">
+        <div class="brand-logo-dot"></div>
+        <div>
+          <h1 class="brand-title">Sawarna Smart Guide</h1>
+          <p class="brand-sub">Peta Panduan Wisata Digital</p>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <!-- Legenda Button -->
+        <button id="btn-legend" class="icon-btn" title="Legenda Simbol" aria-label="Buka Legenda Simbol">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="8" y1="6" x2="21" y2="6"></line>
+            <line x1="8" y1="12" x2="21" y2="12"></line>
+            <line x1="8" y1="18" x2="21" y2="18"></line>
+            <line x1="3" y1="6" x2="3.01" y2="6"></line>
+            <line x1="3" y1="12" x2="3.01" y2="12"></line>
+            <line x1="3" y1="18" x2="3.01" y2="18"></line>
+          </svg>
+        </button>
+
+        <!-- Bantuan Button -->
+        <button id="btn-help" class="icon-btn" title="Panduan Penggunaan" aria-label="Buka Panduan Penggunaan">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+            <line x1="12" y1="17" x2="12.01" y2="17"></line>
+          </svg>
+        </button>
+      </div>
     </div>
 
-    <!-- Main Card -->
-    <article class="hero-card">
-      <div class="icon-container" aria-hidden="true">
-        <!-- Map & Navigation Pin Icon -->
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"></polygon>
-          <line x1="9" y1="3" x2="9" y2="18"></line>
-          <line x1="15" y1="6" x2="15" y2="21"></line>
+    <!-- HORIZONTAL FILTER BAR -->
+    <nav class="filter-bar" aria-label="Filter Kategori Fasilitas">
+      <button class="filter-chip active" data-category="all">
+        <span>Semua</span>
+      </button>
+      <button class="filter-chip" data-category="attraction">
+        <span>📍 Spot Wisata</span>
+      </button>
+      <button class="filter-chip" data-category="culinary">
+        <span>🍽️ Kuliner & Kelapa</span>
+      </button>
+      <button class="filter-chip" data-category="worship">
+        <span>🕌 Ibadah</span>
+      </button>
+      <button class="filter-chip" data-category="sanitation">
+        <span>🚻 Sanitasi & Bilas</span>
+      </button>
+      <button class="filter-chip" data-category="transport">
+        <span>🅿️ Parkir</span>
+      </button>
+      <button class="filter-chip" data-category="umkm">
+        <span>🛍️ UMKM & Oleh-oleh</span>
+      </button>
+    </nav>
+  </header>
+
+  <!-- MAP CONTAINER -->
+  <main id="map-container">
+    <div id="map"></div>
+
+    <!-- FLOATING MAP CONTROLS -->
+    <aside class="map-controls">
+      <button id="btn-zoom-in" class="control-btn" title="Perbesar Peta" aria-label="Zoom in">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="12" y1="5" x2="12" y2="19"></line>
+          <line x1="5" y1="12" x2="19" y2="12"></line>
         </svg>
-      </div>
-
-      <!-- Required Heading Text -->
-      <h1 class="hero-title">Sawarna Smart Guide — Dalam Pengembangan</h1>
-      
-      <p class="hero-subtitle">Pengembangan Peta Ilustrasi Kawasan Wisata Interaktif Berbasis Web</p>
-      
-      <p class="hero-desc">
-        Platform panduan digital untuk memudahkan wisatawan mengeksplorasi fasilitas, titik penting, dan orientasi kawasan pantai di Desa Sawarna secara interaktif, ringan, dan ramah smartphone.
-      </p>
-
-      <div class="divider" role="separator"></div>
-
-      <!-- PRD Core Features Preview -->
-      <div class="features-grid">
-        <section class="feature-item">
-          <div class="feature-icon-badge" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-              <circle cx="8.5" cy="8.5" r="1.5"></circle>
-              <polyline points="21 15 16 10 5 21"></polyline>
-            </svg>
-          </div>
-          <h3>Peta Ilustrasi 2D</h3>
-          <p>Visualisasi kawasan pesisir ramah sentuh dengan dukungan zoom, pan, dan titik orientasi pintu masuk.</p>
-        </section>
-
-        <section class="feature-item">
-          <div class="feature-icon-badge" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-              <circle cx="12" cy="10" r="3"></circle>
-            </svg>
-          </div>
-          <h3>Marker Fasilitas</h3>
-          <p>Informasi detail mushola, toilet, warung kuliner, area parkir, hingga pos informasi tanpa pelacakan GPS.</p>
-        </section>
-
-        <section class="feature-item">
-          <div class="feature-icon-badge" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="2" y="2" width="8" height="8" rx="1"></rect>
-              <rect x="14" y="2" width="8" height="8" rx="1"></rect>
-              <rect x="2" y="14" width="8" height="8" rx="1"></rect>
-              <circle cx="18" cy="18" r="3"></circle>
-            </svg>
-          </div>
-          <h3>Akses Cepat QR Code</h3>
-          <p>Cukup pindai kode QR di gerbang masuk utama, langsung terbuka di browser tanpa wajib login atau unduh aplikasi.</p>
-        </section>
-      </div>
-
-      <!-- Project Metadata from PRD -->
-      <div class="meta-box">
-        <div class="meta-item">
-          <span>📍</span>
-          <span>Lokasi: <strong>Desa Sawarna, Kec. Bayah, Lebak, Banten</strong></span>
-        </div>
-        <div class="meta-item">
-          <span>🎓</span>
-          <span>Program Kerja: <strong>KKN — Divisi Informatika</strong></span>
-        </div>
-        <div class="meta-item">
-          <span>⚡</span>
-          <span>Arsitektur: <strong>Static Web App (Leaflet CRS.Simple)</strong></span>
-        </div>
-      </div>
-    </article>
+      </button>
+      <button id="btn-zoom-out" class="control-btn" title="Perkecil Peta" aria-label="Zoom out">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+        </svg>
+      </button>
+      <button id="btn-reset-view" class="control-btn" title="Tampilan Semula (Reset)" aria-label="Reset tampilan awal">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"></circle>
+          <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon>
+        </svg>
+      </button>
+    </aside>
   </main>
 
-  <!-- Footer -->
-  <footer>
-    <p>&copy; 2026 Sawarna Smart Guide &bull; Program Kerja KKN Divisi Informatika</p>
-    <p>Dokumentasi produk mengacu pada PRD_SMART_GUIDE.md v1.0</p>
-  </footer>
+  <!-- BOTTOM SHEET FACILITY DRAWER -->
+  <div id="sheet-backdrop" class="bottom-sheet-backdrop" aria-hidden="true"></div>
+  <section id="bottom-sheet" class="bottom-sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title">
+    <div class="sheet-drag-area">
+      <div class="sheet-handle"></div>
+    </div>
+    <div class="sheet-content">
+      <div class="sheet-header">
+        <div>
+          <span id="sheet-category" class="sheet-category-badge">Fasilitas</span>
+          <h2 id="sheet-title" class="sheet-title">Nama Fasilitas</h2>
+        </div>
+        <button id="sheet-close-btn" class="sheet-close-btn" aria-label="Tutup panel informasi">✕</button>
+      </div>
+
+      <div class="sheet-meta-row">
+        <span id="sheet-hours" class="sheet-meta-item">🕒 Jam Operasional</span>
+        <span class="sheet-meta-item" style="color:#2878B8;font-weight:700;">✓ Tervalidasi</span>
+      </div>
+
+      <p id="sheet-desc" class="sheet-desc">Deskripsi informasi lengkap fasilitas wisata.</p>
+
+      <div id="sheet-tags" class="sheet-tags">
+        <!-- Tag items injected via JS -->
+      </div>
+
+      <div class="sheet-actions">
+        <button id="btn-show-trail" class="btn-primary">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="9 18 15 12 9 6"></polyline>
+          </svg>
+          Tunjukkan Jalur dari Pintu Masuk
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- MODAL: PANDUAN PENGGUNAAN (FR-10) -->
+  <div id="help-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="help-modal-title">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 id="help-modal-title" class="modal-title">Cara Menggunakan Peta</h3>
+        <button class="modal-close-btn sheet-close-btn" aria-label="Tutup panduan">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="help-step-item">
+          <div class="help-step-num">1</div>
+          <div class="help-step-text">
+            <h4>Geser & Perbesar Peta</h4>
+            <p>Sentuh dan geser layar untuk mengeksplorasi kawasan pantai. Gunakan dua jari (pinch) atau tombol +/- di kanan bawah untuk zoom in/out.</p>
+          </div>
+        </div>
+
+        <div class="help-step-item">
+          <div class="help-step-num">2</div>
+          <div class="help-step-text">
+            <h4>Pilih Ikon Fasilitas</h4>
+            <p>Tekan simbol fasilitas (mushola, toilet, warung makan, spot karang) untuk melihat jam buka, deskripsi, dan info lokal.</p>
+          </div>
+        </div>
+
+        <div class="help-step-item">
+          <div class="help-step-num">3</div>
+          <div class="help-step-text">
+            <h4>Panduan Rute Visual</h4>
+            <p>Tekan tombol <em>"Tunjukkan Jalur dari Pintu Masuk"</em> untuk melihat garis arah dari gerbang kedatangan menuju fasilitas tujuan.</p>
+          </div>
+        </div>
+
+        <div class="help-step-item">
+          <div class="help-step-num">4</div>
+          <div class="help-step-text">
+            <h4>Privasi & Hemat Kuota</h4>
+            <p>Sistem ini merupakan peta ilustrasi digital tanpa meminta izin GPS dan tanpa registrasi akun, ringan serta ramah sinyal minim.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: LEGENDA SIMBOL (FR-09) -->
+  <div id="legend-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="legend-modal-title">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 id="legend-modal-title" class="modal-title">Legenda Simbol Fasilitas</h3>
+        <button class="modal-close-btn sheet-close-btn" aria-label="Tutup legenda">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="legend-list">
+          <div class="legend-item">
+            <div class="legend-icon-badge" style="background:#C94747;">🚪</div>
+            <span>Pintu Masuk & Loket</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-icon-badge" style="background:#2878B8;">📍</div>
+            <span>Spot Wisata & Karang</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-icon-badge" style="background:#E8A23A;">🍽️</div>
+            <span>Kuliner & Kelapa</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-icon-badge" style="background:#4a9e52;">🕌</div>
+            <span>Mushola / Ibadah</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-icon-badge" style="background:#4fb3cb;">🚻</div>
+            <span>Toilet & Kamar Bilas</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-icon-badge" style="background:#75553a;">🅿️</div>
+            <span>Area Parkir</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-icon-badge" style="background:#9059b5;">🛍️</div>
+            <span>Kios UMKM & Oleh-oleh</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-icon-badge" style="background:#C5A47E;">🛖</div>
+            <span>Saung / Gazebo</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-icon-badge" style="background:#dc3545;">🛟</div>
+            <span>Pos Pantau / Keselamatan</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-icon-badge" style="background:#56B8D0;">🗑️</div>
+            <span>Tempat Sampah</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <!-- Main Application Script -->
+  <script src="js/app.js"></script>
 </body>
 </html>
