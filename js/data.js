@@ -8,7 +8,7 @@
  */
 window.PETA = {
   config: {
-    pusat: [-6.9840, 106.3077],
+    pusat: [-6.9850, 106.3087], // tengah antara dua kawasan (UMKM & Homestay)
     zoomAwal: 17,
     zoomMin: 16,
     zoomMaks: 19,
@@ -23,7 +23,7 @@ window.PETA = {
   // Peta ilustrasi: tile WebP hasil tools/gen-ilustrasi.mjs + tools/render-tiles.mjs.
   // Batas HARUS sama dengan data/geografi.json → batasGambar. Zoom 19 hanya ada di kawasan inti.
   ilustrasi: {
-    tiles: "assets/tiles/{arah}/{z}/{x}/{y}.webp?v=iso1", // naikkan ?v= setiap tile dirender ulang (hindari cache lama) // satu set per arah pandang (0, 45, … 315)
+    tiles: "assets/tiles/{arah}/{z}/{x}/{y}.webp?v=iso3", // naikkan ?v= setiap tile dirender ulang (hindari cache lama) // satu set per arah pandang (0, 45, … 315)
     batas: [[-6.9960, 106.2960], [-6.9735, 106.3180]],
     marginInti: 0.0015,
   },
@@ -32,7 +32,7 @@ window.PETA = {
   label: [
     { teks: "Samudra Hindia", teks_en: "Indian Ocean", lokasi: [-6.9850, 106.3012], tipe: "laut", zoomMin: 16 },
     { teks: "Pantai Ciantir", teks_en: "Ciantir Beach", lokasi: [-6.9857, 106.3083], tipe: "alam", zoomMin: 18, putar: 58 },
-    { teks: "Sungai Cisawarna", teks_en: "Cisawarna River", lokasi: [-6.98035, 106.3125], tipe: "sungai", zoomMin: 17, putar: -2 },
+    { teks: "Sungai Cisawarna", teks_en: "Cisawarna River", lokasi: [-6.98017, 106.3127], tipe: "sungai", zoomMin: 17, putar: -2 },
     { teks: "Persawahan", teks_en: "Rice fields", lokasi: [-6.9822, 106.3135], tipe: "alam", zoomMin: 17 },
     { teks: "Perbukitan", teks_en: "Hills", lokasi: [-6.9905, 106.3135], tipe: "alam", zoomMin: 17 },
   ],
@@ -54,12 +54,12 @@ window.PETA = {
     [-6.99026, 106.30616], [-6.98270, 106.30231], [-6.98111, 106.30795],
   ],
 
-  // Zona (digambar di ilustrasi; poligon ini area kliknya)
+  // Kawasan: tampil sebagai satu marker saat peta jauh; titik di dalam poligonnya muncul saat zoom dekat
   zona: [
     {
       id: "zona-umkm",
       nama: "Kawasan UMKM Pantai", nama_en: "Beach market",
-      warna: "#E0674F",
+      warna: "#E0674F", ikon: "toko",
       label: [-6.9876, 106.3085],
       deskripsi: "Deretan warung, kuliner laut, sewa papan selancar, dan fasilitas bilas di sepanjang Pantai Ciantir.",
       deskripsi_en: "Food stalls, seafood, surfboard rentals and showers along Ciantir Beach.",
@@ -75,7 +75,7 @@ window.PETA = {
     {
       id: "zona-homestay",
       nama: "Kawasan Homestay", nama_en: "Homestay area",
-      warna: "#4E9F6A",
+      warna: "#4E9F6A", ikon: "rumah",
       label: [-6.98235, 106.3088],
       tautan: "visitSawarna", // homestay tidak punya pin; arahkan ke visitsawarna.com (PRD F2)
       deskripsi: "Rumah warga yang menyediakan penginapan, 5–10 menit jalan kaki ke pantai.",
@@ -89,11 +89,12 @@ window.PETA = {
     },
   ],
 
-  // Jalur utama: pintu masuk → homestay → pantai (dipakai generator ilustrasi)
+  // Jalur utama: pintu masuk (Jl. Sawarna) → jembatan Cisawarna → homestay → pantai (dipakai generator ilustrasi).
+  // Titik ke-2 & ke-3 = ujung jembatan menurut OpenStreetMap.
   jalur: {
     nama: "Jalur Utama ke Pantai", nama_en: "Main path to the beach",
     koordinat: [
-      [-6.97961, 106.30960], [-6.98010, 106.31001], [-6.98092, 106.30960],
+      [-6.97961, 106.30960], [-6.980036, 106.310231], [-6.980329, 106.310302], [-6.98092, 106.30960],
       [-6.98169, 106.30927], [-6.98256, 106.30932], [-6.98392, 106.30877],
       [-6.98474, 106.30850], [-6.98496, 106.30830],
     ],

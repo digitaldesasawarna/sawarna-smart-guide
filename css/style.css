@@ -30,7 +30,6 @@ h1, h2, p { margin: 0; }
 
 /* ---------- Peta ---------- */
 #map { position: fixed; inset: 0; background: #4C93CD; }
-#map.mode-lain { background: var(--sw-abu-100); }
 .leaflet-container { font: inherit; }
 .leaflet-interactive:focus { outline: none; }
 .leaflet-control-attribution {
@@ -166,17 +165,6 @@ h1, h2, p { margin: 0; }
 }
 .pa-preset button[aria-pressed="true"] { background: var(--sw-biru-50); color: var(--sw-biru-700); box-shadow: inset 0 0 0 1px var(--sw-biru-300); }
 
-.pl-pilihan { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 12px; }
-.pl-pilihan button {
-  display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 6px 6px 8px;
-  border: 0; border-radius: 12px; background: transparent; font-size: 12px; font-weight: 600; color: var(--sw-abu-700); cursor: pointer;
-}
-.pl-contoh { width: 100%; aspect-ratio: 4 / 3; border-radius: 8px; box-shadow: inset 0 0 0 1px oklch(0 0 0 / .08); }
-.pl-contoh.ilus { background: linear-gradient(135deg, #4C93CD 0 38%, #F1DDB4 38% 46%, #9ED47C 46%); }
-.pl-contoh.sat { background: linear-gradient(135deg, #1F5F6B 0 38%, #C9B48A 38% 46%, #3D6B3A 46%); }
-.pl-contoh.jln { background: linear-gradient(135deg, #AAD3DF 0 38%, #F2EFE9 38% 70%, #CDEBB0 70%); }
-.pl-pilihan button[aria-checked="true"] { color: var(--sw-biru-700); background: var(--sw-biru-50); }
-.pl-pilihan button[aria-checked="true"] .pl-contoh { box-shadow: 0 0 0 2px var(--sw-biru-600); }
 
 /* ---------- Lembar keselamatan (dialog) ---------- */
 .lembar {
@@ -277,18 +265,33 @@ h1, h2, p { margin: 0; }
   font-size: 12px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; color: var(--sw-biru-900);
   paint-order: stroke; -webkit-text-stroke: 3px #fff;
 }
-/* label zona: kapsul putih + titik warna (DESIGN §4.6) */
-.label-zona span {
-  display: inline-flex; align-items: center; gap: 7px; padding: 6px 12px 6px 10px;
-  border-radius: 999px; background: rgba(255, 255, 255, .95);
-  box-shadow: var(--sw-bayangan-kartu);
+/* marker kawasan: kapsul putih + ikon berwarna + jumlah tempat (tampil saat peta jauh) */
+.pin-kawasan { background: none; border: 0; }
+.kw {
+  position: absolute; left: 0; top: 0; translate: -50% calc(-100% - 7px);
+  display: inline-flex; align-items: center; gap: 8px; padding: 4px 12px 4px 4px;
+  border-radius: 999px; background: #fff; white-space: nowrap; cursor: pointer;
+  box-shadow: 0 1px 2px oklch(0 0 0 / .18), 0 6px 14px -4px oklch(0.25 0.03 250 / .4);
   font-size: 13px; font-weight: 600; color: var(--sw-tinta);
+  transition: scale 150ms ease-out;
 }
-.label-zona { pointer-events: auto; }
-.label-zona span { cursor: pointer; }
-.label-zona:focus-visible { outline: none; }
-.label-zona:focus-visible span { outline: 2px solid var(--sw-biru-600); outline-offset: 2px; }
-.label-zona span::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--c); }
+.kw::after { /* ekor penunjuk ke lokasi kawasan */
+  content: ""; position: absolute; left: 50%; bottom: -6px; width: 12px; height: 12px; translate: -50% 0; rotate: 45deg;
+  background: #fff; border-radius: 0 0 3px 0; box-shadow: 2px 2px 3px -1px oklch(0 0 0 / .15);
+}
+.kw-ikon { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: var(--c); color: #fff; }
+.kw-ikon .ikon { width: 17px; height: 17px; stroke-width: 2; }
+.kw-jumlah {
+  min-width: 20px; height: 20px; padding: 0 6px; border-radius: 999px; display: grid; place-items: center;
+  background: var(--sw-abu-100); color: var(--sw-abu-700); font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums;
+}
+.pin-kawasan:active .kw { scale: .96; }
+@media (hover: hover) { .pin-kawasan:hover .kw { scale: 1.04; } }
+.pin-kawasan:focus-visible { outline: none; }
+.pin-kawasan:focus-visible .kw { outline: 2px solid var(--sw-biru-600); outline-offset: 2px; }
+/* tingkat zoom: jauh = marker kawasan, dekat = titik detail di dalam kawasan */
+#map:not(.tingkat-detail) .pin-dalam,
+#map.tingkat-detail .pin-kawasan { display: none; }
 
 /* ---------- Pop-up kartu (DESIGN §4.5) ---------- */
 .popup-kartu .leaflet-popup-content-wrapper {

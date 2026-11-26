@@ -264,6 +264,19 @@ export const mobil = (id, warna) => `<g id="${id}"><ellipse cx="2" cy="1" rx="10
   <path d="M-9 0V-4Q-9 -6 -7 -6L-4 -10H5L8 -6Q10 -6 10 -4V0Z" fill="${warna}"/><path d="M-3.4 -9.2H1V-6H-5.6Z M2 -9.2H4.6L6.8 -6H2Z" fill="#BFDCEF"/>
   <circle cx="-5" cy="0" r="1.8" fill="#1F2937"/><circle cx="6" cy="0" r="1.8" fill="#1F2937"/><path d="M-9 -3H10" stroke="#fff" stroke-opacity=".35" stroke-width=".6"/></g>`;
 export const motor = (id) => `<g id="${id}"><ellipse cx="1" cy=".8" rx="5" ry="1.2" fill="#152638" opacity=".3"/><circle cx="-3.4" cy="-1.6" r="1.6" fill="none" stroke="#1F2937" stroke-width="1"/><circle cx="3.4" cy="-1.6" r="1.6" fill="none" stroke="#1F2937" stroke-width="1"/><path d="M-3 -2.6H2L3.6 -5" stroke="#D64545" stroke-width="1.6"/><rect x="-1.4" y="-9" width="2.8" height="4" rx="1" fill="#4677B4"/><circle cx="0" cy="-10.4" r="1.4" fill="#2D3A4A"/></g>`;
+// pintu masuk Jl. Sawarna (foto survei): tiang reklame minimarket, spanduk kopi hijau, papan informasi
+export const tiangReklame = (id) => `<g id="${id}"><ellipse cx="2" cy=".8" rx="5" ry="1.4" fill="#152638" opacity=".3"/>
+  <path d="M0 0V-30" stroke="#E9EDF1" stroke-width="2"/><path d="M1 0V-30" stroke="#AEB7C0" stroke-width=".8"/>
+  <rect x="-8" y="-46" width="16" height="17" rx="1" fill="#FFFFFF" stroke="#7D8894" stroke-width=".6"/>
+  <rect x="-7" y="-45" width="14" height="5" fill="#D9353B"/><rect x="-7" y="-40" width="14" height="4" fill="#F4C21F"/><rect x="-7" y="-36" width="14" height="6" fill="#2059A8"/>
+  <rect x="-5" y="-43.6" width="10" height="2.2" rx="1" fill="#fff" opacity=".85"/></g>`;
+export const spanduk = (id) => `<g id="${id}"><ellipse cx="1" cy=".6" rx="3" ry="1" fill="#152638" opacity=".3"/>
+  <path d="M0 0V-28" stroke="#6F7A86" stroke-width=".9"/><path d="M0.4 -27.5Q5 -26 4.6 -18Q4 -10 5.4 -4L0.4 -3Z" fill="#2E9E56"/>
+  <path d="M1.6 -23V-8" stroke="#fff" stroke-width=".9" stroke-dasharray="1.4 1"/></g>`;
+export const papan = (id) => `<g id="${id}"><ellipse cx="1" cy=".8" rx="8" ry="1.6" fill="#152638" opacity=".28"/>
+  <path d="M-6 0V-12M6 0V-12" stroke="#5C6773" stroke-width="1.2"/>
+  <rect x="-9" y="-21" width="18" height="10" fill="#F7F8F9" stroke="#5C6773" stroke-width=".8"/>
+  <path d="M-6.5 -18H6.5M-6.5 -15.6H4M-6.5 -13.4H5.2" stroke="#3F6DA6" stroke-width=".9"/></g>`;
 export function gapura(id, teks = "PANTAI CIANTIR") {
   let s = bayangTanah(34, 6, 10);
   const tiang = (x) => `<rect x="${x - 4}" y="-26" width="8" height="26" fill="#B85C3A"/><rect x="${x + 4}" y="-28" width="3" height="28" fill="#8E4429"/>

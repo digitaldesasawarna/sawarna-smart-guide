@@ -45,10 +45,13 @@ export function gedung(g, P, TENDA) {
   const base = g.poly.map(([x, y]) => P(x, y));
   const n = base.length;
   const c = base.reduce((s, p) => [s[0] + p[0] / n, s[1] + p[1] / n], [0, 0]);
-  const h = { rumah2: 19, kios: 7, warung: 8, seng: 9 }[g.jenis] ?? 11;
-  const dinding = g.jenis === "kios" ? "#F3E1C2" : g.jenis === "warung" ? "#E9CFA4" : DINDING[Math.floor(r * DINDING.length)];
+  const toko = MINIMARKET[g.jenis];
+  const h = toko ? 14 : { rumah2: 19, kios: 7, warung: 8, seng: 9, rumahKayu: 10 }[g.jenis] ?? 11;
+  const dinding = toko ? "#F6F4EF" : g.jenis === "rumahKayu" ? "#94704F" : g.jenis === "kios" ? "#F3E1C2" : g.jenis === "warung" ? "#E9CFA4" : DINDING[Math.floor(r * DINDING.length)];
   const tenda = TENDA[Math.floor(r * TENDA.length)];
-  const atap = g.jenis === "kios" ? [tenda[0], terang(tenda[0], -0.12), terang(tenda[0], -0.25)]
+  const atap = toko ? ["#E3E6E9", "#CDD2D7", "#B4BBC2"]
+    : g.jenis === "rumahKayu" ? ["#737B84", "#5E656D", "#4A5057"]
+    : g.jenis === "kios" ? [tenda[0], terang(tenda[0], -0.12), terang(tenda[0], -0.25)]
     : g.jenis === "warung" ? ["#D9B470", "#B48B45", "#9C7638"]
     : ATAP[g.jenis === "seng" ? "seng" : g.atap] || ATAP.terakota;
   let s = `<path d="${d(base.map(([x, y]) => [x + 5, y + 2.5]))}" fill="#152638" opacity=".2"/>`;
@@ -66,8 +69,29 @@ export function gedung(g, P, TENDA) {
   for (const w of dindingTampak) {
     const { p, q } = w, warna = bayangBidang(dinding, w.nx, w.ny);
     s += `<path d="${d([p, q, [q[0], q[1] - h], [p[0], p[1] - h]])}" fill="${warna}" ${GARIS}/>`;
-    // jendela & pintu (bangunan kecil cukup satu deret)
     const pj = Math.hypot(q[0] - p[0], q[1] - p[1]);
+    // potongan dinding setinggi y0..y1, sepanjang t0..t1
+    const bidang = (t0, t1, y0, y1) => {
+      const a0 = [p[0] + (q[0] - p[0]) * t0, p[1] + (q[1] - p[1]) * t0], a1 = [p[0] + (q[0] - p[0]) * t1, p[1] + (q[1] - p[1]) * t1];
+      return d([[a0[0], a0[1] - y0], [a1[0], a1[1] - y0], [a1[0], a1[1] - y1], [a0[0], a0[1] - y1]]);
+    };
+    if (toko) { // minimarket: kaca lebar + papan nama bergaris warna di atasnya
+      if (pj >= 7) s += `<path d="${bidang(0.08, 0.92, 0.8, h * 0.6)}" fill="#5F86A8" stroke="#fff" stroke-opacity=".7" stroke-width=".6"/>`;
+      const pita = toko.length, y0 = h * 0.66;
+      toko.forEach((c, i) => { s += `<path d="${bidang(0, 1, y0 + ((h - y0) * i) / pita, y0 + ((h - y0) * (i + 1)) / pita)}" fill="${bayangBidang(c, w.nx, w.ny)}"/>`; });
+      continue;
+    }
+    if (g.jenis === "rumahKayu") { // dinding papan kayu berjajar tegak (foto survei pintu masuk)
+      let bilah = "";
+      for (let t = 0.06; t < 1; t += Math.max(0.05, 2.4 / Math.max(pj, 1))) {
+        const a = [p[0] + (q[0] - p[0]) * t, p[1] + (q[1] - p[1]) * t];
+        bilah += `M${f1(a[0])} ${f1(a[1] - 0.5)}V${f1(a[1] - h + 1)}`;
+      }
+      s += `<path d="${bilah}" stroke="#5E4330" stroke-width=".7" opacity=".7"/>`;
+      if (pj >= 9) s += `<path d="${bidang(0.38, 0.62, 0, h * 0.75)}" fill="#3F4A55" stroke="#fff" stroke-opacity=".5" stroke-width=".5"/>`;
+      continue;
+    }
+    // jendela & pintu (bangunan kecil cukup satu deret)
     if (pj < 7 || g.jenis === "kios") continue;
     const lantai = g.jenis === "rumah2" ? 2 : 1, jml = Math.max(1, Math.floor(pj / 9));
     for (let L = 0; L < lantai; L++) {
@@ -84,6 +108,11 @@ export function gedung(g, P, TENDA) {
 
   // atap
   const top = base.map(([x, y]) => [x, y - h]);
+  if (toko) { // atap datar beton dengan dinding tepi (parapet)
+    s += `<path d="${d(top)}" fill="${atap[0]}" ${GARIS}/>`;
+    s += `<path d="${d(top.map(([x, y]) => [c[0] + (x - c[0]) * 0.86, (y - (c[1] - h)) * 0.86 + c[1] - h]))}" fill="${atap[2]}" opacity=".45"/>`;
+    return s;
+  }
   if (n === 4 && g.jenis !== "kios") {
     const pm = g.poly, len = (i, j) => Math.hypot(pm[j][0] - pm[i][0], pm[j][1] - pm[i][1]);
     const panjang01 = len(0, 1) >= len(1, 2);
@@ -119,6 +148,41 @@ export function gedung(g, P, TENDA) {
     else s += `<path d="${d(top.map(([x, y]) => [c[0] + (x - c[0]) * 0.8, (y - (c[1] - h)) * 0.8 + c[1] - h]))}" fill="${atap[0]}" opacity=".7"/>`;
   }
   return s;
+}
+
+// pita papan nama minimarket (dari atas ke bawah), mengikuti warna toko di foto survei pintu masuk
+export const MINIMARKET = {
+  minimarket1: ["#D9353B", "#F4C21F", "#2059A8"],
+  minimarket2: ["#D9353B", "#FFFFFF", "#2059A8"],
+};
+
+/*
+ * Jembatan busur (bowstring) berangka baja biru dari ujung a ke ujung b (unit peta).
+ * Lantai digambar di lapisan tanah; fungsi ini menghasilkan dua sisi rangka yang berdiri,
+ * masing-masing [kedalaman Y, svg] agar ikut diurutkan dengan objek lain.
+ */
+export function jembatanBusur(a, b, P, { lebar = 20, tinggi = 22, ruas = 12 } = {}) {
+  const dx = b[0] - a[0], dy = b[1] - a[1], l = Math.hypot(dx, dy) || 1, nx = -dy / l, ny = dx / l;
+  const BIRU = "#2E78C7", GELAP = "#1B4F8A";
+  return [1, -1].map((sisi) => {
+    const tanah = [], atas = [];
+    for (let i = 0; i <= ruas; i++) {
+      const t = i / ruas, g = P(a[0] + dx * t + nx * sisi * lebar / 2, a[1] + dy * t + ny * sisi * lebar / 2);
+      const hh = 3 + tinggi * Math.sin(Math.PI * t);
+      tanah.push([g[0], g[1] - 2.5]); atas.push([g[0], g[1] - hh]);
+    }
+    const garis = (pp) => pp.map(([x, y], i) => `${i ? "L" : "M"}${f1(x)} ${f1(y)}`).join("");
+    let tegak = "";
+    for (let i = 1; i < ruas; i++) tegak += `M${f1(tanah[i][0])} ${f1(tanah[i][1])}L${f1(atas[i][0])} ${f1(atas[i][1])}`;
+    for (let i = 1; i < ruas - 1; i += 2) tegak += `M${f1(tanah[i][0])} ${f1(tanah[i][1])}L${f1(atas[i + 1][0])} ${f1(atas[i + 1][1])}`;
+    const svg = `<g fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <path d="${tegak}" stroke="${GELAP}" stroke-width="1.5"/><path d="${tegak}" stroke="${BIRU}" stroke-width=".8"/>
+      <path d="${garis(atas)}" stroke="${GELAP}" stroke-width="3.2"/><path d="${garis(atas)}" stroke="${BIRU}" stroke-width="2"/>
+      <path d="${garis(tanah)}" stroke="${GELAP}" stroke-width="2.6"/><path d="${garis(tanah)}" stroke="${BIRU}" stroke-width="1.5"/>
+      <path d="${garis(atas)}" stroke="#fff" stroke-opacity=".35" stroke-width=".6" transform="translate(0 -.8)"/></g>`;
+    const y = tanah.reduce((t, v) => t + v[1], 0) / tanah.length;
+    return [y, svg];
+  });
 }
 
 export const defsIso = () => `<pattern id="pGarisTenda" width="4" height="4" patternUnits="userSpaceOnUse" patternTransform="rotate(30)"><rect width="2" height="4" fill="#fff" opacity=".75"/></pattern>`;

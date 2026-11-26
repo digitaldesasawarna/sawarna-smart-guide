@@ -12,8 +12,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,600;0,700;1,600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
-  <link rel="stylesheet" href="brand/tokens.css?v=iso2">
-  <link rel="stylesheet" href="css/style.css?v=iso2">
+  <link rel="stylesheet" href="brand/tokens.css?v=iso6">
+  <link rel="stylesheet" href="css/style.css?v=iso6">
 </head>
 <body>
   <!-- Layar pembuka: logo memudar ±1 detik (DESIGN §4.1) -->
@@ -47,7 +47,6 @@
     <button type="button" class="fab fab-aman" id="btn-aman" aria-haspopup="dialog"></button>
     <button type="button" class="fab fab-kompas" id="btn-kompas" aria-expanded="false" aria-controls="panel-arah"></button>
     <button type="button" class="fab" id="btn-lokasi" aria-pressed="false"></button>
-    <button type="button" class="fab" id="btn-lapisan" aria-expanded="false" aria-controls="panel-lapisan"></button>
     <div class="zoom-laptop">
       <button type="button" class="fab" id="btn-plus"></button>
       <button type="button" class="fab" id="btn-minus"></button>
@@ -73,18 +72,6 @@
     <p class="panel-catatan" data-t="tipsArah"></p>
   </section>
 
-  <!-- Panel tampilan peta -->
-  <section id="panel-lapisan" class="kartu panel panel-lapisan" hidden aria-labelledby="pl-judul">
-    <header class="panel-kepala">
-      <h2 id="pl-judul" class="panel-judul" data-t="lapisan">Tampilan peta</h2>
-      <button type="button" class="tutup" data-tutup="panel-lapisan"></button>
-    </header>
-    <div class="pl-pilihan" role="radiogroup" aria-labelledby="pl-judul">
-      <button type="button" role="radio" data-lapis="ilustrasi" aria-checked="true"><span class="pl-contoh ilus"></span><span data-t="ilustrasi">Ilustrasi</span></button>
-      <button type="button" role="radio" data-lapis="satelit" aria-checked="false"><span class="pl-contoh sat"></span><span data-t="satelit">Satelit</span></button>
-      <button type="button" role="radio" data-lapis="jalan" aria-checked="false"><span class="pl-contoh jln"></span><span data-t="jalan">Peta jalan</span></button>
-    </div>
-  </section>
 
   <!-- Panel keselamatan (DESIGN §4.7) -->
   <dialog id="panel-aman" class="lembar aman" aria-labelledby="aman-judul">
@@ -100,11 +87,11 @@
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-  <script src="js/data.js?v=iso2"></script>
-  <script src="js/iso.js?v=iso2"></script>
-  <script src="js/i18n.js?v=iso2"></script>
-  <script src="js/ikon.js?v=iso2"></script>
-  <script src="js/popup.js?v=iso2"></script>
-  <script src="js/app.js?v=iso2"></script>
+  <script src="js/data.js?v=iso6"></script>
+  <script src="js/iso.js?v=iso6"></script>
+  <script src="js/i18n.js?v=iso6"></script>
+  <script src="js/ikon.js?v=iso6"></script>
+  <script src="js/popup.js?v=iso6"></script>
+  <script src="js/app.js?v=iso6"></script>
 </body>
 </html>

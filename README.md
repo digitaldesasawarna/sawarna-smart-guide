@@ -20,7 +20,7 @@ lalu buka http://localhost:5173
 | `css/style.css` | Tampilan (mobile-first) |
 | `js/data.js` | **Semua data peta**: batas kawasan, zona, jalur, kategori, titik layanan |
 | `js/popup.js` | Isi pop-up per kategori layanan |
-| `js/app.js` | Logika peta (Leaflet): ilustrasi/satelit, filter, lokasi saya, mode ambil koordinat |
+| `js/app.js` | Logika peta (Leaflet): ilustrasi isometrik, marker kawasan bertingkat, filter, lokasi saya, mode ambil koordinat |
 | `data/geografi.json` | Bentuk pantai, sungai, sawah, hutan (untuk ilustrasi) |
 | `tools/gen-ilustrasi.mjs` | Generator ilustrasi peta (8 arah) → `assets/ilustrasi/peta-{arah}.svg` |
 | `tools/render-tiles.mjs` | SVG → tile WebP `assets/tiles/{arah}/{z}/{x}/{y}.webp` |
@@ -34,11 +34,10 @@ lalu buka http://localhost:5173
 - Pop-up per kategori: homestay, kuliner, sewa & jasa, tiket & parkir, toilet & ibadah, keselamatan, spot wisata, akses
 - Pop-up zona: ringkasan layanan di dalam zona + tombol tampilkan layanan zona
 - Tombol **Lokasi saya** (GPS), **kembali ke awal**, dan **📍 ambil koordinat** (untuk survei)
-- Basemap satelit (Esri) / peta jalan (OSM)
 
 ## Peta ilustrasi
 
-Peta dasar bawaan adalah ilustrasi 2.5D bergaya peta taman wisata: tanah (jalan, zona, pantai, sungai, sawah) presisi sesuai koordinat asli, sedangkan bangunan, pohon, orang, dan kendaraan digambar "berdiri" menghadap penonton. Satelit dan peta jalan tetap tersedia di tombol lapisan.
+Peta dasar bawaan adalah ilustrasi 2.5D bergaya peta taman wisata: tanah (jalan, zona, pantai, sungai, sawah) presisi sesuai koordinat asli, sedangkan bangunan, pohon, orang, dan kendaraan digambar "berdiri" menghadap penonton. Peta hanya memakai ilustrasi (tanpa pilihan satelit/peta jalan). Saat peta jauh, tiap kawasan (UMKM Pantai, Homestay) tampil sebagai satu marker berikon; setelah diperbesar ke zoom 18, marker kawasan hilang dan titik detail di dalamnya muncul.
 
 Ilustrasi bergaya **isometrik** (dimetrik 2:1, ala Rod Hunt / Icograms): bangunan diekstrusi dari jejak OSM asli, dibuat untuk **8 arah pandang** (0°, 45°, … 315°). Tiap arah memakai CRS Leaflet khusus dengan matriks yang sama dengan generator, sehingga pin dan GPS tetap tepat. Arah dipilih lewat tombol kompas (slider, ±45°, 8 arah mata angin).
 

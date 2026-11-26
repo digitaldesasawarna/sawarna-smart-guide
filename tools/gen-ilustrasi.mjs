@@ -135,7 +135,21 @@ const use = (id, x, y, rot = 0, s = 1) =>
 const rect = [[0, 0], [W, 0], [W, H], [0, H]];
 const spitLaut = pts(GEO.pantaiSpitLaut), spitDalam = pts(GEO.pantaiSpitDalam);
 const laut = pts(GEO.pantaiLaut), dalam = pts(GEO.pantaiDalam);
-const sungaiAsli = pts(GEO.sungai);
+// sungai utama: alur Cisawarna dari OpenStreetMap (stream hulu + river di muara) agar tidak menimpa rumah;
+// garis gambar tangan di data/geografi.json hanya cadangan bila data OSM tidak ada
+const fileNyata = path.join(ROOT, "data/nyata.json");
+const NY = fs.existsSync(fileNyata) ? JSON.parse(fs.readFileSync(fileNyata, "utf8")) : null;
+const sungaiOSM = (() => {
+  if (!NY) return null;
+  const dekat = (u, v) => Math.hypot(u[0] - v[0], u[1] - v[1]) < 0.0005;
+  const hilir = NY.air.filter((a) => a.kelas === "river");
+  const hulu = NY.air.find((a) => a.kelas === "stream" && hilir.some((r) => dekat(r.garis[0], a.garis.at(-1))));
+  if (!hulu) return null;
+  const muara = hilir.find((r) => dekat(r.garis[0], hulu.garis.at(-1)));
+  const m = 0.003, diBatas = ([la, ln]) => la < B.utara + m && la > B.selatan - m && ln > B.barat - m && ln < B.timur + m;
+  return { hulu, garis: pts([...hulu.garis.filter(diBatas), ...muara.garis.slice(1)]) };
+})();
+const sungaiAsli = sungaiOSM ? sungaiOSM.garis : pts(GEO.sungai);
 const sungai = densify([...sungaiAsli, (() => { const [a, b] = sungaiAsli.slice(-2); const l = Math.hypot(b[0] - a[0], b[1] - a[1]); return [b[0] + ((b[0] - a[0]) / l) * 70, b[1] + ((b[1] - a[1]) / l) * 70]; })()], 40), sawah = pts(GEO.sawah), sawahU = pts(GEO.sawahUtara);
 const hutan = pts(GEO.hutan), lapangan = pts(GEO.lapangan);
 const batas = pts(PETA.batas);
@@ -148,7 +162,7 @@ const dalamD = densify(dalam, 25), spitDalamD = densify(spitDalam, 25);
 const daratan = [[0, 0], [W, 0], [W, H], [laut.at(-1)[0], H], ...laut.slice().reverse(), ...spitLaut.slice().reverse(), [0, spitLaut[0][1]]];
 const pasirSpit = [...spitDalam, ...spitLaut.slice().reverse(), [0, spitDalam[0][1]]];
 const pasirSelatan = [...dalam, ...laut.slice().reverse()];
-const LS = 54; // lebar sungai
+const LS = 46; // lebar sungai (±25 m)
 
 const diAir = (p) => !inside(p, daratan) || distLine(p, sungai) < LS / 2 + 12;
 const diPasir = (p) => inside(p, pasirSpit) || inside(p, pasirSelatan);
@@ -157,15 +171,15 @@ const diHutan = (p) => inside(p, hutan);
 const diZona = (p) => inside(p, zHome) || inside(p, zUmkm);
 
 // ================================================================ data nyata (OSM + warna atap dari citra)
-const fileNyata = path.join(ROOT, "data/nyata.json");
-const NY = fs.existsSync(fileNyata) ? JSON.parse(fs.readFileSync(fileNyata, "utf8")) : null;
 const luasPoly = (q) => { let a = 0; for (let i = 0; i < q.length; i++) { const [x1, y1] = q[i], [x2, y2] = q[(i + 1) % q.length]; a += x1 * y2 - x2 * y1; } return Math.abs(a) / 2; };
 const pusatPoly = (q) => [q.reduce((t, v) => t + v[0], 0) / q.length, q.reduce((t, v) => t + v[1], 0) / q.length];
 const bangunanNyata = NY ? NY.bangunan.map((b) => { const q = pts(b.poly); // "hijau" di citra hampir selalu kanopi pohon yang menutupi atap → pakai warna atap umum
-  return { atap: b.atap === "hijau" ? pick(["terakota", "terakota", "genteng", "cokelat"]) : b.atap, luas: b.luas, poly: q, c: pusatPoly(q) }; }).filter((b) => b.c[0] > 0 && b.c[1] > 0 && b.c[0] < W && b.c[1] < H) : [];
+  return { osm: b.id, atap: b.atap === "hijau" ? pick(["terakota", "terakota", "genteng", "cokelat"]) : b.atap, luas: b.luas, poly: q, c: pusatPoly(q) }; })
+  .filter((b) => b.c[0] > 0 && b.c[1] > 0 && b.c[0] < W && b.c[1] < H)
+  .filter((b) => !b.poly.some((q) => distLine(q, sungai) < LS / 2 + 3)) : []; // tidak ada rumah di atas sungai
 const LEBAR_JALAN = { primary: 26, secondary: 24, tertiary: 22, unclassified: 16, residential: 14, service: 11, track: 9, footway: 7, path: 7, steps: 7 };
 const jalanNyata = NY ? NY.jalan.filter((j) => LEBAR_JALAN[j.kelas]).map((j) => ({ kelas: j.kelas, lebar: LEBAR_JALAN[j.kelas], garis: densify(pts(j.garis), 20) })) : [];
-const kaliNyata = NY ? NY.air.filter((a) => a.kelas !== "river").map((a) => densify(pts(a.garis), 20)) : [];
+const kaliNyata = NY ? NY.air.filter((a) => a.kelas !== "river" && a !== sungaiOSM?.hulu).map((a) => densify(pts(a.garis), 20)) : [];
 
 // ================================================================ jalan desa
 const jalanUtara = runs(densify(offset(sungai, 78), 20), (p) => !diAir(p) && !diPasir(p) && p[0] > 60);
@@ -188,7 +202,7 @@ for (const a of ATAPS) {
   }
 }
 for (let i = 0; i < 4; i++) { defs.push(SP.rumah(`s${i}`, { w: rr(18, 22), dd: 9, atap: S.ATAP.seng, dinding: pick(S.DINDING) })); ids.seng.push(`s${i}`); }
-defs.push(SP.pondok("pondok"), SP.warung("warung"), SP.gazebo("gazebo"), SP.gapura("gapura"));
+defs.push(SP.pondok("pondok"), SP.warung("warung"), SP.gazebo("gazebo"), SP.tiangReklame("reklame"), SP.spanduk("spanduk"), SP.papan("papan"));
 S.TENDA.forEach((t, i) => { defs.push(SP.kios(`k${i}`, t, { lebar: i % 2 ? 24 : 28 })); ids.kios.push(`k${i}`); });
 S.PAYUNG.forEach((t, i) => { defs.push(SP.payung(`u${i}`, t)); ids.payung.push(`u${i}`); });
 S.DAUN.forEach((c, i) => [9, 12, 15].forEach((r, j) => { defs.push(SP.pohon(`p${i}_${j}`, c, R, r)); ids.pohon.push(`p${i}_${j}`); }));
@@ -363,8 +377,9 @@ for (const j of daftarJalan) {
 }
 L.push(`<path d="${smooth(jalur)}" stroke="#152638" stroke-width="30" fill="none" stroke-linecap="round" opacity=".18" filter="url(#b4)" transform="translate(3 4)"/>`);
 L.push(`<path d="${smooth(jalur)}" stroke="#FFFFFF" stroke-width="30" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`);
-L.push(`<path d="${smooth(jalur)}" stroke="#E6F3D8" stroke-width="22" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`);
-L.push(`<path d="${smooth(jalur)}" stroke="#C9E3B0" stroke-width="22" fill="none" stroke-dasharray="1.2 7" stroke-linejoin="round"/>`);
+L.push(`<path d="${smooth(jalur)}" stroke="#B5BBC2" stroke-width="24" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`);
+L.push(`<path d="${smooth(jalur)}" stroke="#A3AAB2" stroke-width="24" fill="none" stroke-dasharray="14 30 6 40" stroke-linejoin="round" opacity=".6"/>`);
+L.push(`<path d="${smooth(jalur)}" stroke="#FFFFFF" stroke-width="1.4" fill="none" stroke-dasharray="10 12" opacity=".9"/>`);
 // cincin jalan setapak bertepi putih yang membingkai tiap zona
 for (const z of [zHome, zUmkm]) {
   L.push(`<g clip-path="${cDarat}"><path d="${smooth(z, true)}" fill="none" stroke="#152638" stroke-width="20" opacity=".14" filter="url(#b4)" transform="translate(3 4)"/>
@@ -372,28 +387,24 @@ for (const z of [zHome, zUmkm]) {
     <path d="${smooth(z, true)}" fill="none" stroke="#D9EBC6" stroke-width="11" stroke-linejoin="round"/></g>`);
 }
 
-// 9. jembatan gantung di persilangan jalur × sungai
-(function () {
+// 9. jembatan busur baja biru (foto survei) pada ruas jalur yang melintasi sungai
+const jembatan = (() => {
   for (let i = 1; i < jalur.length; i++) {
     const a = jalur[i - 1], b = jalur[i];
-    for (let t = 0; t <= 1; t += 0.01) {
-      const p = [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
-      if (distLine(p, sungai) < 3) {
-        const ang = (Math.atan2(b[1] - a[1], b[0] - a[0]) * 180) / Math.PI, h = LS * 0.85;
-        let papan = "";
-        for (let x = -h; x <= h; x += 3.2) papan += `<path d="M${f1(x)} -8V8"/>`;
-        L.push(`<g transform="translate(${f1(p[0])} ${f1(p[1])}) rotate(${f1(ang)})">
-          <rect x="${-h}" y="-9" width="${2 * h}" height="18" transform="translate(5 8)" fill="#0E2A46" opacity=".3" filter="url(#b4)"/>
-          <rect x="${-h}" y="-8" width="${2 * h}" height="16" fill="#C49A63"/>
-          <g stroke="#8C6A3E" stroke-width=".9">${papan}</g>
-          <path d="M${-h} -9Q0 -5 ${h} -9M${-h} 9Q0 13 ${h} 9" stroke="#4A3626" stroke-width="2" fill="none"/>
-          ${[-h - 4, h + 4].map((x) => `<rect x="${x - 3}" y="-13" width="6" height="6" fill="#7A5A3A"/><rect x="${x - 3}" y="7" width="6" height="6" fill="#7A5A3A"/>`).join("")}
-        </g>`);
-        return;
-      }
-    }
+    for (let t = 0; t <= 1; t += 0.02) if (distLine([a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t], sungai) < 3) return { a, b };
   }
+  return null;
 })();
+if (jembatan) {
+  const { a, b } = jembatan, ang = (Math.atan2(b[1] - a[1], b[0] - a[0]) * 180) / Math.PI, pj = Math.hypot(b[0] - a[0], b[1] - a[1]);
+  L.push(`<g transform="translate(${f1(a[0])} ${f1(a[1])}) rotate(${f1(ang)})">
+    <rect x="-4" y="-11" width="${f1(pj + 8)}" height="22" transform="translate(4 7)" fill="#0E2A46" opacity=".3" filter="url(#b4)"/>
+    <rect x="-4" y="-11" width="${f1(pj + 8)}" height="22" fill="#8F969D"/>
+    <rect x="-4" y="-8" width="${f1(pj + 8)}" height="16" fill="#AEB4BA"/>
+    <path d="M-4 0H${f1(pj + 4)}" stroke="#fff" stroke-width="1" stroke-dasharray="6 6" opacity=".8"/>
+    <path d="M-4 -10.5H${f1(pj + 4)}M-4 10.5H${f1(pj + 4)}" stroke="#2E78C7" stroke-width="1.6"/>
+  </g>`);
+}
 
 // ================================================================ objek berdiri (sprite 2.5D)
 // Setiap objek disimpan sebagai {x, y, id, s}; saat menulis tiap arah pandang, objek diputar
@@ -409,6 +420,8 @@ const kosong = (p, r) => terpakai.every((q) => Math.hypot(q[0] - p[0], q[1] - p[
 const halamanDi = (p, rx, ry, c = "#E3D9B5", op = 0.55) => halaman.push(`<ellipse cx="${f1(p[0])}" cy="${f1(p[1])}" rx="${rx}" ry="${ry}" fill="${c}" opacity="${op}"/>`);
 
 const daftarGedung = [];
+// bangunan di simpang pintu masuk (id OSM) → jenis khusus sesuai foto survei
+const PINTU_KHUSUS = { 630693849: "minimarket1", 630693960: "minimarket2", 630693847: "rumahKayu" };
 if (NY) {
   // setiap bangunan OSM digambar di jejak aslinya: tapak + objek 2.5D dengan warna atap dari citra
   const jejak = [];
@@ -418,10 +431,11 @@ if (NY) {
     terpakai.push(bg.c);
     // jenis bangunan → diekstrusi isometrik dari jejak aslinya (tools/ilustrasi/isometrik.mjs)
     let jenis;
-    if (inside(bg.c, zUmkm)) jenis = bg.luas < 45 ? "kios" : bg.luas < 110 ? "warung" : "rumah";
+    if (PINTU_KHUSUS[bg.osm]) jenis = PINTU_KHUSUS[bg.osm];
+    else if (inside(bg.c, zUmkm)) jenis = bg.luas < 45 ? "kios" : bg.luas < 110 ? "warung" : "rumah";
     else if (inside(bg.c, zHome)) jenis = bg.luas > 70 ? "rumah2" : "rumah";
     else jenis = bg.atap === "seng" ? "seng" : bg.luas > 150 ? "rumah2" : "rumah";
-    daftarGedung.push({ id: daftarGedung.length, poly: bg.poly, c: bg.c, jenis, atap: bg.atap });
+    daftarGedung.push({ id: daftarGedung.length, osm: bg.osm, poly: bg.poly, c: bg.c, jenis, atap: bg.atap });
     void luasU;
   }
   halaman.push(...jejak);
@@ -468,13 +482,25 @@ for (const [x, y, ang] of along(jalurD, 48, 24)) {
   tambah([x + nx * 15 * sisi, y + ny * 15 * sisi], "lampu2");
   if (rnd() < 0.55) tambah([x + rr(-5, 5), y + rr(-5, 5)], pick(ids.orang));
 }
-for (const [x, y, ang] of along(jalurD, 22, 6).slice(0, 7)) {
-  const a = (ang * Math.PI) / 180, nx = -Math.sin(a), ny = Math.cos(a);
-  tambah([x + nx * 16, y + ny * 16], "umbul"); tambah([x - nx * 16, y - ny * 16], "umbul");
-}
 {
+  // simpang Jl. Sawarna: reklame & motor di depan minimarket, spanduk kopi, papan info, mobil putih di depan rumah kayu
+  const pintu = jalur[0], gd = (osm) => daftarGedung.find((g) => g.osm === osm);
+  const ke = (u, v, t) => [u[0] + (v[0] - u[0]) * t, u[1] + (v[1] - u[1]) * t];
+  const m1 = gd(630693849), m2 = gd(630693960), rk = gd(630693847);
+  if (m1) {
+    const depan = ke(m1.c, pintu, 0.62);
+    tambah(ke(m1.c, pintu, 0.85), "reklame");
+    tambah([depan[0] - 6, depan[1] + 2], "spanduk");
+    for (let i = 0; i < 3; i++) tambah([depan[0] - 10 + i * 6, depan[1] - 6], "motor");
+  }
+  if (m2) {
+    const depan = ke(m2.c, pintu, 0.6);
+    tambah([depan[0] + 8, depan[1]], "reklame");
+    for (let i = 0; i < 2; i++) tambah([depan[0] - 6 + i * 6, depan[1] + 4], "motor");
+  }
+  if (rk) tambah(ke(rk.c, pintu, 0.55), "m1");
   const [a, b] = jalurD;
-  tambah([jalur[0][0] + (b[0] - a[0]) * 1.6, jalur[0][1] + (b[1] - a[1]) * 1.6], "gapura", 1.15);
+  tambah([pintu[0] + (b[0] - a[0]) * 1.4 + 12, pintu[1] + (b[1] - a[1]) * 1.4], "papan");
 }
 
 // zona UMKM: deret kios menghadap laut, warung, gazebo, rumah toko di belakang
@@ -603,6 +629,8 @@ for (const a of ARAH) {
   }
   // bangunan diekstrusi dari jejak asli
   for (const g of daftarGedung) isi.push([P(g.c[0], g.c[1])[1] + 2, ISO.gedung(g, P, S.TENDA)]);
+  // rangka jembatan busur biru di atas lantai jembatan
+  if (jembatan) isi.push(...ISO.jembatanBusur(jembatan.a, jembatan.b, P));
   isi.sort((u, v) => u[0] - v[0]);
   const inti = semuaArah[a].inti;
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}">

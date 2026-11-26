@@ -45,9 +45,8 @@
     return L.latLngBounds([[k[0], k[1]], [k[2], k[1]], [k[2], k[3]], [k[0], k[3]]].map(([x, y]) => crs.projection.unproject(L.point(x, y))));
   };
   let arahAktif = config.arahAwal;
-  let batasGambar = batasLatLng(arahAktif);
-  const layarKecil = innerWidth < 768;
-  const zoomAwal = layarKecil ? config.zoomAwal - 1 : config.zoomAwal;
+  // HP: satu tingkat lebih jauh agar semua marker kawasan (gambaran besar) muat di layar sempit
+  const zoomAwal = innerWidth < 768 ? config.zoomAwal - 1 : config.zoomAwal;
   const norm = (v) => ((Math.round(v) % 360) + 360) % 360;
   const map = L.map("map", {
     center: config.pusat,
@@ -65,20 +64,15 @@
 
   // Batas peta dihitung di ruang piksel gambar. maxBounds & getBoundsZoom Leaflet memakai kotak lintang/bujur
   // dan hanya dua sudutnya, sehingga salah pada proyeksi isometrik yang berputar (zoom & geser terkunci).
-  const isoAktif = () => map.options.crs !== L.CRS.EPSG3857;
   function aturZoomMin() {
-    let z;
-    if (isoAktif()) {
-      const { w, h } = ISO.arah[arahAktif], s = map.getSize();
-      z = 18 + Math.log2((Math.max(s.x / w, s.y / h) * 0.85) / ISO.S0); // gambar (hampir) menutupi layar
-    } else z = map.getBoundsZoom(batasGambar, true);
+    const { w, h } = ISO.arah[arahAktif], s = map.getSize();
+    let z = 18 + Math.log2((Math.max(s.x / w, s.y / h) * 0.85) / ISO.S0); // gambar (hampir) menutupi layar
     z = Math.min(config.zoomMaks, Math.max(config.zoomMin, Math.ceil(z)));
     map.setMinZoom(z);
     if (map.getZoom() < z) map.setZoom(z);
   }
   // pusat peta dijaga agar layar tidak keluar dari gambar
   function jagaBatas() {
-    if (!isoAktif()) return;
     const { w, h } = ISO.arah[arahAktif], sk = map.options.crs.scale(map.getZoom()), s = map.getSize();
     const c = map.project(map.getCenter());
     const jepit = (v, uk, layar) => (uk <= layar ? uk / 2 : Math.min(uk - layar / 2, Math.max(layar / 2, v)));
@@ -103,7 +97,7 @@
     });
   });
 
-  // ---------- lapisan ilustrasi (8 arah), satelit, peta jalan
+  // ---------- lapisan ilustrasi (8 arah pandang)
   const opsiTile = { arah: config.arahAwal, noWrap: true, keepBuffer: 4, className: "ilustrasi", attribution: "Ilustrasi © KKN Sawarna · data © kontributor <a href=\"https://www.openstreetmap.org/copyright\">OpenStreetMap</a>" };
   const tileIlustrasi = [
     L.tileLayer(ilustrasi.tiles, { ...opsiTile, minNativeZoom: 16, maxNativeZoom: 18, maxZoom: 19 }),
@@ -122,10 +116,6 @@
       icon: L.divIcon({ className: `label-peta label-${l.tipe}`, iconSize: [0, 0],
         html: `<span>${esc(d(l, "teks"))}</span>` }),
     })));
-    zona.forEach((z) => lapisLabel.addLayer(bisaKeyboard(L.marker(z.label, {
-      interactive: true, keyboard: true, zoomMin: 16, title: d(z, "nama"), alt: d(z, "nama"),
-      icon: L.divIcon({ className: "label-peta label-zona", iconSize: [0, 0], html: `<span style="--c:${z.warna}">${esc(d(z, "nama"))}</span>` }),
-    }).on("click", () => poligonZona[z.id].openPopup(L.latLng(z.label))))));
     setTimeout(aturLabel);
   }
   function aturLabel() {
@@ -134,39 +124,60 @@
   }
   map.on("zoomend", aturLabel);
 
-  const gambar = L.layerGroup([...tileIlustrasi, lapisLabel]).addTo(map);
-  const satelit = L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", { maxZoom: 19, attribution: "Citra © Esri" });
-  const jalan = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: "© OpenStreetMap" });
-  const LAPIS = { ilustrasi: gambar, satelit, jalan };
-  let lapisKini = "ilustrasi";
+  L.layerGroup([...tileIlustrasi, lapisLabel]).addTo(map);
 
   // indikator memuat (garis ombak)
   const elMuat = $("muat");
   let memuat = 0;
-  [...tileIlustrasi, satelit, jalan].forEach((tl) => {
+  tileIlustrasi.forEach((tl) => {
     tl.on("loading", () => { memuat++; elMuat.hidden = false; });
     tl.on("load", () => { memuat = Math.max(0, memuat - 1); if (!memuat) elMuat.hidden = true; });
   });
 
-  // ================================================================ zona
-  let modeIlustrasi = true;
-  const gayaZona = (z, sorot) => modeIlustrasi
-    ? { color: "#fff", weight: sorot ? 2.5 : 0, opacity: .9, fillColor: "#fff", fillOpacity: sorot ? .14 : 0 }
-    : { color: z.warna, weight: 2, opacity: 1, fillColor: z.warna, fillOpacity: sorot ? .3 : .16 };
-  const poligonZona = {};
-  const lapisZona = L.layerGroup().addTo(map);
+  // ================================================================ kawasan (marker bertingkat per zoom)
+  // Zoom jauh (< ZOOM_DETAIL): satu marker per kawasan mewakili isinya; titik di dalam kawasan disembunyikan.
+  // Zoom dekat (>= ZOOM_DETAIL): marker kawasan hilang, titik detail di dalamnya muncul.
+  const ZOOM_DETAIL = 18;
   const opsiPopup = { className: "popup-kartu", maxWidth: 300, minWidth: 240, autoPanPaddingTopLeft: [16, 130], autoPanPaddingBottomRight: [72, 24] };
-  zona.forEach((z) => {
-    const p = L.polygon(z.koordinat, gayaZona(z, false)).addTo(lapisZona);
-    p.on("mouseover", () => p.setStyle(gayaZona(z, true)));
-    p.on("mouseout", () => p.setStyle(gayaZona(z, false)));
-    p.bindPopup(() => buatPopupZona(z), opsiPopup);
-    poligonZona[z.id] = p;
-  });
+  const dalamPoligon = ([la, ln], poly) => {
+    let c = false;
+    for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+      const [ai, bi] = poly[i], [aj, bj] = poly[j];
+      if (bi > ln !== bj > ln && la < ((aj - ai) * (ln - bi)) / (bj - bi) + ai) c = !c;
+    }
+    return c;
+  };
+  // titik keselamatan selalu tampil di semua zoom, tidak dirangkum ke kawasan
+  const kawasanDari = (tt) => tt.kategori === "keselamatan" ? undefined : zona.find((z) => dalamPoligon([tt.lat, tt.lng], z.koordinat));
+  const lapisKawasan = L.layerGroup().addTo(map);
+  function buatKawasan() {
+    lapisKawasan.clearLayers();
+    zona.forEach((z) => {
+      const isi = titik.filter((tt) => kawasanDari(tt) === z && aktif.has(tt.kategori)).length;
+      const jumlah = isi ? `<b class="kw-jumlah" aria-hidden="true">${isi}</b>` : "";
+      const nama = d(z, "nama");
+      const mk = bisaKeyboard(L.marker(z.label, {
+        title: isi ? `${nama}: ${t("jumlahTempat", { n: isi })}` : nama, alt: nama, riseOnHover: true, zIndexOffset: 500,
+        icon: L.divIcon({ className: "pin-kawasan", iconSize: [0, 0],
+          html: `<div class="kw" style="--c:${z.warna}"><span class="kw-ikon">${ikon(z.ikon || "toko")}</span><span class="kw-nama">${esc(nama)}</span>${jumlah}</div>` }),
+      }));
+      if (isi && !z.tautan) mk.on("click", () => masukKawasan(z));
+      else mk.bindPopup(() => buatPopupZona(z), opsiPopup);
+      mk.addTo(lapisKawasan);
+    });
+  }
+  function masukKawasan(z) {
+    map.closePopup();
+    map.flyTo(z.label, Math.max(ZOOM_DETAIL, map.getZoom()), { duration: kurangiGerak ? 0 : .6 });
+    toast(t("menampilkan", { x: d(z, "nama") }));
+  }
+  const aturTingkat = () => map.getContainer().classList.toggle("tingkat-detail", map.getZoom() >= ZOOM_DETAIL);
+  map.on("zoomend", aturTingkat);
+  aturTingkat();
 
   // ================================================================ pin titik
-  const ikonPin = (k) => L.divIcon({
-    className: "pin", iconSize: [28, 28], iconAnchor: [14, 14], popupAnchor: [0, -16],
+  const ikonPin = (k, diKawasan) => L.divIcon({
+    className: diKawasan ? "pin pin-dalam" : "pin", iconSize: [28, 28], iconAnchor: [14, 14], popupAnchor: [0, -16],
     html: `<div class="pin-bulat" style="--c:${k.warna}">${ikon(k.ikon)}</div>`,
   });
   const grupKategori = {};
@@ -177,7 +188,7 @@
     titik.forEach((tt) => {
       const k = kategori[tt.kategori];
       if (!k) return console.warn("Kategori tidak dikenal:", tt.kategori);
-      const mk = bisaKeyboard(L.marker([tt.lat, tt.lng], { icon: ikonPin(k), title: d(tt, "nama"), alt: d(tt, "nama"), riseOnHover: true }))
+      const mk = bisaKeyboard(L.marker([tt.lat, tt.lng], { icon: ikonPin(k, !!kawasanDari(tt)), title: d(tt, "nama"), alt: d(tt, "nama"), riseOnHover: true }))
         .bindPopup(() => buatPopupTitik(tt, k), opsiPopup)
         .on("popupopen", () => mk.getElement()?.classList.add("dipilih"))
         .on("popupclose", () => mk.getElement()?.classList.remove("dipilih"))
@@ -198,6 +209,7 @@
   }
   function terapkanFilter() {
     Object.entries(grupKategori).forEach(([id, g]) => (aktif.has(id) ? map.addLayer(g) : map.removeLayer(g)));
+    buatKawasan();
     elFilter.querySelectorAll(".chip").forEach((b) => {
       const id = b.dataset.kat;
       b.setAttribute("aria-pressed", String(id === "*" ? aktif.size === semuaKat.length : aktif.has(id) && aktif.size < semuaKat.length));
@@ -217,11 +229,7 @@
   map.getContainer().addEventListener("click", (e) => {
     const fz = e.target.closest("[data-fokus-zona]");
     if (fz) {
-      const z = zona.find((x) => x.id === fz.dataset.fokusZona);
-      setFilter(semuaKat.filter((id) => id === "kuliner" || id === "sewa"));
-      map.closePopup();
-      map.flyToBounds(poligonZona[z.id].getBounds(), { padding: [40, 40], duration: kurangiGerak ? 0 : .6 });
-      toast(t("menampilkan", { x: d(z, "nama") }));
+      masukKawasan(zona.find((x) => x.id === fz.dataset.fokusZona));
     }
     if (e.target.closest("[data-wa-contoh]")) toast(t("waContoh"));
   }, true);
@@ -237,7 +245,7 @@
   }
 
   // ================================================================ panel kecil (satu terbuka sekaligus)
-  const PANEL = { "panel-arah": $("btn-kompas"), "panel-lapisan": $("btn-lapisan") };
+  const PANEL = { "panel-arah": $("btn-kompas") };
   function bukaPanel(id, buka) {
     Object.entries(PANEL).forEach(([pid, btn]) => {
       const b = pid === id ? buka : false;
@@ -266,12 +274,7 @@
   // ganti arah pandang = ganti sistem koordinat isometrik; pusat & zoom dipertahankan
   function terapkanCrs() {
     const pusat = map.getCenter(), z = map.getZoom();
-    const crs = lapisKini === "ilustrasi" ? crsArah(arahAktif) : L.CRS.EPSG3857;
-    batasGambar = lapisKini === "ilustrasi" ? batasLatLng(arahAktif) : L.latLngBounds(ilustrasi.batas);
-    map.options.crs = crs;
-    // maxBounds Leaflet hanya benar untuk lapisan satelit/OSM (Mercator biasa)
-    map.setMaxBounds(lapisKini === "ilustrasi" ? null : batasGambar.pad(0.05));
-    map.options.maxBoundsViscosity = 1;
+    map.options.crs = crsArah(arahAktif);
     map.setView(pusat, z, { reset: true });
     aturZoomMin();
     jagaBatas();
@@ -282,7 +285,7 @@
     arahAktif = a;
     tileIlustrasi.forEach((tl) => (tl.options.arah = a));
     aturBatasInti(a);
-    if (lapisKini === "ilustrasi") terapkanCrs();
+    terapkanCrs();
     perbaruiArah();
   }
   const selisih = (a, b) => Math.abs(((a - b + 540) % 360) - 180);
@@ -314,21 +317,7 @@
     map.flyTo(config.pusat, zoomAwal, { duration: kurangiGerak ? 0 : .6 });
   }
 
-  // ================================================================ tampilan peta
-  $("panel-lapisan").addEventListener("click", (e) => {
-    const b = e.target.closest("[data-lapis]");
-    if (!b || b.dataset.lapis === lapisKini) return;
-    map.removeLayer(LAPIS[lapisKini]);
-    lapisKini = b.dataset.lapis;
-    map.addLayer(LAPIS[lapisKini]);
-    LAPIS[lapisKini].bringToBack?.();
-    modeIlustrasi = lapisKini === "ilustrasi";
-    terapkanCrs();
-    map.getContainer().classList.toggle("mode-lain", !modeIlustrasi);
-    zona.forEach((z) => poligonZona[z.id].setStyle(gayaZona(z, false)));
-    $("panel-lapisan").querySelectorAll("[data-lapis]").forEach((x) => x.setAttribute("aria-checked", String(x === b)));
-  });
-  $("btn-lapisan").addEventListener("click", () => bukaPanel("panel-lapisan", $("panel-lapisan").hidden));
+  // ================================================================ zoom
   $("btn-plus").addEventListener("click", () => map.zoomIn());
   $("btn-minus").addEventListener("click", () => map.zoomOut());
 
@@ -436,7 +425,7 @@
   });
 
   // ================================================================ bahasa
-  const FAB = { "btn-aman": ["pelampung", "keselamatan"], "btn-lokasi": ["lokasi", "lokasi"], "btn-lapisan": ["lapisan", "lapisan"],
+  const FAB = { "btn-aman": ["pelampung", "keselamatan"], "btn-lokasi": ["lokasi", "lokasi"],
     "btn-plus": ["plus", "perbesar"], "btn-minus": ["minus", "perkecil"], "btn-koordinat": ["koordinat", "koordinat"] };
   Object.entries(FAB).forEach(([id, [ik]]) => ($(id).innerHTML = ikon(ik)));
   document.querySelectorAll("[data-tutup]").forEach((b) => (b.innerHTML = ikon("tutup")));
