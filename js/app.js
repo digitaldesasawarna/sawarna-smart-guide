@@ -12,27 +12,56 @@
   const kurangiGerak = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   // ================================================================ peta dasar
-  const batasGambar = L.latLngBounds(ilustrasi.batas);
+  // CRS isometrik per arah pandang (parameter dari js/iso.js, dibuat tools/gen-ilustrasi.mjs)
+  const ISO = window.ISO;
+  const crsCache = {};
+  function crsArah(a) {
+    if (crsCache[a]) return crsCache[a];
+    const { m: [A, B, C, D, E, F], w, h } = ISO.arah[a];
+    const det = A * D - C * B;
+    const projection = {
+      project(ll) {
+        const x = (ll.lng - ISO.barat) * ISO.U;
+        const y = (ISO.mercN - Math.log(Math.tan(Math.PI / 4 + (ll.lat * Math.PI) / 360))) * ISO.KY;
+        return L.point(A * x + C * y + E, B * x + D * y + F);
+      },
+      unproject(pt) {
+        const X = pt.x - E, Y = pt.y - F;
+        const x = (D * X - C * Y) / det, y = (-B * X + A * Y) / det;
+        return L.latLng(((2 * Math.atan(Math.exp(ISO.mercN - y / ISO.KY)) - Math.PI / 2) * 180) / Math.PI, x / ISO.U + ISO.barat);
+      },
+      bounds: L.bounds([0, 0], [w, h]),
+    };
+    return (crsCache[a] = L.extend({}, L.CRS.Earth, {
+      code: "SAWARNA-ISO-" + a, projection, infinite: true,
+      transformation: new L.Transformation(1, 0, 1, 0),
+      scale: (z) => ISO.S0 * Math.pow(2, z - 18),
+      zoom: (sk) => 18 + Math.log(sk / ISO.S0) / Math.LN2,
+    }));
+  }
+  // batas gambar (latlng) untuk arah tertentu: sudut gambar dikembalikan ke latlng
+  const batasLatLng = (a, kotak) => {
+    const crs = crsArah(a), { w, h } = ISO.arah[a], k = kotak || [0, 0, w, h];
+    return L.latLngBounds([[k[0], k[1]], [k[2], k[1]], [k[2], k[3]], [k[0], k[3]]].map(([x, y]) => crs.projection.unproject(L.point(x, y))));
+  };
+  let arahAktif = config.arahAwal;
+  let batasGambar = batasLatLng(arahAktif);
   const layarKecil = innerWidth < 768;
   const zoomAwal = layarKecil ? config.zoomAwal - 1 : config.zoomAwal;
   const norm = (v) => ((Math.round(v) % 360) + 360) % 360;
   const map = L.map("map", {
     center: config.pusat,
     zoom: zoomAwal,
+    crs: crsArah(config.arahAwal),
     zoomSnap: 1, // tile ilustrasi hanya ada di zoom bulat (16–19)
     minZoom: config.zoomMin,
     maxZoom: config.zoomMaks,
-    maxBounds: batasGambar,
+    maxBounds: batasGambar.pad(0.05),
     maxBoundsViscosity: 1,
     zoomControl: false,
     zoomAnimation: !kurangiGerak,
     fadeAnimation: !kurangiGerak,
     markerZoomAnimation: !kurangiGerak,
-    rotate: true,
-    bearing: norm(-config.arahAwal), // leaflet-rotate memutar isi searah jarum jam → bearing = −arah
-    touchRotate: true,
-    shiftKeyRotate: true,
-    rotateControl: false,
   });
   map.attributionControl.setPrefix(false);
 
@@ -59,14 +88,14 @@
   });
 
   // ---------- lapisan ilustrasi (8 arah), satelit, peta jalan
-  const lats = batas.map((b) => b[0]), lngs = batas.map((b) => b[1]), m = ilustrasi.marginInti;
-  const batasInti = L.latLngBounds([Math.min(...lats) - m, Math.min(...lngs) - m], [Math.max(...lats) + m, Math.max(...lngs) + m]);
-  const opsiTile = { arah: config.arahAwal, bounds: batasGambar, noWrap: true, keepBuffer: 4, className: "ilustrasi", attribution: "Ilustrasi © KKN Sawarna · data © kontributor <a href=\"https://www.openstreetmap.org/copyright\">OpenStreetMap</a>" };
+  const opsiTile = { arah: config.arahAwal, noWrap: true, keepBuffer: 4, className: "ilustrasi", attribution: "Ilustrasi © KKN Sawarna · data © kontributor <a href=\"https://www.openstreetmap.org/copyright\">OpenStreetMap</a>" };
   const tileIlustrasi = [
     L.tileLayer(ilustrasi.tiles, { ...opsiTile, minNativeZoom: 16, maxNativeZoom: 18, maxZoom: 19 }),
-    L.tileLayer(ilustrasi.tiles, { ...opsiTile, bounds: batasInti, minZoom: 19, minNativeZoom: 19, maxNativeZoom: 19, maxZoom: 19 }),
+    L.tileLayer(ilustrasi.tiles, { ...opsiTile, minZoom: 19, minNativeZoom: 19, maxNativeZoom: 19, maxZoom: 19 }),
   ];
-  const pakaiTileArah = (a) => tileIlustrasi.forEach((tl) => { if (tl.options.arah !== a) { tl.options.arah = a; tl.redraw(); } });
+  // zoom 19 hanya dirender untuk kawasan inti
+  const aturBatasInti = (a) => { tileIlustrasi[1].options.bounds = batasLatLng(a, ISO.arah[a].inti); };
+  aturBatasInti(config.arahAwal);
 
   // label nama tempat & zona
   const lapisLabel = L.layerGroup();
@@ -75,13 +104,13 @@
     label.forEach((l) => lapisLabel.addLayer(L.marker(l.lokasi, {
       interactive: false, keyboard: false, zoomMin: l.zoomMin || 0,
       icon: L.divIcon({ className: `label-peta label-${l.tipe}`, iconSize: [0, 0],
-        html: `<span data-putar="${l.putar || 0}">${esc(d(l, "teks"))}</span>` }),
+        html: `<span>${esc(d(l, "teks"))}</span>` }),
     })));
     zona.forEach((z) => lapisLabel.addLayer(bisaKeyboard(L.marker(z.label, {
       interactive: true, keyboard: true, zoomMin: 16, title: d(z, "nama"), alt: d(z, "nama"),
       icon: L.divIcon({ className: "label-peta label-zona", iconSize: [0, 0], html: `<span style="--c:${z.warna}">${esc(d(z, "nama"))}</span>` }),
     }).on("click", () => poligonZona[z.id].openPopup(L.latLng(z.label))))));
-    setTimeout(() => { aturLabel(); putarLabel(); });
+    setTimeout(aturLabel);
   }
   function aturLabel() {
     const z = map.getZoom();
@@ -217,45 +246,42 @@
   // ================================================================ arah pandang (8 arah, kunci 45°)
   const btnKompas = $("btn-kompas"), elRange = $("pa-range");
   btnKompas.innerHTML = ikonKompas();
-  const arahKini = () => norm(-map.getBearing());
-  const setArah = (a) => map.setBearing(norm(-a));
+  const arahKini = () => arahAktif;
+  // ganti arah pandang = ganti sistem koordinat isometrik; pusat & zoom dipertahankan
+  function terapkanCrs() {
+    const pusat = map.getCenter(), z = map.getZoom();
+    const crs = lapisKini === "ilustrasi" ? crsArah(arahAktif) : L.CRS.EPSG3857;
+    batasGambar = lapisKini === "ilustrasi" ? batasLatLng(arahAktif) : L.latLngBounds(ilustrasi.batas);
+    map.options.crs = crs;
+    map.setMaxBounds(batasGambar.pad(0.05));
+    map.setView(pusat, z, { reset: true });
+  }
+  function setArah(a) {
+    a = (Math.round(norm(a) / 45) * 45) % 360;
+    if (a === arahAktif) return perbaruiArah();
+    arahAktif = a;
+    tileIlustrasi.forEach((tl) => (tl.options.arah = a));
+    aturBatasInti(a);
+    if (lapisKini === "ilustrasi") terapkanCrs();
+    perbaruiArah();
+  }
   const selisih = (a, b) => Math.abs(((a - b + 540) % 360) - 180);
+  void selisih;
   function buatPreset() {
     const nama = t("arahNama"), singkat = t("arahSingkat");
     $("pa-preset").innerHTML = nama.map((n, i) => `<button type="button" data-derajat="${i * 45}" aria-label="${n}, ${i * 45}°">${singkat[i]}</button>`).join("");
     perbaruiArah();
   }
-  function putarLabel() {
-    const b = arahKini();
-    document.querySelectorAll(".label-peta span[data-putar]").forEach((sp) => {
-      const p = +sp.dataset.putar;
-      if (!p) return;
-      let a = norm(p - b);
-      if (a > 90 && a < 270) a = (a + 180) % 360;
-      sp.style.transform = `rotate(${a}deg)`;
-    });
-  }
   function perbaruiArah() {
     const b = arahKini(), i = Math.round(b / 45) % 8;
-    elRange.value = Math.round(b / 45) * 45 % 360;
+    elRange.value = b;
     $("pa-derajat").textContent = b + "°";
     $("pa-nama").textContent = t("menghadap", { x: t("arahNama")[i] });
     btnKompas.querySelector(".jarum").style.transform = `rotate(${-b}deg)`;
     btnKompas.setAttribute("aria-label", `${t("kompas")}: ${t("menghadap", { x: t("arahNama")[i] })}`);
     $("pa-preset").querySelectorAll("button").forEach((c) => c.setAttribute("aria-pressed", String(+c.dataset.derajat === b)));
-    putarLabel();
   }
-  let tSnap;
-  map.on("rotate", () => {
-    perbaruiArah();
-    clearTimeout(tSnap);
-    tSnap = setTimeout(() => {
-      const a = arahKini(), s = (Math.round(a / 45) * 45) % 360;
-      if (s !== a) setArah(s);
-      pakaiTileArah(s);
-    }, 250);
-  });
-  elRange.addEventListener("input", () => setArah(+elRange.value));
+  elRange.addEventListener("change", () => setArah(+elRange.value));
   $("panel-arah").addEventListener("click", (e) => {
     const c = e.target.closest("[data-derajat]"), st = e.target.closest("[data-step]");
     if (c) setArah(+c.dataset.derajat);
@@ -277,6 +303,7 @@
     map.addLayer(LAPIS[lapisKini]);
     LAPIS[lapisKini].bringToBack?.();
     modeIlustrasi = lapisKini === "ilustrasi";
+    terapkanCrs();
     map.getContainer().classList.toggle("mode-lain", !modeIlustrasi);
     zona.forEach((z) => poligonZona[z.id].setStyle(gayaZona(z, false)));
     $("panel-lapisan").querySelectorAll("[data-lapis]").forEach((x) => x.setAttribute("aria-checked", String(x === b)));

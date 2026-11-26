@@ -33,7 +33,7 @@ const KUALITAS = Number(process.env.QUALITY || 80);
 const B = GEO.batasGambar;
 const lats = PETA.batas.map((p) => p[0]), lngs = PETA.batas.map((p) => p[1]), M = 0.0015;
 const INTI = { utara: Math.max(...lats) + M, selatan: Math.min(...lats) - M, barat: Math.min(...lngs) - M, timur: Math.max(...lngs) + M };
-const LEVEL = [[16, B], [17, B], [18, B], [19, INTI]];
+const S0 = 0.932; // harus sama dengan tools/ilustrasi/isometrik.mjs
 
 const lon2x = (lng, z) => ((lng + 180) / 360) * 256 * 2 ** z;
 const lat2y = (lat, z) => ((1 - Math.log(Math.tan(Math.PI / 4 + (lat * Math.PI) / 360)) / Math.PI) / 2) * 256 * 2 ** z;
@@ -90,10 +90,14 @@ for (const arah of ARAH) {
   if (muat.result.value <= 0) throw new Error("SVG gagal dimuat");
 
   const BONGKAH = 8; // 8×8 tile per bongkah
-  for (const [z, R] of LEVEL) {
-    const X0 = lon2x(B.barat, z), X1 = lon2x(B.timur, z), Y0 = lat2y(B.utara, z), Y1 = lat2y(B.selatan, z);
-    const tx0 = Math.floor(lon2x(Math.max(R.barat, B.barat), z) / 256), tx1 = Math.floor((lon2x(Math.min(R.timur, B.timur), z) - 1e-6) / 256);
-    const ty0 = Math.floor(lat2y(Math.min(R.utara, B.utara), z) / 256), ty1 = Math.floor((lat2y(Math.max(R.selatan, B.selatan), z) - 1e-6) / 256);
+  // ruang piksel isometrik: piksel = unit × S0 × 2^(z−18) (sama dengan CRS di js/iso.js)
+  const meta = JSON.parse(fs.readFileSync(path.join(DIR, `peta-${arah}.json`), "utf8"));
+  for (const z of [16, 17, 18, 19]) {
+    const sk = S0 * 2 ** (z - 18);
+    const X0 = 0, Y0 = 0, X1 = meta.w * sk, Y1 = meta.h * sk;
+    const R = z === 19 ? meta.inti.map((v) => v * sk) : [0, 0, X1, Y1];
+    const tx0 = Math.max(0, Math.floor(R[0] / 256)), tx1 = Math.floor((Math.min(R[2], X1) - 1e-6) / 256);
+    const ty0 = Math.max(0, Math.floor(R[1] / 256)), ty1 = Math.floor((Math.min(R[3], Y1) - 1e-6) / 256);
     let n = 0;
     for (let bx = tx0; bx <= tx1; bx += BONGKAH) {
       for (let by = ty0; by <= ty1; by += BONGKAH) {

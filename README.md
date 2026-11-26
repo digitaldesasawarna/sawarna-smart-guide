@@ -25,7 +25,7 @@ lalu buka http://localhost:5173
 | `tools/gen-ilustrasi.mjs` | Generator ilustrasi peta (8 arah) → `assets/ilustrasi/peta-{arah}.svg` |
 | `tools/render-tiles.mjs` | SVG → tile WebP `assets/tiles/{arah}/{z}/{x}/{y}.webp` |
 | `tools/ilustrasi/` | Pustaka simbol tanah & sprite 2.5D |
-| `js/vendor/leaflet-rotate.js` | Plugin rotasi peta (Raruto, GPL-3.0) |
+| `js/iso.js` | Parameter proyeksi isometrik per arah (dibuat `gen-ilustrasi.mjs`) |
 
 ## Fitur kerangka
 
@@ -40,7 +40,7 @@ lalu buka http://localhost:5173
 
 Peta dasar bawaan adalah ilustrasi 2.5D bergaya peta taman wisata: tanah (jalan, zona, pantai, sungai, sawah) presisi sesuai koordinat asli, sedangkan bangunan, pohon, orang, dan kendaraan digambar "berdiri" menghadap penonton. Satelit dan peta jalan tetap tersedia di tombol lapisan.
 
-Ilustrasi dibuat untuk **8 arah pandang** (0°, 45°, … 315°) agar bangunan selalu tegak. Arah dipilih lewat tombol kompas (slider, ±45°, 8 arah mata angin), dua jari di HP, atau Shift + seret di laptop; putaran bebas otomatis dikunci ke arah terdekat.
+Ilustrasi bergaya **isometrik** (dimetrik 2:1, ala Rod Hunt / Icograms): bangunan diekstrusi dari jejak OSM asli, dibuat untuk **8 arah pandang** (0°, 45°, … 315°). Tiap arah memakai CRS Leaflet khusus dengan matriks yang sama dengan generator, sehingga pin dan GPS tetap tepat. Arah dipilih lewat tombol kompas (slider, ±45°, 8 arah mata angin).
 
 Ilustrasi disajikan sebagai **tile WebP** di `assets/tiles/{arah}/{z}/{x}/{y}.webp`; HP hanya mengunduh tile arah & tampilan yang sedang dilihat. Cara membuat ulang setelah mengubah zona/jalur di `js/data.js` atau bentuk alam di `data/geografi.json`:
 

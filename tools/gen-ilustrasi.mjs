@@ -16,6 +16,7 @@ import vm from "node:vm";
 import { fileURLToPath } from "node:url";
 import * as S from "./ilustrasi/simbol.mjs";
 import * as SP from "./ilustrasi/sprite.mjs";
+import * as ISO from "./ilustrasi/isometrik.mjs";
 
 const { f1 } = S;
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -407,6 +408,7 @@ const terpakai = [];
 const kosong = (p, r) => terpakai.every((q) => Math.hypot(q[0] - p[0], q[1] - p[1]) > r);
 const halamanDi = (p, rx, ry, c = "#E3D9B5", op = 0.55) => halaman.push(`<ellipse cx="${f1(p[0])}" cy="${f1(p[1])}" rx="${rx}" ry="${ry}" fill="${c}" opacity="${op}"/>`);
 
+const daftarGedung = [];
 if (NY) {
   // setiap bangunan OSM digambar di jejak aslinya: tapak + objek 2.5D dengan warna atap dari citra
   const jejak = [];
@@ -414,12 +416,13 @@ if (NY) {
     const luasU = luasPoly(bg.poly);
     jejak.push(`<path d="${dz(bg.poly)}" fill="#CDBE9C" opacity=".55"/>`);
     terpakai.push(bg.c);
-    const sk = Math.max(0.55, Math.min(1.3, Math.sqrt(luasU) / 13));
-    let id;
-    if (inside(bg.c, zUmkm)) id = bg.luas < 45 ? pick(ids.kios) : bg.luas < 110 ? "warung" : pickAtap(ids.rumahAtap, bg.atap);
-    else if (inside(bg.c, zHome)) id = bg.luas > 70 ? pickAtap(ids.rumah2Atap, bg.atap) : rnd() < 0.4 ? "pondok" : pickAtap(ids.rumahAtap, bg.atap);
-    else id = bg.atap === "seng" ? pick(ids.seng) : bg.luas > 150 ? pickAtap(ids.rumah2Atap, bg.atap) : pickAtap(ids.rumahAtap, bg.atap);
-    tambah(bg.c, id, sk);
+    // jenis bangunan → diekstrusi isometrik dari jejak aslinya (tools/ilustrasi/isometrik.mjs)
+    let jenis;
+    if (inside(bg.c, zUmkm)) jenis = bg.luas < 45 ? "kios" : bg.luas < 110 ? "warung" : "rumah";
+    else if (inside(bg.c, zHome)) jenis = bg.luas > 70 ? "rumah2" : "rumah";
+    else jenis = bg.atap === "seng" ? "seng" : bg.luas > 150 ? "rumah2" : "rumah";
+    daftarGedung.push({ id: daftarGedung.length, poly: bg.poly, c: bg.c, jenis, atap: bg.atap });
+    void luasU;
   }
   halaman.push(...jejak);
   // pekarangan: semak & pohon di sela rumah
@@ -575,24 +578,47 @@ luar.push(`<g clip-path="url(#cLuarDarat)"><path d="${dz(batas)}" fill="none" st
   <path d="${dz(batas)}" fill="none" stroke="#FFFFFF" stroke-width="22" stroke-linejoin="round"/><path d="${dz(batas)}" fill="none" stroke="#CFE6B8" stroke-width="14" stroke-linejoin="round"/></g>`);
 const spriteDalam = sprite; // semua objek berdiri ditampilkan (dalam & luar kawasan)
 
+// ================================================================ tulis: peta isometrik per arah pandang
 const ARAH = process.argv[2] ? [Number(process.argv[2])] : [0, 45, 90, 135, 180, 225, 270, 315];
 const DIR = path.join(ROOT, "assets/ilustrasi");
 fs.mkdirSync(DIR, { recursive: true });
-const tabir = `<path d="M0 0H${f1(W)}V${f1(H)}H0Z ${dz(batas)}" fill="#F3F6EE" fill-rule="evenodd" opacity=".3" clip-path="${cDarat}"/>`;
-const dasar = L.join("\n");
+const dasar = L.join("\n") + "\n" + luar.join("\n");
+const semuaArah = {};
+for (const a of [0, 45, 90, 135, 180, 225, 270, 315]) {
+  semuaArah[a] = ISO.matriks(a, W, H);
+  const Pa = ISO.proyektor(semuaArah[a].m), bi = batas.map(([x, y]) => Pa(x, y));
+  // kotak kawasan inti (untuk tile zoom 19)
+  semuaArah[a].inti = [Math.min(...bi.map((p) => p[0])) - 120, Math.min(...bi.map((p) => p[1])) - 140, Math.max(...bi.map((p) => p[0])) + 120, Math.max(...bi.map((p) => p[1])) + 80].map(Math.round);
+}
+
 for (const a of ARAH) {
-  const r = (a * Math.PI) / 180, sn = Math.sin(r), cs = Math.cos(r);
-  const urut = (arr) => arr.map((o) => [-o.x * sn + o.y * cs, o]).sort((p, q) => p[0] - q[0]).map(([, o]) =>
-    `<use href="#${o.id}" transform="translate(${f1(o.x)} ${f1(o.y)})${a ? ` rotate(${a})` : ""}${o.s !== 1 ? ` scale(${Math.round(o.s * 100) / 100})` : ""}"/>`).join("");
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 ${f1(W)} ${f1(H)}" width="${Math.round(W)}" height="${Math.round(H)}">
-<!-- Dibuat oleh tools/gen-ilustrasi.mjs, jangan edit manual. Arah pandang ${a}°. Batas: ${JSON.stringify(B)} -->
-<defs>${defs.join("\n")}</defs>
-${dasar}
-<g>${urut(spriteLaut)}</g>
-${luar.join("\n")}
-<g>${urut(spriteDalam)}</g>
+  const { m, w, h } = semuaArah[a];
+  const P = ISO.proyektor(m);
+  const isi = [];
+  // objek berdiri (pohon, orang, payung, kendaraan, perahu…) tetap tegak di layar
+  for (const o of [...spriteLaut, ...sprite]) {
+    const [X, Y] = P(o.x, o.y);
+    const sk = o.s * 0.85;
+    isi.push([Y, `<use href="#${o.id}" transform="translate(${f1(X)} ${f1(Y)}) scale(${Math.round(sk * 100) / 100})"/>`]);
+  }
+  // bangunan diekstrusi dari jejak asli
+  for (const g of daftarGedung) isi.push([P(g.c[0], g.c[1])[1] + 2, ISO.gedung(g, P, S.TENDA)]);
+  isi.sort((u, v) => u[0] - v[0]);
+  const inti = semuaArah[a].inti;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}">
+<!-- Dibuat oleh tools/gen-ilustrasi.mjs (isometrik), jangan edit manual. Arah pandang ${a}°. -->
+<defs>${defs.join("\n")}${ISO.defsIso()}</defs>
+<rect width="${w}" height="${h}" fill="#3F86C4"/>
+<g transform="matrix(${m.join(" ")})">${dasar}</g>
+<g>${isi.map((i) => i[1]).join("")}</g>
 </svg>`;
   fs.writeFileSync(path.join(DIR, `peta-${a}.svg`), svg);
-  console.log(`assets/ilustrasi/peta-${a}.svg  ${(svg.length / 1024).toFixed(0)} KB`);
+  fs.writeFileSync(path.join(DIR, `peta-${a}.json`), JSON.stringify({ arah: a, m, w, h, inti }));
+  console.log(`assets/ilustrasi/peta-${a}.svg  ${w}×${h}  ${(svg.length / 1024).toFixed(0)} KB`);
 }
-console.log(`${sprite.length + spriteLaut.length} objek, ${Math.round(W)}×${Math.round(H)}`);
+
+// parameter proyeksi untuk aplikasi (Leaflet CRS khusus) — selalu lengkap 8 arah
+fs.writeFileSync(path.join(ROOT, "js/iso.js"), `/* Dibuat oleh tools/gen-ilustrasi.mjs — parameter proyeksi isometrik per arah pandang. */
+window.ISO = ${JSON.stringify({ U, KY, barat: B.barat, mercN: merc(B.utara), S0: ISO.S0, arah: semuaArah })};
+`);
+console.log(`${sprite.length + spriteLaut.length} objek berdiri, ${daftarGedung.length} bangunan isometrik`);

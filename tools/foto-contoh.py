@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """
 Membuat FOTO CONTOH (docs/DESIGN.md §7) untuk tiap titik di js/data.js: potongan ilustrasi peta
-16:9 di sekitar lokasi tempat, dari tile arah 0° (objek tegak). Ganti dengan foto asli hasil survei.
+16:9 di sekitar lokasi tempat, dari tile isometrik arah 225° (arah awal). Ganti dengan foto asli hasil survei.
 
   python tools/foto-contoh.py
 
 Hasil: assets/foto/{id}.webp (640×360). Titik yang sudah punya kolom "foto" dilewati.
 Butuh: Python 3 + Pillow, dan tile hasil tools/render-tiles.mjs.
 """
-import math, os, re
+import json, math, os, re
 from PIL import Image
 
 AKAR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -18,14 +18,18 @@ KELUAR = os.path.join(AKAR, "assets", "foto")
 os.makedirs(KELUAR, exist_ok=True)
 LW, LH = 640, 360
 
-def px(lat, lng, z):
-    n = 256 * 2 ** z
-    x = (lng + 180) / 360 * n
-    y = (1 - math.log(math.tan(math.pi / 4 + math.radians(lat) / 2)) / math.pi) / 2 * n
-    return x, y
+ARAH = "225"
+ISO = json.loads(re.search(r"window\.ISO = (\{.*\});", open(os.path.join(AKAR, "js", "iso.js"), encoding="utf-8").read()).group(1))
+A, B, C, D, E, F = ISO["arah"][ARAH]["m"]
+
+def px(lat, lng, z):  # sama dengan CRS isometrik di js/app.js
+    x = (lng - ISO["barat"]) * ISO["U"]
+    y = (ISO["mercN"] - math.log(math.tan(math.pi / 4 + math.radians(lat) / 2))) * ISO["KY"]
+    sk = ISO["S0"] * 2 ** (z - 18)
+    return (A * x + C * y + E) * sk, (B * x + D * y + F) * sk
 
 def tile(z, x, y):
-    f = os.path.join(AKAR, "assets", "tiles", "0", str(z), str(x), f"{y}.webp")
+    f = os.path.join(AKAR, "assets", "tiles", ARAH, str(z), str(x), f"{y}.webp")
     return Image.open(f).convert("RGB") if os.path.exists(f) else None
 
 for id_, lat, lng in titik:
