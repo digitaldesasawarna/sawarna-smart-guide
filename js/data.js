@@ -23,7 +23,7 @@ window.PETA = {
   // Peta ilustrasi: tile WebP hasil tools/gen-ilustrasi.mjs + tools/render-tiles.mjs.
   // Batas HARUS sama dengan data/geografi.json → batasGambar. Zoom 19 hanya ada di kawasan inti.
   ilustrasi: {
-    tiles: "assets/tiles/{arah}/{z}/{x}/{y}.webp?v=iso5", // naikkan ?v= setiap tile dirender ulang (hindari cache lama) // satu set per arah pandang (0, 45, … 315)
+    tiles: "assets/tiles/{arah}/{z}/{x}/{y}.webp?v=iso6", // naikkan ?v= setiap tile dirender ulang (hindari cache lama) // satu set per arah pandang (0, 45, … 315)
     batas: [[-6.9960, 106.2960], [-6.9735, 106.3180]],
     marginInti: 0.0015,
   },
@@ -89,16 +89,34 @@ window.PETA = {
     },
   ],
 
-  // Jalur utama: Pintu Masuk Ciantir 1 (±22 m di utara jembatan) → jembatan Cisawarna → homestay → pantai (dipakai generator ilustrasi).
-  // Titik ke-2 & ke-3 = ujung jembatan menurut OpenStreetMap.
+  // Jalur ke Pantai Ciantir, koordinat dari Google Maps (dikirim pengguna, 27 Nov 2026).
+  // jalur  : dari Pintu Masuk Ciantir 1 (khusus motor) lewat jembatan biru.
+  // jalur2 : dari Pintu Masuk Ciantir 2 (mobil & motor), lalu belok kanan menyatu dengan jalur 1 di dekat pantai.
   jalur: {
-    nama: "Jalur Utama ke Pantai", nama_en: "Main path to the beach",
+    nama: "Jalur dari Pintu Masuk Ciantir 1", nama_en: "Route from Ciantir Entrance 1",
     koordinat: [
-      [-6.979842, 106.310189], [-6.980036, 106.310231], [-6.980329, 106.310302], [-6.98092, 106.30960],
-      [-6.98169, 106.30927], [-6.98256, 106.30932], [-6.98392, 106.30877],
-      [-6.98474, 106.30850], [-6.98496, 106.30830],
+      [-6.979919, 106.310192], [-6.980014, 106.310217], [-6.980147, 106.310253], [-6.980308, 106.310283],
+      [-6.980647, 106.310325], [-6.980781, 106.310267], [-6.980928, 106.310247], [-6.981058, 106.310256],
+      [-6.981089, 106.310203], [-6.981128, 106.310014], [-6.981244, 106.309961], [-6.981333, 106.309767],
+      [-6.981417, 106.309767], [-6.981492, 106.309786], [-6.981575, 106.309747], [-6.981675, 106.309778],
+      [-6.981822, 106.309831], [-6.981956, 106.309858], [-6.982067, 106.309892], [-6.982158, 106.30985],
+      [-6.982242, 106.309789], [-6.982317, 106.309786], [-6.982467, 106.309783], [-6.982494, 106.309594],
+      [-6.982731, 106.309589], [-6.983281, 106.309575], [-6.983367, 106.309572], [-6.983728, 106.309547],
+      [-6.983939, 106.309364], [-6.984333, 106.309331], [-6.984522, 106.309231], [-6.985236, 106.308811],
     ],
   },
+  jalur2: {
+    nama: "Jalur dari Pintu Masuk Ciantir 2", nama_en: "Route from Ciantir Entrance 2",
+    koordinat: [
+      [-6.978961, 106.306647], [-6.979311, 106.306611], [-6.980589, 106.306683], [-6.9809, 106.306725],
+      [-6.981189, 106.306778], [-6.981489, 106.306844], [-6.981933, 106.306994], [-6.982156, 106.307203],
+      [-6.982492, 106.307528], [-6.982711, 106.307656], [-6.983006, 106.307919], [-6.983303, 106.308194],
+      [-6.98375, 106.308628], [-6.983986, 106.308783], [-6.984242, 106.308964], [-6.984486, 106.309228],
+      [-6.984522, 106.309231], [-6.985236, 106.308811],
+    ],
+  },
+  // Jembatan biru (rangka busur) menurut OpenStreetMap; dilalui jalur 1
+  jembatan: [[-6.980036, 106.310231], [-6.980329, 106.310302]],
 
   // Info keselamatan statis (PRD F4). Nomor lokal = contoh sampai survei.
   keselamatan: {
@@ -134,6 +152,8 @@ window.PETA = {
     // Koordinat pintu masuk dari Google Maps (dikirim pengguna, 27 Nov 2026). Loket tiket berada di titik Pintu 1.
     { id: "pintu-masuk", kategori: "akses", nama: "Pintu Masuk Ciantir 1 & Loket Tiket", nama_en: "Ciantir Entrance 1 & ticket booth", lat: -6.979842, lng: 106.310189, jam: "24 jam",
       deskripsi: "Khusus motor, lewat jembatan biru. Bayar retribusi masuk di loket di sini.", deskripsi_en: "Motorbikes only, across the blue bridge. Pay the entrance fee at the booth here.", contoh: true, aktif: true },
+    { id: "parkir-wisata", kategori: "fasilitas", nama: "Parkir Wisata Pantai Ciantir", nama_en: "Ciantir Beach visitor parking", lat: -6.980319, lng: 106.306825, jam: "24 jam",
+      deskripsi: "Tempat parkir mobil dan motor di jalur dari Pintu Masuk Ciantir 2.", deskripsi_en: "Car and motorbike parking on the route from Ciantir Entrance 2.", contoh: true, aktif: true },
     { id: "pintu-masuk-2", kategori: "akses", nama: "Pintu Masuk Ciantir 2", nama_en: "Ciantir Entrance 2", lat: -6.978961, lng: 106.306647, jam: "24 jam",
       deskripsi: "Bisa dilalui mobil dan motor.", deskripsi_en: "Open to cars and motorbikes.", contoh: true, aktif: true },
     { id: "warung-seafood", kategori: "kuliner", nama: "Warung Seafood Bu Ani", nama_en: "Bu Ani's Seafood", lat: -6.98532, lng: 106.30844, jam: "08.00–21.00", whatsapp: "",

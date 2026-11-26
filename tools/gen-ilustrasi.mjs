@@ -156,7 +156,8 @@ const hutan = pts(GEO.hutan), lapangan = pts(GEO.lapangan);
 const batas = pts(PETA.batas);
 const zUmkm = pts(PETA.zona.find((z) => z.id === "zona-umkm").koordinat);
 const zHome = pts(PETA.zona.find((z) => z.id === "zona-homestay").koordinat);
-const jalur = pts(PETA.jalur.koordinat);
+const jalur = pts(PETA.jalur.koordinat);                     // Pintu Masuk Ciantir 1 → pantai (motor)
+const jalur2 = PETA.jalur2 ? pts(PETA.jalur2.koordinat) : null; // Pintu Masuk Ciantir 2 → pantai (mobil & motor)
 
 const garisPantai = densify([...spitLaut, ...laut], 30);   // barat → selatan; laut di kanan
 const dalamD = densify(dalam, 25), spitDalamD = densify(spitDalam, 25);
@@ -226,7 +227,9 @@ const pusatPoly = (q) => [q.reduce((t, v) => t + v[0], 0) / q.length, q.reduce((
 const bangunanNyata = NY ? NY.bangunan.map((b) => { const q = pts(b.poly); // "hijau" di citra hampir selalu kanopi pohon yang menutupi atap → pakai warna atap umum
   return { osm: b.id, atap: b.atap === "hijau" ? pick(["terakota", "terakota", "genteng", "cokelat"]) : b.atap, luas: b.luas, poly: q, c: pusatPoly(q) }; })
   .filter((b) => b.c[0] > 0 && b.c[1] > 0 && b.c[0] < W && b.c[1] < H)
-  .filter((b) => !b.poly.some((q) => distLine(q, sungai) < LS / 2 + 3)) : []; // tidak ada rumah di atas sungai
+  .filter((b) => !b.poly.some((q) => distLine(q, sungai) < LS / 2 + 3)) // tidak ada rumah di atas sungai
+  // jalur dari Google Maps tidak boleh tertutup rumah: buang jejak yang menimpa garis tengah jalur
+  .filter((b) => ![jalur, ...(jalur2 ? [jalur2] : [])].some((g) => b.poly.some((q) => distLine(q, g) < 4) || distLine(b.c, g) < 5)) : [];
 const LEBAR_JALAN = { primary: 26, secondary: 24, tertiary: 22, unclassified: 16, residential: 14, service: 11, track: 9, footway: 7, path: 7, steps: 7 };
 const jalanNyata = NY ? NY.jalan.filter((j) => LEBAR_JALAN[j.kelas]).map((j) => ({ kelas: j.kelas, lebar: LEBAR_JALAN[j.kelas], garis: densify(pts(j.garis), 20) })) : [];
 const kaliNyata = NY ? NY.air.filter((a) => a.kelas !== "river" && a !== sungaiOSM?.hulu).map((a) => densify(pts(a.garis), 20)) : [];
@@ -237,7 +240,7 @@ const atasJalur = jalur[0];
 const jalanKeUtara = [densify([[atasJalur[0], atasJalur[1]], [atasJalur[0] + 30, atasJalur[1] - 260], [atasJalur[0] - 20, atasJalur[1] - 620], [atasJalur[0] + 10, -10]], 20)];
 const jalanBelakangPantai = runs(densify(offset(dalamD, -165), 20), (p) => !diAir(p) && !diHutan(p) && !diSawah(p) && p[1] > dalamD[0][1] + 40);
 const jalanDesa = NY ? jalanNyata.map((j) => j.garis) : [...jalanUtara, ...jalanKeUtara, ...jalanBelakangPantai];
-const dekatJalan = (p, m) => jalanDesa.some((j) => distLine(p, j) < m) || distLine(p, jalur) < m;
+const dekatJalan = (p, m) => jalanDesa.some((j) => distLine(p, j) < m) || distLine(p, jalur) < m || (jalur2 && distLine(p, jalur2) < m);
 
 // ================================================================ simbol (defs)
 const defs = [S.defsUmum(), S.lainLain()];
@@ -437,13 +440,30 @@ for (const j of daftarJalan) {
   L.push(`<path d="${smooth(j.garis)}" stroke="${tanah ? "#E8DCC0" : j.lebar >= 20 ? "#C3C8CE" : "#CDD1D5"}" stroke-width="${j.lebar - 5}" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`);
   if (j.lebar >= 20) L.push(`<path d="${smooth(j.garis)}" stroke="#FFFFFF" stroke-width="1.4" fill="none" stroke-dasharray="10 12" opacity=".9"/>`);
 }
-L.push(`<path d="${smooth(jalur)}" stroke="#152638" stroke-width="30" fill="none" stroke-linecap="round" opacity=".18" filter="url(#b4)" transform="translate(3 4)"/>`);
-L.push(`<path d="${smooth(jalur)}" stroke="#FFFFFF" stroke-width="30" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`);
-L.push(`<path d="${smooth(jalur)}" stroke="#B5BBC2" stroke-width="24" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`);
-L.push(`<path d="${smooth(jalur)}" stroke="#A3AAB2" stroke-width="24" fill="none" stroke-dasharray="14 30 6 40" stroke-linejoin="round" opacity=".6"/>`);
-L.push(`<path d="${smooth(jalur)}" stroke="#FFFFFF" stroke-width="1.4" fill="none" stroke-dasharray="10 12" opacity=".9"/>`);
+// jalur dari koordinat Google Maps: jalur 2 = jalan aspal (mobil & motor), jalur 1 = jalan beton sempit (khusus motor)
+const gambarJalur = (g, lebar, marka) => {
+  L.push(`<path d="${smooth(g)}" stroke="#152638" stroke-width="${lebar}" fill="none" stroke-linecap="round" opacity=".18" filter="url(#b4)" transform="translate(3 4)"/>`);
+  L.push(`<path d="${smooth(g)}" stroke="#FFFFFF" stroke-width="${lebar}" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`);
+  L.push(`<path d="${smooth(g)}" stroke="#B5BBC2" stroke-width="${lebar - 6}" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`);
+  L.push(`<path d="${smooth(g)}" stroke="#A3AAB2" stroke-width="${lebar - 6}" fill="none" stroke-dasharray="14 30 6 40" stroke-linejoin="round" opacity=".6"/>`);
+  if (marka) L.push(`<path d="${smooth(g)}" stroke="#FFFFFF" stroke-width="1.4" fill="none" stroke-dasharray="10 12" opacity=".9"/>`);
+};
+if (jalur2) gambarJalur(jalur2, 28, true);
+gambarJalur(jalur, 18, false);
+
+// parkir wisata (titik dari Google Maps): pelataran berpaving
+const tParkir = PETA.titik.find((t) => t.id === "parkir-wisata");
+const parkir = tParkir ? P([tParkir.lat, tParkir.lng]) : null;
+let sudutParkir = 0;
+if (parkir) {
+  const sudut = (sudutParkir = jalur2 ? (() => { let m = 0, k = 1; for (let i = 1; i < jalur2.length; i++) { const dd = distSeg(parkir, jalur2[i - 1], jalur2[i]); if (i === 1 || dd < m) { m = dd; k = i; } } return Math.atan2(jalur2[k][1] - jalur2[k - 1][1], jalur2[k][0] - jalur2[k - 1][0]); })() : 0);
+  L.push(`<g transform="translate(${f1(parkir[0])} ${f1(parkir[1])}) rotate(${f1((sudut * 180) / Math.PI)})">
+    <rect x="-34" y="-20" width="68" height="40" rx="4" fill="#FFFFFF"/><rect x="-31" y="-17" width="62" height="34" rx="3" fill="#D9D1BC"/>
+    ${[-24, -12, 0, 12, 24].map((x) => `<path d="M${x} -17V-4M${x} 4V17" stroke="#FFFFFF" stroke-width="1.2" opacity=".85"/>`).join("")}
+  </g>`);
+}
 // 9. jembatan busur baja biru (foto survei) pada ruas jalur yang melintasi sungai
-const jembatan = (() => {
+const jembatan = PETA.jembatan ? { a: P(PETA.jembatan[0]), b: P(PETA.jembatan[1]) } : (() => {
   for (let i = 1; i < jalur.length; i++) {
     const a = jalur[i - 1], b = jalur[i];
     for (let t = 0; t <= 1; t += 0.02) if (distLine([a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t], sungai) < 3) return { a, b };
@@ -555,10 +575,16 @@ for (const p of poisson(zHome, 30, (p) => bebas(p) && kosong(p, 24)).filter(() =
 }
 // jalur utama: lampu, umbul-umbul, pejalan kaki, gapura di pintu masuk
 const jalurD = densify(jalur, 10);
-for (const [x, y, ang] of along(jalurD, 48, 24)) {
-  const a = (ang * Math.PI) / 180, nx = -Math.sin(a), ny = Math.cos(a), sisi = Math.round(x + y) % 2 ? 1 : -1;
-  tambah([x + nx * 15 * sisi, y + ny * 15 * sisi], "lampu2");
-  if (rnd() < 0.55) tambah([x + rr(-5, 5), y + rr(-5, 5)], pick(ids.orang));
+for (const [g, jarakLampu] of [[jalurD, 11], ...(jalur2 ? [[densify(jalur2, 10), 16]] : [])])
+  for (const [x, y, ang] of along(g, 48, 24)) {
+    const a = (ang * Math.PI) / 180, nx = -Math.sin(a), ny = Math.cos(a), sisi = Math.round(x + y) % 2 ? 1 : -1;
+    tambah([x + nx * jarakLampu * sisi, y + ny * jarakLampu * sisi], "lampu2");
+    if (rnd() < 0.4) tambah([x + rr(-4, 4), y + rr(-4, 4)], g === jalurD ? (rnd() < 0.6 ? "motor" : pick(ids.orang)) : rnd() < 0.5 ? pick(ids.mobil) : "motor");
+  }
+if (parkir) for (const lx of [-24, -12, 0, 12, 24]) for (const ly of [-10, 10]) { // kendaraan di petak parkir
+  if (rnd() < 0.35) continue;
+  const c = Math.cos(sudutParkir), sn = Math.sin(sudutParkir);
+  tambah([parkir[0] + lx * c - ly * sn, parkir[1] + lx * sn + ly * c], rnd() < 0.55 ? pick(ids.mobil) : "motor");
 }
 {
   // simpang Jl. Sawarna: reklame & motor di depan minimarket, spanduk kopi, papan info, mobil putih di depan rumah kayu

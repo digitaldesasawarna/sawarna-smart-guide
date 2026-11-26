@@ -379,7 +379,8 @@
     const ev = keselamatan.evakuasi;
     gambarEvakuasi();
     lapisEvak.addTo(map);
-    map.flyToBounds(L.latLngBounds(ev.jalur), { padding: [80, 80], duration: kurangiGerak ? 0 : .8 });
+    // flyToBounds memakai kotak lintang/bujur yang salah pada proyeksi isometrik → terbang ke tengah jalur
+    map.flyTo(L.latLngBounds(ev.jalur).getCenter(), 18, { duration: kurangiGerak ? 0 : .8 });
     toast(t("evakuasiTampil"), 4000);
   }
   let pemicuAman = null;
