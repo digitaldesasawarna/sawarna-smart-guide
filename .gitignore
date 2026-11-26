@@ -3,3 +3,5 @@ node_modules/
 # bahan ilustrasi (dibuat ulang oleh tools/gen-ilustrasi.mjs); situs memakai assets/tiles
 assets/peta-ilustrasi.svg
 assets/ilustrasi/
+# dokumen acuan (PRD, DESIGN) disimpan lokal saja
+docs/
