@@ -52,7 +52,7 @@ node tools/render-tiles.mjs 225   #    (atau satu arah saja)
 
 Foto contoh untuk kartu info (potongan ilustrasi) dibuat dengan `python tools/foto-contoh.py` → `assets/foto/`; ganti dengan foto asli hasil survei.
 
-Bangunan, jalan, dan anak sungai di ilustrasi mengikuti data OpenStreetMap (© kontributor OpenStreetMap, ODbL); warna atap disimpulkan dari citra satelit sebagai acuan saja.
+Hutan, sawah, dan lahan terbuka mengikuti tutupan lahan hasil `python tools/tutupan-lahan.py` (klasifikasi warna & tekstur citra satelit Esri per sel ±4 m → `data/tutupan.json`; citranya sendiri tidak disimpan). Sungai Cisawarna, bangunan, jalan, dan anak sungai di ilustrasi mengikuti data OpenStreetMap; setiap jalan yang melintasi sungai diberi jembatan (© kontributor OpenStreetMap, ODbL); warna atap disimpulkan dari citra satelit sebagai acuan saja.
 
 Simbol tanah ada di `tools/ilustrasi/simbol.mjs`, objek berdiri (rumah, kios, pohon, orang, gapura, dll.) di `tools/ilustrasi/sprite.mjs`. Label nama tempat diatur di `js/data.js` → `label`.
 

@@ -161,9 +161,9 @@ export const MINIMARKET = {
  * Lantai digambar di lapisan tanah; fungsi ini menghasilkan dua sisi rangka yang berdiri,
  * masing-masing [kedalaman Y, svg] agar ikut diurutkan dengan objek lain.
  */
-export function jembatanBusur(a, b, P, { lebar = 20, tinggi = 22, ruas = 12 } = {}) {
+export function jembatanBusur(a, b, P, { lebar = 20, tinggi = 22, ruas = 12, warna = ["#2E78C7", "#1B4F8A"] } = {}) {
   const dx = b[0] - a[0], dy = b[1] - a[1], l = Math.hypot(dx, dy) || 1, nx = -dy / l, ny = dx / l;
-  const BIRU = "#2E78C7", GELAP = "#1B4F8A";
+  const [BIRU, GELAP] = warna; // tinggi 0 = pagar rendah jembatan beton biasa
   return [1, -1].map((sisi) => {
     const tanah = [], atas = [];
     for (let i = 0; i <= ruas; i++) {

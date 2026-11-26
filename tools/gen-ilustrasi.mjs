@@ -13,6 +13,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import vm from "node:vm";
+import zlib from "node:zlib";
 import { fileURLToPath } from "node:url";
 import * as S from "./ilustrasi/simbol.mjs";
 import * as SP from "./ilustrasi/sprite.mjs";
@@ -162,12 +163,51 @@ const dalamD = densify(dalam, 25), spitDalamD = densify(spitDalam, 25);
 const daratan = [[0, 0], [W, 0], [W, H], [laut.at(-1)[0], H], ...laut.slice().reverse(), ...spitLaut.slice().reverse(), [0, spitLaut[0][1]]];
 const pasirSpit = [...spitDalam, ...spitLaut.slice().reverse(), [0, spitDalam[0][1]]];
 const pasirSelatan = [...dalam, ...laut.slice().reverse()];
-const LS = 46; // lebar sungai (±25 m)
+const LS = 34; // lebar sungai (±18 m, diukur dari citra)
+
+// tutupan lahan hasil tools/tutupan-lahan.py: 0 tanah/rumput · 1 pepohonan · 2 sawah/ladang · 3 permukiman · 4 air
+const fileTutupan = path.join(ROOT, "data/tutupan.json");
+const TP = (() => {
+  if (!fs.existsSync(fileTutupan)) return null;
+  const t = JSON.parse(fs.readFileSync(fileTutupan, "utf8"));
+  const g = new Uint8Array(t.lebar * t.tinggi);
+  t.baris.forEach((rl, j) => { let i = j * t.lebar; for (const seg of rl.split(".")) { const c = +seg[0], n = seg.length > 1 ? +seg.slice(1) : 1; g.fill(c === 4 ? 0 : c, i, i + n); i += n; } });
+  // saring mayoritas 5×5 agar bercak kecil hilang (2 kali)
+  let a = g;
+  for (let ulang = 0; ulang < 2; ulang++) {
+    const b = new Uint8Array(a.length), hit = new Uint16Array(4);
+    for (let j = 0; j < t.tinggi; j++) for (let i = 0; i < t.lebar; i++) {
+      hit.fill(0);
+      for (let dj = -2; dj <= 2; dj++) for (let di = -2; di <= 2; di++) {
+        const x = Math.min(t.lebar - 1, Math.max(0, i + di)), y = Math.min(t.tinggi - 1, Math.max(0, j + dj));
+        hit[a[y * t.lebar + x]]++;
+      }
+      let m = a[j * t.lebar + i]; for (let c = 0; c < 4; c++) if (hit[c] > hit[m]) m = c;
+      b[j * t.lebar + i] = m;
+    }
+    a = b;
+  }
+  return { sel: t.sel, w: t.lebar, h: t.tinggi, g: a };
+})();
+const kelasDi = ([x, y]) => { if (!TP) return 0; const i = Math.floor(x / TP.sel), j = Math.floor(y / TP.sel); return i < 0 || j < 0 || i >= TP.w || j >= TP.h ? 0 : TP.g[j * TP.w + i]; };
+// PNG kecil (RGBA) tanpa pustaka luar
+function png(w, h, rgba) {
+  const crcT = new Int32Array(256).map((_, n) => { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1; return c; });
+  const crc = (b) => { let c = -1; for (const v of b) c = crcT[(c ^ v) & 255] ^ (c >>> 8); return (c ^ -1) >>> 0; };
+  const potong = (jenis, data) => { const l = Buffer.alloc(4); l.writeUInt32BE(data.length); const td = Buffer.concat([Buffer.from(jenis), data]); const c = Buffer.alloc(4); c.writeUInt32BE(crc(td)); return Buffer.concat([l, td, c]); };
+  const ihdr = Buffer.alloc(13); ihdr.writeUInt32BE(w, 0); ihdr.writeUInt32BE(h, 4); ihdr[8] = 8; ihdr[9] = 6;
+  const mentah = Buffer.alloc((w * 4 + 1) * h);
+  for (let y = 0; y < h; y++) rgba.copy(mentah, y * (w * 4 + 1) + 1, y * w * 4, (y + 1) * w * 4);
+  return Buffer.concat([Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]), potong("IHDR", ihdr), potong("IDAT", zlib.deflateSync(mentah, { level: 9 })), potong("IEND", Buffer.alloc(0))]).toString("base64");
+}
+// gambar kelas → data URI; warna[c] = [r,g,b,a]
+const gambarKelas = (warna) => { const b = Buffer.alloc(TP.w * TP.h * 4); TP.g.forEach((c, i) => warna[c].forEach((v, k) => (b[i * 4 + k] = v))); return `data:image/png;base64,${png(TP.w, TP.h, b)}`; };
 
 const diAir = (p) => !inside(p, daratan) || distLine(p, sungai) < LS / 2 + 12;
 const diPasir = (p) => inside(p, pasirSpit) || inside(p, pasirSelatan);
-const diSawah = (p) => inside(p, sawah) || inside(p, sawahU) || inside(p, lapangan);
-const diHutan = (p) => inside(p, hutan);
+// hutan & sawah mengikuti tutupan lahan dari citra; poligon geografi.json hanya cadangan
+const diSawah = (p) => (TP ? kelasDi(p) === 2 : inside(p, sawah) || inside(p, sawahU) || inside(p, lapangan));
+const diHutan = (p) => (TP ? kelasDi(p) === 1 : inside(p, hutan));
 const diZona = (p) => inside(p, zHome) || inside(p, zUmkm);
 
 // ================================================================ data nyata (OSM + warna atap dari citra)
@@ -278,8 +318,10 @@ for (let i = 0; i < 260; i++) bercak += `<ellipse cx="${f1(rr(0, W))}" cy="${f1(
 L.push(`<g clip-path="${cDarat}" filter="url(#b20)">${bercak}</g>`);
 L.push(`<rect width="${f1(W)}" height="${f1(H)}" fill="url(#pRumput)" clip-path="${cDarat}"/>`);
 
-// 3. hutan (dasar)
-L.push(`<path d="${smooth(hutan, true)}" fill="#3F7F4C" filter="url(#b8)"/>`);
+// 3. tutupan lahan (dasar): warna tanah per kelas dari citra, diperhalus saat diperbesar
+if (TP) {
+  L.push(`<image href="${gambarKelas([[191, 221, 150, 0], [84, 146, 84, 255], [211, 221, 152, 255], [218, 212, 182, 200]])}" x="0" y="0" width="${f1(W)}" height="${f1(H)}" preserveAspectRatio="none" clip-path="${cDarat}" filter="url(#b4)"/>`);
+} else L.push(`<path d="${smooth(hutan, true)}" fill="#3F7F4C" filter="url(#b8)"/>`);
 
 // 4. sawah
 const nSw = noise(190, 5);
@@ -313,11 +355,12 @@ function sawahPetak(poly, ang, cw, ch) {
       const inset = q.map(([x, y]) => [mx + (x - mx) * 0.9, my + (y - my) * 0.9]);
       const n = nSw([wx, wy]) + rr(-0.07, 0.07);
       // dominan hijau (padi tumbuh), sesekali baru tanam / menguning / panen
-      const [fill, pat] = n < 0.12 ? ["#CDB27A", "pSwPanen"] : n < 0.22 ? ["#9FD0BE", "pSwMuda"] : n < 0.5 ? ["#7DBE4F", "pSwTumbuh"] : n < 0.78 ? ["#94CC5E", "pSwTumbuh"] : n < 0.9 ? ["#A9D46A", "pSwTumbuh"] : ["#D3D069", "pSwMatang"];
+      // campuran musim seperti di citra: banyak petak selesai panen (cokelat kusam), sebagian tumbuh hijau
+      const [fill, pat] = n < 0.3 ? ["#CDB884", "pSwPanen"] : n < 0.4 ? ["#BFAE86", "pSwPanen"] : n < 0.5 ? ["#9FD0BE", "pSwMuda"] : n < 0.72 ? ["#8CC559", "pSwTumbuh"] : n < 0.88 ? ["#A9D46A", "pSwTumbuh"] : ["#D3D069", "pSwMatang"];
       const rot = rr(-12, 12), dd = smooth(inset, true);
       s += `<path d="${dd}" fill="${fill}"/><g transform="rotate(${f1(rot)} ${f1(mx)} ${f1(my)})"><path d="${dd}" fill="url(#${pat})" transform="rotate(${f1(-rot)} ${f1(mx)} ${f1(my)})"/></g>`;
       if (pat === "pSwMuda" && rnd() < 0.6) s += `<path d="${dd}" fill="url(#pSwAir)"/>`;
-      s += `<path d="${dd}" fill="none" stroke="#5E7A3A" stroke-opacity=".18" stroke-width="1"/>`;
+      s += `<path d="${dd}" fill="none" stroke="#F3EED6" stroke-opacity=".8" stroke-width="2.2"/>`; // pematang terang seperti di citra
       if (lebar === 2) i += 0; // simpul dipakai bersama; petak berikutnya tetap jalan
     }
     if (rnd() < 0.07) kanal += `<path d="${smooth(V[i].map(([x, y]) => [x - 2, y]))}" stroke="#7FB8D8" stroke-width="3.2" fill="none"/>`;
@@ -325,9 +368,14 @@ function sawahPetak(poly, ang, cw, ch) {
   const id = "cs" + Math.floor(rnd() * 1e6);
   return `<clipPath id="${id}"><path d="${smooth(poly, true)}"/></clipPath><g clip-path="url(#${id})"><path d="${dz(poly)}" fill="#D3DD98"/><path d="${dz(poly)}" fill="url(#pRumput)"/><g transform="translate(${f1(cx)} ${f1(cy)}) rotate(${ang})">${s}${kanal}</g></g>`;
 }
-L.push(sawahPetak(sawah, -8, 70, 44));
-L.push(sawahPetak(sawahU, 6, 64, 40));
-L.push(sawahPetak(lapangan, -4, 52, 32));
+if (TP) { // petak sawah hanya di sel "sawah/ladang" hasil citra (masker)
+  L.push(`<mask id="mSawah" maskUnits="userSpaceOnUse" x="0" y="0" width="${f1(W)}" height="${f1(H)}"><image href="${gambarKelas([[0, 0, 0, 255], [0, 0, 0, 255], [255, 255, 255, 255], [0, 0, 0, 255]])}" x="0" y="0" width="${f1(W)}" height="${f1(H)}" preserveAspectRatio="none"/></mask>`);
+  L.push(`<g mask="url(#mSawah)" clip-path="${cDarat}">${sawahPetak(rect, -8, 64, 40)}</g>`);
+} else {
+  L.push(sawahPetak(sawah, -8, 70, 44));
+  L.push(sawahPetak(sawahU, 6, 64, 40));
+  L.push(sawahPetak(lapangan, -4, 52, 32));
+}
 
 // 5. dasar zona (dibatasi daratan, di bawah pasir)
 L.push(`<g clip-path="${cDarat}">
@@ -351,9 +399,9 @@ const muara = sungaiAsli.at(-1);
 L.push(`<ellipse cx="${f1(muara[0] - 40)}" cy="${f1(muara[1] + 40)}" rx="150" ry="90" fill="#A9D9E8" opacity=".55" filter="url(#b20)"/>`);
 L.push(`<g clip-path="${cDarat}">`);
 L.push(`<path d="${smooth(sungai)}" stroke="#A08A5E" stroke-width="${LS + 22}" fill="none" stroke-linecap="round" opacity=".6" filter="url(#b4)"/>`);
-L.push(`<path d="${smooth(sungai)}" stroke="#4E8EC2" stroke-width="${LS + 6}" fill="none" stroke-linecap="round"/>`);
-L.push(`<path d="${smooth(sungai)}" stroke="#6FAEDB" stroke-width="${LS - 8}" fill="none" stroke-linecap="round"/>`);
-L.push(`<path d="${smooth(sungai)}" stroke="#8CC5E8" stroke-width="${LS * 0.35}" fill="none" stroke-linecap="round" opacity=".6"/>`);
+L.push(`<path d="${smooth(sungai)}" stroke="#3F8088" stroke-width="${LS + 6}" fill="none" stroke-linecap="round"/>`);
+L.push(`<path d="${smooth(sungai)}" stroke="#5A9C9C" stroke-width="${LS - 6}" fill="none" stroke-linecap="round"/>`);
+L.push(`<path d="${smooth(sungai)}" stroke="#7DB5AE" stroke-width="${LS * 0.35}" fill="none" stroke-linecap="round" opacity=".6"/>`);
 L.push(`<path d="${smooth(offset(sungai, -9))}" stroke="#fff" stroke-width="1.8" fill="none" opacity=".5" stroke-dasharray="30 34"/>`);
 L.push(`<path d="${smooth(offset(sungai, 11))}" stroke="#fff" stroke-width="1.4" fill="none" opacity=".4" stroke-dasharray="18 46"/>`);
 L.push(`</g>`);
@@ -380,13 +428,6 @@ L.push(`<path d="${smooth(jalur)}" stroke="#FFFFFF" stroke-width="30" fill="none
 L.push(`<path d="${smooth(jalur)}" stroke="#B5BBC2" stroke-width="24" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`);
 L.push(`<path d="${smooth(jalur)}" stroke="#A3AAB2" stroke-width="24" fill="none" stroke-dasharray="14 30 6 40" stroke-linejoin="round" opacity=".6"/>`);
 L.push(`<path d="${smooth(jalur)}" stroke="#FFFFFF" stroke-width="1.4" fill="none" stroke-dasharray="10 12" opacity=".9"/>`);
-// cincin jalan setapak bertepi putih yang membingkai tiap zona
-for (const z of [zHome, zUmkm]) {
-  L.push(`<g clip-path="${cDarat}"><path d="${smooth(z, true)}" fill="none" stroke="#152638" stroke-width="20" opacity=".14" filter="url(#b4)" transform="translate(3 4)"/>
-    <path d="${smooth(z, true)}" fill="none" stroke="#FFFFFF" stroke-width="17" stroke-linejoin="round"/>
-    <path d="${smooth(z, true)}" fill="none" stroke="#D9EBC6" stroke-width="11" stroke-linejoin="round"/></g>`);
-}
-
 // 9. jembatan busur baja biru (foto survei) pada ruas jalur yang melintasi sungai
 const jembatan = (() => {
   for (let i = 1; i < jalur.length; i++) {
@@ -404,6 +445,29 @@ if (jembatan) {
     <path d="M-4 0H${f1(pj + 4)}" stroke="#fff" stroke-width="1" stroke-dasharray="6 6" opacity=".8"/>
     <path d="M-4 -10.5H${f1(pj + 4)}M-4 10.5H${f1(pj + 4)}" stroke="#2E78C7" stroke-width="1.6"/>
   </g>`);
+}
+
+// 9b. jembatan beton kecil di setiap jalan OSM lain yang melintasi sungai (ada di citra)
+function silang(A, Bg) {
+  const out = [];
+  for (let i = 1; i < A.length; i++) for (let j = 1; j < Bg.length; j++) {
+    const [p, q, r, t] = [A[i - 1], A[i], Bg[j - 1], Bg[j]];
+    const dd = (q[0] - p[0]) * (t[1] - r[1]) - (q[1] - p[1]) * (t[0] - r[0]);
+    if (!dd) continue;
+    const u = ((r[0] - p[0]) * (t[1] - r[1]) - (r[1] - p[1]) * (t[0] - r[0])) / dd, v = ((r[0] - p[0]) * (q[1] - p[1]) - (r[1] - p[1]) * (q[0] - p[0])) / dd;
+    if (u >= 0 && u <= 1 && v >= 0 && v <= 1) out.push({ p: [p[0] + u * (q[0] - p[0]), p[1] + u * (q[1] - p[1])], ang: Math.atan2(q[1] - p[1], q[0] - p[0]) });
+  }
+  return out;
+}
+const jembatanKecil = [];
+for (const j of jalanNyata) for (const x of silang(j.garis, sungai)) {
+  if (jembatan && Math.hypot(x.p[0] - (jembatan.a[0] + jembatan.b[0]) / 2, x.p[1] - (jembatan.a[1] + jembatan.b[1]) / 2) < 60) continue;
+  const pj = LS + 14, ca = Math.cos(x.ang), sa = Math.sin(x.ang);
+  const a = [x.p[0] - (ca * pj) / 2, x.p[1] - (sa * pj) / 2], b = [x.p[0] + (ca * pj) / 2, x.p[1] + (sa * pj) / 2], lb = j.lebar + 4;
+  jembatanKecil.push({ a, b, lebar: lb });
+  L.push(`<g transform="translate(${f1(a[0])} ${f1(a[1])}) rotate(${f1((x.ang * 180) / Math.PI)})">
+    <rect x="0" y="${-lb / 2 - 1}" width="${f1(pj)}" height="${lb + 2}" transform="translate(4 6)" fill="#0E2A46" opacity=".28" filter="url(#b4)"/>
+    <rect x="0" y="${-lb / 2 - 1}" width="${f1(pj)}" height="${lb + 2}" fill="#9AA1A8"/><rect x="0" y="${-lb / 2 + 1.5}" width="${f1(pj)}" height="${lb - 3}" fill="#C4C9CE"/></g>`);
 }
 
 // ================================================================ objek berdiri (sprite 2.5D)
@@ -541,18 +605,29 @@ for (const j of NY ? jalanNyata.filter((x) => x.lebar >= 14).map((x) => x.garis)
   for (const [x, y] of along(j, 150, rr(20, 80))) if (rnd() < 0.7) tambah([x, y], rnd() < 0.6 ? pick(ids.mobil) : "motor");
 
 // sawah: pohon di pematang + gubuk
-for (const p of poisson(sawah, 140, (p) => !diAir(p))) tambah(p, rnd() < 0.5 ? pick(ids.kelapa) : pick(ids.pohon), rr(0.8, 1.05));
-for (const p of poisson(sawah, 320, (p) => !diAir(p))) tambah(p, "gazebo", 0.6);
+const lahanSawah = TP ? rect : sawah;
+for (const p of poisson(lahanSawah, 140, (p) => !diAir(p) && diSawah(p) && kosong(p, 20))) tambah(p, rnd() < 0.5 ? pick(ids.kelapa) : pick(ids.pohon), rr(0.8, 1.05));
+for (const p of poisson(lahanSawah, 320, (p) => !diAir(p) && diSawah(p) && kosong(p, 30))) tambah(p, "gazebo", 0.6);
 
 // batu di tepi sungai
 for (const side of [1, -1]) for (const [x, y] of along(offset(sungai, side * (LS / 2 + 6)), 70, 30)) if (rnd() < 0.4 && !diPasir([x, y]) && inside([x, y], daratan)) tambah([x, y], "batu2", rr(0.8, 1.3));
 
 // taman di dalam kawasan (di luar zona): pepohonan & semak rimbun ala taman wisata
-for (const p of poisson(batas, 20, (p) => bebas(p) && !diZona(p) && !diSawah(p) && kosong(p, 14) && distLine(p, batas.concat([batas[0]])) > 14))
-  if (rnd() < 0.62) tambah(p, rnd() < 0.62 ? pohonAcak() : pick(ids.semak), rr(0.85, 1.2));
+// (dengan tutupan citra: pohon hanya di sel kanopi; di tanah terbuka cukup semak jarang)
+for (const p of poisson(batas, 20, (p) => bebas(p) && !diZona(p) && !diSawah(p) && (!TP || kelasDi(p) === 0) && kosong(p, 14) && distLine(p, batas.concat([batas[0]])) > 14))
+  if (rnd() < (TP ? 0.14 : 0.62)) tambah(p, !TP && rnd() < 0.62 ? pohonAcak() : pick(ids.semak), rr(0.85, 1.2));
 
-// hutan: pepohonan rapat
-for (const p of poisson(hutan, 15, (p) => !diAir(p))) tambah(p, pick(ids.pohon), rr(1, 1.5));
+// hutan & kebun: pepohonan rapat di sel kanopi hasil citra (bukan di atas rumah, jalan, sungai, pantai)
+if (TP) {
+  const jauhSungai = (p) => distLine(p, sungai) > LS / 2 + 20; // tajuk pohon tidak menutupi air
+  for (const p of poisson(rect, 17, (p) => diHutan(p) && !diAir(p) && jauhSungai(p) && !diPasir(p) && !dekatJalan(p, 10) && kosong(p, 12)))
+    tambah(p, rnd() < 0.8 ? pick(ids.pohon) : pick(ids.kelapa), rr(1, 1.45));
+  // pohon rimbun di sepanjang tepi sungai (seperti citra)
+  for (const side of [1, -1]) for (const [x, y] of along(offset(sungai, side * (LS / 2 + 22)), 15, 4)) {
+    const p = [x + rr(-3, 3), y + rr(-3, 3)];
+    if (rnd() < 0.55 && inside(p, daratan) && !diPasir(p) && !dekatJalan(p, 10) && kosong(p, 12)) tambah(p, rnd() < 0.7 ? pick(ids.pohon) : pick(ids.kelapa), rr(0.95, 1.3));
+  }
+} else for (const p of poisson(hutan, 15, (p) => !diAir(p))) tambah(p, pick(ids.pohon), rr(1, 1.5));
 
 L.push(`<g>${halaman.join("")}</g>`);
 
@@ -576,32 +651,31 @@ const luar = [];
 const cLuar = `M0 0H${f1(W)}V${f1(H)}H0Z ${dz(batas)}`;
 luar.push(`<clipPath id="cLuarDarat"><path d="${daratD}"/></clipPath><clipPath id="cLuar"><path d="${cLuar}" clip-rule="evenodd"/></clipPath>`);
 
-// sawah tambahan di lahan terbuka (jauh dari desa, sungai, jalan, pantai, hutan)
-const nLahan = noise(520, 77);
-let masker = "";
-const sel = 34;
-for (let x = sel / 2; x < W; x += sel) for (let y = sel / 2; y < H; y += sel) {
-  const p = [x, y];
-  if (inside(p, batas) || !inside(p, daratan) || diPasir(p) || diHutan(p) || inside(p, sawah) || inside(p, sawahU)) continue;
-  if (distLine(p, sungai) < 60 || dekatJalan(p, 34) || distLine(p, garisPantai) < 90) continue;
-  if (nLahan(p) > 0.6 || terpakai.some((q) => Math.hypot(q[0] - p[0], q[1] - p[1]) < 46)) continue;
-  masker += `<circle cx="${f1(x)}" cy="${f1(y)}" r="${sel * 0.78}"/>`;
+// (sawah di luar kawasan sudah digambar dari tutupan lahan citra pada lapisan dasar)
+if (!TP) {
+  const nLahan = noise(520, 77);
+  let masker = "";
+  const sel = 34;
+  for (let x = sel / 2; x < W; x += sel) for (let y = sel / 2; y < H; y += sel) {
+    const p = [x, y];
+    if (inside(p, batas) || !inside(p, daratan) || diPasir(p) || diHutan(p) || inside(p, sawah) || inside(p, sawahU)) continue;
+    if (distLine(p, sungai) < 60 || dekatJalan(p, 34) || distLine(p, garisPantai) < 90) continue;
+    if (nLahan(p) > 0.6 || terpakai.some((q) => Math.hypot(q[0] - p[0], q[1] - p[1]) < 46)) continue;
+    masker += `<circle cx="${f1(x)}" cy="${f1(y)}" r="${sel * 0.78}"/>`;
+  }
+  luar.push(`<clipPath id="cSawahLuar">${masker}</clipPath>`);
+  luar.push(`<g clip-path="url(#cLuar)"><g clip-path="url(#cSawahLuar)">${sawahPetak(rect, -6, 64, 40)}</g></g>`);
 }
-luar.push(`<clipPath id="cSawahLuar">${masker}</clipPath>`);
-luar.push(`<g clip-path="url(#cLuar)"><g clip-path="url(#cSawahLuar)">${sawahPetak(rect, -6, 64, 40)}</g></g>`);
 
 // perbukitan: bayangan lembut berbentuk bukit di hutan & lahan timur
 let bukit = "";
-const pusatBukit = poisson(hutan, 260, () => true);
+const pusatBukit = TP ? poisson(rect, 260, (p) => diHutan(p) && !inside(p, batas)) : poisson(hutan, 260, () => true);
 for (const [x, y] of pusatBukit) {
   const rx = rr(170, 280), ry = rx * rr(0.55, 0.75);
   bukit += `<ellipse cx="${f1(x + rx * 0.18)}" cy="${f1(y + ry * 0.22)}" rx="${f1(rx)}" ry="${f1(ry)}" fill="#1E4F2E" opacity=".34"/>`;
   bukit += `<ellipse cx="${f1(x - rx * 0.12)}" cy="${f1(y - ry * 0.18)}" rx="${f1(rx * 0.72)}" ry="${f1(ry * 0.62)}" fill="#D6F2B5" opacity=".34"/>`;
 }
 luar.push(`<g clip-path="url(#cLuarDarat)"><g filter="url(#b20)">${bukit}</g></g>`);
-// bingkai kawasan: jalan setapak lebar bertepi putih (hanya di darat)
-luar.push(`<g clip-path="url(#cLuarDarat)"><path d="${dz(batas)}" fill="none" stroke="#152638" stroke-width="26" opacity=".14" filter="url(#b4)" transform="translate(3 4)"/>
-  <path d="${dz(batas)}" fill="none" stroke="#FFFFFF" stroke-width="22" stroke-linejoin="round"/><path d="${dz(batas)}" fill="none" stroke="#CFE6B8" stroke-width="14" stroke-linejoin="round"/></g>`);
 const spriteDalam = sprite; // semua objek berdiri ditampilkan (dalam & luar kawasan)
 
 // ================================================================ tulis: peta isometrik per arah pandang
@@ -631,6 +705,8 @@ for (const a of ARAH) {
   for (const g of daftarGedung) isi.push([P(g.c[0], g.c[1])[1] + 2, ISO.gedung(g, P, S.TENDA)]);
   // rangka jembatan busur biru di atas lantai jembatan
   if (jembatan) isi.push(...ISO.jembatanBusur(jembatan.a, jembatan.b, P));
+  // pagar jembatan kecil (abu-abu, rendah)
+  for (const jk of jembatanKecil) isi.push(...ISO.jembatanBusur(jk.a, jk.b, P, { lebar: jk.lebar, tinggi: 0, ruas: 8, warna: ["#E9EDF0", "#7D8792"] }));
   isi.sort((u, v) => u[0] - v[0]);
   const inti = semuaArah[a].inti;
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}">
