@@ -1,17 +1,23 @@
 /*
  * Data peta Pantai Ciantir.
- * Semua koordinat memakai format [lat, lng] (WGS84).
- * Titik layanan di bawah masih DATA CONTOH: ganti dengan hasil survei lapangan.
- * Tips: aktifkan tombol "📍 Ambil koordinat" di peta untuk menyalin koordinat suatu titik.
+ * Koordinat [lat, lng] (WGS84). Teks dwibahasa: kolom biasa = Indonesia, akhiran _en = Inggris.
+ * Titik layanan memakai kolom yang sama dengan Google Sheets pokdarwis (docs/PRD.md §7):
+ *   id, kategori, nama, nama_en, lat, lng, deskripsi, deskripsi_en, whatsapp, jam, foto, aktif
+ * Semua titik di bawah masih DATA CONTOH (contoh: true) sampai survei lapangan.
+ * whatsapp: isi HANYA dengan izin pemilik, format 62xxxxxxxxxx.
  */
 window.PETA = {
   config: {
-    judul: "Peta Pantai Ciantir",
-    subjudul: "Desa Sawarna · Lebak, Banten",
     pusat: [-6.9840, 106.3077],
     zoomAwal: 17,
     zoomMin: 16,
     zoomMaks: 19,
+    arahAwal: 225, // menghadap pantai (Barat Daya) — PRD F9
+    visitSawarna: "https://visitsawarna.com",
+    pesanWhatsApp: {
+      id: "Halo, saya lihat {nama} dari Peta Pantai Ciantir. ",
+      en: "Hello, I found {nama} on the Pantai Ciantir map. ",
+    },
   },
 
   // Peta ilustrasi: tile WebP hasil tools/gen-ilustrasi.mjs + tools/render-tiles.mjs.
@@ -22,43 +28,41 @@ window.PETA = {
     marginInti: 0.0015,
   },
 
-  // Label nama tempat di atas ilustrasi. tipe: laut | sungai | zona | alam
+  // Label nama tempat di atas ilustrasi. tipe: laut | sungai | alam
   label: [
-    { teks: "Samudra Hindia", lokasi: [-6.9850, 106.3012], tipe: "laut", zoomMin: 16 },
-    { teks: "Pantai Ciantir", lokasi: [-6.9857, 106.3083], tipe: "alam", zoomMin: 17.5, putar: 58 },
-    { teks: "Sungai Cisawarna", lokasi: [-6.98035, 106.3125], tipe: "sungai", zoomMin: 17, putar: -2 },
-    { teks: "Kawasan UMKM Pantai", lokasi: [-6.9876, 106.3085], tipe: "zona", warna: "#E0674F", zoomMin: 16 },
-    { teks: "Kawasan Homestay", lokasi: [-6.98235, 106.3088], tipe: "zona", warna: "#4E9F6A", zoomMin: 16 },
-    { teks: "Persawahan", lokasi: [-6.9822, 106.3135], tipe: "alam", zoomMin: 17 },
-    { teks: "Perbukitan", lokasi: [-6.9905, 106.3135], tipe: "alam", zoomMin: 17 },
+    { teks: "Samudra Hindia", teks_en: "Indian Ocean", lokasi: [-6.9850, 106.3012], tipe: "laut", zoomMin: 16 },
+    { teks: "Pantai Ciantir", teks_en: "Ciantir Beach", lokasi: [-6.9857, 106.3083], tipe: "alam", zoomMin: 18, putar: 58 },
+    { teks: "Sungai Cisawarna", teks_en: "Cisawarna River", lokasi: [-6.98035, 106.3125], tipe: "sungai", zoomMin: 17, putar: -2 },
+    { teks: "Persawahan", teks_en: "Rice fields", lokasi: [-6.9822, 106.3135], tipe: "alam", zoomMin: 17 },
+    { teks: "Perbukitan", teks_en: "Hills", lokasi: [-6.9905, 106.3135], tipe: "alam", zoomMin: 17 },
   ],
 
-  // Kategori layanan: warna pin + ikon + label filter
+  // Kategori titik: warna (diredam, DESIGN §2) + ikon garis (js/ikon.js)
   kategori: {
-    homestay:    { label: "Homestay",        ikon: "🏠", warna: "#4E9F6A" },
-    kuliner:     { label: "Kuliner",         ikon: "🍜", warna: "#DF9232" },
-    sewa:        { label: "Sewa & Jasa",     ikon: "🏄", warna: "#2A9DB5" },
-    fasilitas:   { label: "Tiket & Parkir",  ikon: "🎫", warna: "#7A5FB8" },
-    dasar:       { label: "Toilet & Ibadah", ikon: "🚻", warna: "#6B7A8F" },
-    keselamatan: { label: "Keselamatan",     ikon: "⛑️", warna: "#D64545" },
-    spot:        { label: "Spot Wisata",     ikon: "📸", warna: "#D35B9A" },
-    akses:       { label: "Akses",           ikon: "🚪", warna: "#4677B4" },
+    kuliner:     { label: "Kuliner & UMKM",   label_en: "Food & shops",      ikon: "toko",     warna: "#C9822B" },
+    sewa:        { label: "Sewa & Jasa",      label_en: "Rentals",           ikon: "selancar", warna: "#2A8FA5" },
+    fasilitas:   { label: "Tiket & Parkir",   label_en: "Tickets & parking", ikon: "tiket",    warna: "#6E5AA8" },
+    dasar:       { label: "Toilet & Ibadah",  label_en: "Toilets & prayer",  ikon: "toilet",   warna: "#6B7A8F" },
+    keselamatan: { label: "Keselamatan",      label_en: "Safety",            ikon: "pelampung", warna: "#C94545" },
+    spot:        { label: "Spot Wisata",      label_en: "Sights",            ikon: "kamera",   warna: "#BF5A8C" },
+    akses:       { label: "Akses",            label_en: "Access",            ikon: "gerbang",  warna: "#3F6DA6" },
   },
 
-  // Batas kawasan studi (garis kuning)
+  // Batas kawasan inti
   batas: [
     [-6.97896, 106.30762], [-6.97961, 106.31097], [-6.98966, 106.31070],
     [-6.99026, 106.30616], [-6.98270, 106.30231], [-6.98111, 106.30795],
   ],
 
-  // Zona berwarna yang bisa diklik
+  // Zona (digambar di ilustrasi; poligon ini area kliknya)
   zona: [
     {
       id: "zona-umkm",
-      nama: "Kawasan UMKM Pantai",
+      nama: "Kawasan UMKM Pantai", nama_en: "Beach market",
       warna: "#E0674F",
-      kategori: ["kuliner", "sewa", "dasar"],
-      deskripsi: "Deretan warung, kuliner laut, sewa papan surfing, dan fasilitas bilas di sepanjang bibir Pantai Ciantir.",
+      label: [-6.9876, 106.3085],
+      deskripsi: "Deretan warung, kuliner laut, sewa papan selancar, dan fasilitas bilas di sepanjang Pantai Ciantir.",
+      deskripsi_en: "Food stalls, seafood, surfboard rentals and showers along Ciantir Beach.",
       koordinat: [
         [-6.98224, 106.30494], [-6.98197, 106.30577], [-6.98304, 106.30693],
         [-6.98395, 106.30775], [-6.98441, 106.30858], [-6.98458, 106.30905],
@@ -70,10 +74,12 @@ window.PETA = {
     },
     {
       id: "zona-homestay",
-      nama: "Kawasan Homestay",
+      nama: "Kawasan Homestay", nama_en: "Homestay area",
       warna: "#4E9F6A",
-      kategori: ["homestay"],
-      deskripsi: "Permukiman warga yang menyediakan penginapan, sekitar 5–10 menit jalan kaki ke pantai.",
+      label: [-6.98235, 106.3088],
+      tautan: "visitSawarna", // homestay tidak punya pin; arahkan ke visitsawarna.com (PRD F2)
+      deskripsi: "Rumah warga yang menyediakan penginapan, 5–10 menit jalan kaki ke pantai.",
+      deskripsi_en: "Village homes offering stays, a 5–10 minute walk from the beach.",
       koordinat: [
         [-6.98297, 106.30699], [-6.98174, 106.30809], [-6.98141, 106.30877],
         [-6.98160, 106.30987], [-6.98283, 106.31001], [-6.98392, 106.31001],
@@ -83,10 +89,9 @@ window.PETA = {
     },
   ],
 
-  // Jalur utama (garis biru): pintu masuk → homestay → pantai
+  // Jalur utama: pintu masuk → homestay → pantai (dipakai generator ilustrasi)
   jalur: {
-    nama: "Jalur Utama ke Pantai",
-    keterangan: "Jalan kaki ± 10 menit dari pintu masuk ke kawasan UMKM pantai.",
+    nama: "Jalur Utama ke Pantai", nama_en: "Main path to the beach",
     koordinat: [
       [-6.97961, 106.30960], [-6.98010, 106.31001], [-6.98092, 106.30960],
       [-6.98169, 106.30927], [-6.98256, 106.30932], [-6.98392, 106.30877],
@@ -94,101 +99,67 @@ window.PETA = {
     ],
   },
 
-  /*
-   * Titik layanan. Field umum: id, nama, kategori, lokasi, deskripsi, foto (url, opsional), contoh (true = dummy).
-   * Field khusus per kategori ada di "info" (lihat js/popup.js untuk cara tampilnya).
-   * kontak.wa / kontak.telp: isi HANYA dengan izin pemilik. Format 62xxxxxxxxxx.
-   */
+  // Info keselamatan statis (PRD F4). Nomor lokal = contoh sampai survei.
+  keselamatan: {
+    bendera: [
+      { warna: "#2E8B57", nama: "Hijau", nama_en: "Green", arti: "Laut relatif tenang. Tetap berenang di area yang diawasi.", arti_en: "Calm water. Still swim only where lifeguards watch." },
+      { warna: "#E0B21B", nama: "Kuning", nama_en: "Yellow", arti: "Hati-hati, ombak atau arus sedang. Jangan berenang terlalu jauh.", arti_en: "Take care, moderate waves or currents. Stay close to shore." },
+      { warna: "#C94545", nama: "Merah", nama_en: "Red", arti: "Berbahaya. Dilarang berenang.", arti_en: "Dangerous. No swimming." },
+    ],
+    arusBalik: "Arus balik (rip current) sering muncul di sela ombak. Jika terseret, jangan melawan arus: berenanglah sejajar pantai, lalu kembali ke darat.",
+    arusBalik_en: "Rip currents often form between breaking waves. If caught, don't fight it: swim parallel to the shore, then back to land.",
+    evakuasi: {
+      teks: "Saat peringatan tsunami atau gempa kuat, segera menjauh dari pantai lewat jalur utama menuju titik kumpul di dataran tinggi.",
+      teks_en: "After a tsunami warning or strong earthquake, leave the beach at once along the main path to the assembly point on higher ground.",
+      titikKumpul: [-6.98200, 106.30985],
+      jalur: [
+        [-6.98650, 106.30880], [-6.98496, 106.30830], [-6.98474, 106.30850], [-6.98392, 106.30877],
+        [-6.98256, 106.30932], [-6.98200, 106.30985],
+      ],
+    },
+    nomor: [
+      { nama: "Panggilan darurat", nama_en: "Emergency", nomor: "112" },
+      { nama: "Basarnas (SAR laut)", nama_en: "Search & rescue (Basarnas)", nomor: "115" },
+      { nama: "Ambulans", nama_en: "Ambulance", nomor: "119" },
+      { nama: "Polisi", nama_en: "Police", nomor: "110" },
+      { nama: "Pemadam kebakaran", nama_en: "Fire brigade", nomor: "113" },
+      { nama: "Pos Balawista Ciantir", nama_en: "Ciantir lifeguard post", nomor: "", contoh: true },
+      { nama: "Puskesmas terdekat", nama_en: "Nearest clinic", nomor: "", contoh: true },
+    ],
+  },
+
+  // Titik layanan (data contoh). Homestay tidak diberi pin — lihat zona-homestay.
   titik: [
-    {
-      id: "pintu-masuk", nama: "Pintu Masuk Pantai", kategori: "akses",
-      lokasi: [-6.97961, 106.30960], contoh: true,
-      deskripsi: "Gerbang utama menuju Pantai Ciantir dari arah jalan desa.",
-      info: { kondisiJalan: "Jalan cor, bisa dilalui motor", aksesMobil: "Mobil parkir sebelum gerbang", jam: "24 jam" },
-    },
-    {
-      id: "loket-tiket", nama: "Loket Tiket Masuk", kategori: "fasilitas",
-      lokasi: [-6.98000, 106.30925], contoh: true,
-      deskripsi: "Pembayaran retribusi masuk kawasan wisata.",
-      info: { tarif: [["Dewasa", "Rp10.000"], ["Anak-anak", "Rp5.000"]], jam: "06.00–18.00" },
-    },
-    {
-      id: "parkir-motor", nama: "Parkir Motor", kategori: "fasilitas",
-      lokasi: [-6.98045, 106.31010], contoh: true,
-      deskripsi: "Area parkir motor dekat pintu masuk.",
-      info: { tarif: [["Motor", "Rp5.000"]], kapasitas: "± 100 motor", jam: "24 jam" },
-    },
-    {
-      id: "homestay-a", nama: "Homestay Contoh A", kategori: "homestay",
-      lokasi: [-6.98205, 106.30930], contoh: true,
-      deskripsi: "Rumah warga dengan kamar tamu bersih dan halaman luas.",
-      info: { harga: "Rp150.000–250.000 / malam", kamar: 4, fasilitas: ["Kipas angin", "KM dalam", "Parkir motor"], jarakPantai: "± 400 m", pemilik: "Nama pemilik" },
-    },
-    {
-      id: "homestay-b", nama: "Homestay Contoh B", kategori: "homestay",
-      lokasi: [-6.98300, 106.30800], contoh: true,
-      deskripsi: "Dekat jalur utama, cocok untuk rombongan keluarga.",
-      info: { harga: "Rp300.000 / malam", kamar: 6, fasilitas: ["AC", "KM dalam", "Wi-Fi", "Sarapan"], jarakPantai: "± 300 m", pemilik: "Nama pemilik" },
-    },
-    {
-      id: "homestay-c", nama: "Homestay Contoh C", kategori: "homestay",
-      lokasi: [-6.98400, 106.30960], contoh: true,
-      deskripsi: "Suasana tenang di dekat sawah.",
-      info: { harga: "Rp120.000 / malam", kamar: 3, fasilitas: ["Kipas angin", "KM luar"], jarakPantai: "± 350 m", pemilik: "Nama pemilik" },
-    },
-    {
-      id: "warung-seafood", nama: "Warung Seafood Contoh", kategori: "kuliner",
-      lokasi: [-6.98532, 106.30844], contoh: true,
-      deskripsi: "Ikan dan cumi bakar segar hasil tangkapan nelayan setempat.",
-      info: { menu: [["Ikan bakar", "Rp35.000"], ["Cumi goreng", "Rp30.000"], ["Nasi + lalap", "Rp7.000"]], jam: "08.00–21.00" },
-    },
-    {
-      id: "warung-kelapa", nama: "Warung Kelapa Muda Contoh", kategori: "kuliner",
-      lokasi: [-6.98719, 106.30926], contoh: true,
-      deskripsi: "Kelapa muda dan gorengan sambil menunggu sunset.",
-      info: { menu: [["Kelapa muda", "Rp15.000"], ["Mi instan", "Rp10.000"]], jam: "07.00–18.30" },
-    },
-    {
-      id: "sewa-surfing", nama: "Sewa Papan Surfing Contoh", kategori: "sewa",
-      lokasi: [-6.98478, 106.30775], contoh: true,
-      deskripsi: "Penyewaan papan surfing dan bodyboard, tersedia instruktur lokal.",
-      info: { harga: [["Papan surfing", "Rp50.000 / jam"], ["Bodyboard", "Rp25.000 / jam"], ["Instruktur", "Rp150.000 / sesi"]], instruktur: true, jam: "07.00–17.00" },
-    },
-    {
-      id: "kamar-bilas", nama: "Toilet & Kamar Bilas", kategori: "dasar",
-      lokasi: [-6.98599, 106.30871], contoh: true,
-      deskripsi: "Toilet umum dan kamar bilas air tawar.",
-      info: { biaya: "Rp3.000", jam: "06.00–19.00", air: "Air tawar tersedia" },
-    },
-    {
-      id: "mushola", nama: "Mushola", kategori: "dasar",
-      lokasi: [-6.98498, 106.30899], contoh: true,
-      deskripsi: "Tempat ibadah dengan tempat wudu.",
-      info: { biaya: "Gratis", jam: "24 jam", air: "Tempat wudu tersedia" },
-    },
-    {
-      id: "pos-balawista", nama: "Pos Balawista", kategori: "keselamatan",
-      lokasi: [-6.98505, 106.30734], contoh: true,
-      deskripsi: "Pos penjaga pantai. Laporkan keadaan darurat di sini.",
-      info: { bendera: "kuning", jam: "07.00–17.00", catatan: "Berenang hanya di area yang diawasi" },
-    },
-    {
-      id: "titik-kumpul", nama: "Titik Kumpul Evakuasi", kategori: "keselamatan",
-      lokasi: [-6.98200, 106.30985], contoh: true,
-      deskripsi: "Titik kumpul saat peringatan tsunami. Ikuti jalur menjauhi pantai ke arah dataran tinggi.",
-      info: { jam: "Selalu terbuka", catatan: "Jangan kembali ke pantai sebelum ada pengumuman aman" },
-    },
-    {
-      id: "spot-surfing", nama: "Spot Surfing Ciantir", kategori: "spot",
-      lokasi: [-6.98532, 106.30584], contoh: true,
-      deskripsi: "Ombak Ciantir dikenal konsisten dan diminati peselancar.",
-      info: { waktuTerbaik: "Pagi hari, April–Oktober", kesulitan: "Menengah–mahir", catatan: "Waspadai arus balik" },
-    },
-    {
-      id: "spot-sunset", nama: "Spot Sunset", kategori: "spot",
-      lokasi: [-6.98204, 106.30542], contoh: true,
-      deskripsi: "Pasir landai menghadap barat, cocok untuk foto matahari terbenam.",
-      info: { waktuTerbaik: "17.15–18.00", kesulitan: "Mudah", catatan: "Bawa senter untuk jalan pulang" },
-    },
+    { id: "pintu-masuk", kategori: "akses", nama: "Pintu Masuk Pantai", nama_en: "Beach entrance", lat: -6.97961, lng: 106.30960, jam: "24 jam",
+      deskripsi: "Gerbang utama dari jalan desa. Jalan kaki ±10 menit ke pantai.", deskripsi_en: "Main gate from the village road. About a 10-minute walk to the beach.", contoh: true, aktif: true },
+    { id: "loket-tiket", kategori: "fasilitas", nama: "Loket Tiket", nama_en: "Ticket booth", lat: -6.98000, lng: 106.30925, jam: "06.00–18.00",
+      deskripsi: "Tempat membayar retribusi masuk kawasan.", deskripsi_en: "Pay the area entrance fee here.", contoh: true, aktif: true },
+    { id: "parkir-motor", kategori: "fasilitas", nama: "Parkir Motor", nama_en: "Motorbike parking", lat: -6.98045, lng: 106.31010, jam: "24 jam",
+      deskripsi: "Area parkir motor dekat pintu masuk.", deskripsi_en: "Motorbike parking near the entrance.", contoh: true, aktif: true },
+    { id: "warung-seafood", kategori: "kuliner", nama: "Warung Seafood Bu Ani", nama_en: "Bu Ani's Seafood", lat: -6.98532, lng: 106.30844, jam: "08.00–21.00", whatsapp: "",
+      deskripsi: "Ikan dan cumi bakar segar hasil tangkapan nelayan setempat.", deskripsi_en: "Fresh grilled fish and squid from local fishermen.", contoh: true, aktif: true },
+    { id: "warung-kelapa", kategori: "kuliner", nama: "Kelapa Muda Pak Udin", nama_en: "Pak Udin's Coconuts", lat: -6.98719, lng: 106.30926, jam: "07.00–18.30", whatsapp: "",
+      deskripsi: "Kelapa muda dan gorengan sambil menunggu matahari terbenam.", deskripsi_en: "Young coconuts and fritters while you wait for sunset.", contoh: true, aktif: true },
+    { id: "oleh-oleh", kategori: "kuliner", nama: "Oleh-oleh Khas Sawarna", nama_en: "Sawarna Souvenirs", lat: -6.98620, lng: 106.30905, jam: "08.00–20.00", whatsapp: "",
+      deskripsi: "Keripik, ikan asin, dan kerajinan tangan warga.", deskripsi_en: "Chips, salted fish and local handicrafts.", contoh: true, aktif: true },
+    { id: "kopi-pantai", kategori: "kuliner", nama: "Kopi Pantai Ciantir", nama_en: "Ciantir Beach Coffee", lat: -6.98380, lng: 106.30700, jam: "07.00–22.00", whatsapp: "",
+      deskripsi: "Kopi tubruk dan mi rebus dengan pemandangan laut.", deskripsi_en: "Local coffee and noodles with a sea view.", contoh: true, aktif: true },
+    { id: "sewa-surfing", kategori: "sewa", nama: "Sewa Papan Selancar Ciantir", nama_en: "Ciantir Surf Rental", lat: -6.98478, lng: 106.30775, jam: "07.00–17.00", whatsapp: "",
+      deskripsi: "Papan selancar, bodyboard, dan instruktur lokal.", deskripsi_en: "Surfboards, bodyboards and local instructors.", contoh: true, aktif: true },
+    { id: "kamar-bilas", kategori: "dasar", nama: "Toilet & Kamar Bilas", nama_en: "Toilets & showers", lat: -6.98599, lng: 106.30871, jam: "06.00–19.00",
+      deskripsi: "Toilet umum dan kamar bilas air tawar.", deskripsi_en: "Public toilets and freshwater showers.", contoh: true, aktif: true },
+    { id: "mushola", kategori: "dasar", nama: "Mushola", nama_en: "Prayer room", lat: -6.98498, lng: 106.30899, jam: "24 jam",
+      deskripsi: "Tempat ibadah dengan tempat wudu.", deskripsi_en: "Prayer room with ablution area.", contoh: true, aktif: true },
+    { id: "pos-balawista", kategori: "keselamatan", nama: "Pos Balawista", nama_en: "Lifeguard post", lat: -6.98505, lng: 106.30734, jam: "07.00–17.00",
+      deskripsi: "Pos penjaga pantai. Laporkan keadaan darurat di sini.", deskripsi_en: "Lifeguard post. Report emergencies here.", contoh: true, aktif: true },
+    { id: "titik-kumpul", kategori: "keselamatan", nama: "Titik Kumpul Evakuasi", nama_en: "Evacuation assembly point", lat: -6.98200, lng: 106.30985,
+      deskripsi: "Tujuan evakuasi saat peringatan tsunami. Tunggu di sini sampai ada pengumuman aman.", deskripsi_en: "Go here after a tsunami warning. Wait until it is declared safe.", contoh: true, aktif: true },
+    { id: "spot-surfing", kategori: "spot", nama: "Spot Selancar Ciantir", nama_en: "Ciantir Surf Break", lat: -6.98532, lng: 106.30584, jam: "Pagi, April–Oktober",
+      deskripsi: "Ombak konsisten yang diminati peselancar. Waspadai arus balik.", deskripsi_en: "Consistent waves popular with surfers. Watch for rip currents.", contoh: true, aktif: true },
+    { id: "spot-sunset", kategori: "spot", nama: "Spot Matahari Terbenam", nama_en: "Sunset spot", lat: -6.98204, lng: 106.30542, jam: "17.15–18.00",
+      deskripsi: "Pasir landai menghadap barat, tempat terbaik melihat senja.", deskripsi_en: "Wide west-facing sand, the best place to watch the sunset.", contoh: true, aktif: true },
   ],
+
+  // Kode titik QR (?dari=...) → id titik tempat QR dipasang
+  qr: { gerbang: "pintu-masuk", loket: "loket-tiket", umkm: "warung-seafood", balawista: "pos-balawista" },
 };

@@ -45,10 +45,15 @@ Ilustrasi dibuat untuk **8 arah pandang** (0°, 45°, … 315°) agar bangunan s
 Ilustrasi disajikan sebagai **tile WebP** di `assets/tiles/{arah}/{z}/{x}/{y}.webp`; HP hanya mengunduh tile arah & tampilan yang sedang dilihat. Cara membuat ulang setelah mengubah zona/jalur di `js/data.js` atau bentuk alam di `data/geografi.json`:
 
 ```
+python tools/siapkan-data-nyata.py  # 0. bangunan, jalan, sungai dari OpenStreetMap + warna atap dari citra (data/nyata.json)
 node tools/gen-ilustrasi.mjs      # 1. gambar SVG per arah (assets/ilustrasi/, tidak di-commit), ±10 detik
 node tools/render-tiles.mjs       # 2. potong jadi tile WebP memakai Chrome/Edge headless, ±4 menit
 node tools/render-tiles.mjs 225   #    (atau satu arah saja)
 ```
+
+Foto contoh untuk kartu info (potongan ilustrasi) dibuat dengan `python tools/foto-contoh.py` → `assets/foto/`; ganti dengan foto asli hasil survei.
+
+Bangunan, jalan, dan anak sungai di ilustrasi mengikuti data OpenStreetMap (© kontributor OpenStreetMap, ODbL); warna atap disimpulkan dari citra satelit sebagai acuan saja.
 
 Simbol tanah ada di `tools/ilustrasi/simbol.mjs`, objek berdiri (rumah, kios, pohon, orang, gapura, dll.) di `tools/ilustrasi/sprite.mjs`. Label nama tempat diatur di `js/data.js` → `label`.
 

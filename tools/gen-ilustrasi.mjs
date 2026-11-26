@@ -155,23 +155,34 @@ const diSawah = (p) => inside(p, sawah) || inside(p, sawahU) || inside(p, lapang
 const diHutan = (p) => inside(p, hutan);
 const diZona = (p) => inside(p, zHome) || inside(p, zUmkm);
 
+// ================================================================ data nyata (OSM + warna atap dari citra)
+const fileNyata = path.join(ROOT, "data/nyata.json");
+const NY = fs.existsSync(fileNyata) ? JSON.parse(fs.readFileSync(fileNyata, "utf8")) : null;
+const luasPoly = (q) => { let a = 0; for (let i = 0; i < q.length; i++) { const [x1, y1] = q[i], [x2, y2] = q[(i + 1) % q.length]; a += x1 * y2 - x2 * y1; } return Math.abs(a) / 2; };
+const pusatPoly = (q) => [q.reduce((t, v) => t + v[0], 0) / q.length, q.reduce((t, v) => t + v[1], 0) / q.length];
+const bangunanNyata = NY ? NY.bangunan.map((b) => { const q = pts(b.poly); // "hijau" di citra hampir selalu kanopi pohon yang menutupi atap → pakai warna atap umum
+  return { atap: b.atap === "hijau" ? pick(["terakota", "terakota", "genteng", "cokelat"]) : b.atap, luas: b.luas, poly: q, c: pusatPoly(q) }; }).filter((b) => b.c[0] > 0 && b.c[1] > 0 && b.c[0] < W && b.c[1] < H) : [];
+const LEBAR_JALAN = { primary: 26, secondary: 24, tertiary: 22, unclassified: 16, residential: 14, service: 11, track: 9, footway: 7, path: 7, steps: 7 };
+const jalanNyata = NY ? NY.jalan.filter((j) => LEBAR_JALAN[j.kelas]).map((j) => ({ kelas: j.kelas, lebar: LEBAR_JALAN[j.kelas], garis: densify(pts(j.garis), 20) })) : [];
+const kaliNyata = NY ? NY.air.filter((a) => a.kelas !== "river").map((a) => densify(pts(a.garis), 20)) : [];
+
 // ================================================================ jalan desa
 const jalanUtara = runs(densify(offset(sungai, 78), 20), (p) => !diAir(p) && !diPasir(p) && p[0] > 60);
 const atasJalur = jalur[0];
 const jalanKeUtara = [densify([[atasJalur[0], atasJalur[1]], [atasJalur[0] + 30, atasJalur[1] - 260], [atasJalur[0] - 20, atasJalur[1] - 620], [atasJalur[0] + 10, -10]], 20)];
 const jalanBelakangPantai = runs(densify(offset(dalamD, -165), 20), (p) => !diAir(p) && !diHutan(p) && !diSawah(p) && p[1] > dalamD[0][1] + 40);
-const jalanDesa = [...jalanUtara, ...jalanKeUtara, ...jalanBelakangPantai];
+const jalanDesa = NY ? jalanNyata.map((j) => j.garis) : [...jalanUtara, ...jalanKeUtara, ...jalanBelakangPantai];
 const dekatJalan = (p, m) => jalanDesa.some((j) => distLine(p, j) < m) || distLine(p, jalur) < m;
 
 // ================================================================ simbol (defs)
 const defs = [S.defsUmum(), S.lainLain()];
 const ATAPS = Object.keys(S.ATAP).filter((k) => k !== "seng");
-const ids = { rumah: [], rumah2: [], seng: [], pondok: ["pondok"], kios: [], pohon: [], kelapa: [], semak: [], orang: [], mobil: [], payung: [] };
+const ids = { rumahAtap: {}, rumah2Atap: {}, rumah: [], rumah2: [], seng: [], pondok: ["pondok"], kios: [], pohon: [], kelapa: [], semak: [], orang: [], mobil: [], payung: [] };
 let k = 0;
 for (const a of ATAPS) {
   for (let v = 0; v < 2; v++) {
-    defs.push(SP.rumah(`r${k}`, { w: rr(24, 32), dd: rr(10, 14), atap: S.ATAP[a], dinding: pick(S.DINDING), dindingSamping: pick(["#D9C8AE", "#CDBB9F", "#D6CABB", "#C9BBA8"]), teras: v === 0 })); ids.rumah.push(`r${k}`);
-    defs.push(SP.rumah(`h${k}`, { w: rr(30, 38), dd: rr(13, 16), lantai: 2, atap: S.ATAP[a], dinding: pick(S.DINDING), balkon: true, teras: true, pagar: v === 1, kayu: v === 1 && rnd() < 0.5 })); ids.rumah2.push(`h${k}`);
+    defs.push(SP.rumah(`r${k}`, { w: rr(24, 32), dd: rr(10, 14), atap: S.ATAP[a], dinding: pick(S.DINDING), dindingSamping: pick(["#D9C8AE", "#CDBB9F", "#D6CABB", "#C9BBA8"]), teras: v === 0 })); ids.rumah.push(`r${k}`); (ids.rumahAtap[a] ||= []).push(`r${k}`);
+    defs.push(SP.rumah(`h${k}`, { w: rr(30, 38), dd: rr(13, 16), lantai: 2, atap: S.ATAP[a], dinding: pick(S.DINDING), balkon: true, teras: true, pagar: v === 1, kayu: v === 1 && rnd() < 0.5 })); ids.rumah2.push(`h${k}`); (ids.rumah2Atap[a] ||= []).push(`h${k}`);
     k++;
   }
 }
@@ -187,6 +198,7 @@ defs.push(SP.pisang("pisang", R), SP.cemara("cemara", R));
 ["#E0674F", "#FFFFFF", "#4677B4", "#C3CBD3", "#2D3A4A"].forEach((c, i) => { defs.push(SP.mobil(`m${i}`, c)); ids.mobil.push(`m${i}`); });
 defs.push(SP.motor("motor"), SP.lampu("lampu2"), SP.umbul("umbul"), SP.batu("batu2"), SP.peselancar("selancar"), SP.bananaBoat("banana"), SP.kapal("kapal"), SP.perahu("perahu2"), SP.camar("camar"));
 ["#E0674F", "#F2C14E", "#2D3A4A"].forEach((c, i) => defs.push(SP.perenang(`renang${i}`, c)));
+const pickAtap = (peta, atap) => pick(peta[atap] || peta.terakota);
 const pohonAcak = () => (rnd() < 0.68 ? pick(ids.pohon) : rnd() < 0.7 ? pick(ids.kelapa) : "pisang");
 
 // pola (pattern) alam
@@ -336,10 +348,17 @@ for (const side of [1, -1]) for (const [x, y] of along(offset(sungai, side * (LS
 L.push(`<g stroke="#5E9A4A" stroke-width="1.2" stroke-linecap="round" opacity=".85">${gelagah}</g>`);
 
 // 8. jalan desa & jalur utama
-for (const j of jalanDesa) {
-  L.push(`<path d="${smooth(j)}" stroke="#152638" stroke-width="20" fill="none" stroke-linecap="round" opacity=".18" filter="url(#b4)" transform="translate(3 4)"/>`);
-  L.push(`<path d="${smooth(j)}" stroke="#FFFFFF" stroke-width="18" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`);
-  L.push(`<path d="${smooth(j)}" stroke="#D9EBC6" stroke-width="12" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`);
+for (const k of kaliNyata) {
+  L.push(`<path d="${smooth(k)}" stroke="#4E8EC2" stroke-width="16" fill="none" stroke-linecap="round" stroke-linejoin="round" clip-path="${cDarat}"/>`);
+  L.push(`<path d="${smooth(k)}" stroke="#7DB8E2" stroke-width="10" fill="none" stroke-linecap="round" stroke-linejoin="round" clip-path="${cDarat}"/>`);
+}
+const daftarJalan = NY ? [...jalanNyata].sort((a, b) => a.lebar - b.lebar) : jalanDesa.map((g) => ({ kelas: "residential", lebar: 14, garis: g }));
+for (const j of daftarJalan) {
+  const tanah = j.kelas === "track" || j.kelas === "path" || j.kelas === "footway";
+  L.push(`<path d="${smooth(j.garis)}" stroke="#152638" stroke-width="${j.lebar + 2}" fill="none" stroke-linecap="round" opacity=".16" filter="url(#b4)" transform="translate(3 4)"/>`);
+  L.push(`<path d="${smooth(j.garis)}" stroke="#FFFFFF" stroke-width="${j.lebar}" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`);
+  L.push(`<path d="${smooth(j.garis)}" stroke="${tanah ? "#E8DCC0" : j.lebar >= 20 ? "#C9CED4" : "#D9EBC6"}" stroke-width="${j.lebar - 5}" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`);
+  if (j.lebar >= 20) L.push(`<path d="${smooth(j.garis)}" stroke="#FFFFFF" stroke-width="1.4" fill="none" stroke-dasharray="10 12" opacity=".9"/>`);
 }
 L.push(`<path d="${smooth(jalur)}" stroke="#152638" stroke-width="30" fill="none" stroke-linecap="round" opacity=".18" filter="url(#b4)" transform="translate(3 4)"/>`);
 L.push(`<path d="${smooth(jalur)}" stroke="#FFFFFF" stroke-width="30" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`);
@@ -388,6 +407,25 @@ const terpakai = [];
 const kosong = (p, r) => terpakai.every((q) => Math.hypot(q[0] - p[0], q[1] - p[1]) > r);
 const halamanDi = (p, rx, ry, c = "#E3D9B5", op = 0.55) => halaman.push(`<ellipse cx="${f1(p[0])}" cy="${f1(p[1])}" rx="${rx}" ry="${ry}" fill="${c}" opacity="${op}"/>`);
 
+if (NY) {
+  // setiap bangunan OSM digambar di jejak aslinya: tapak + objek 2.5D dengan warna atap dari citra
+  const jejak = [];
+  for (const bg of bangunanNyata) {
+    const luasU = luasPoly(bg.poly);
+    jejak.push(`<path d="${dz(bg.poly)}" fill="#CDBE9C" opacity=".55"/>`);
+    terpakai.push(bg.c);
+    const sk = Math.max(0.55, Math.min(1.3, Math.sqrt(luasU) / 13));
+    let id;
+    if (inside(bg.c, zUmkm)) id = bg.luas < 45 ? pick(ids.kios) : bg.luas < 110 ? "warung" : pickAtap(ids.rumahAtap, bg.atap);
+    else if (inside(bg.c, zHome)) id = bg.luas > 70 ? pickAtap(ids.rumah2Atap, bg.atap) : rnd() < 0.4 ? "pondok" : pickAtap(ids.rumahAtap, bg.atap);
+    else id = bg.atap === "seng" ? pick(ids.seng) : bg.luas > 150 ? pickAtap(ids.rumah2Atap, bg.atap) : pickAtap(ids.rumahAtap, bg.atap);
+    tambah(bg.c, id, sk);
+  }
+  halaman.push(...jejak);
+  // pekarangan: semak & pohon di sela rumah
+  for (const p of poisson(rect, 26, (p) => bebas(p) && !diSawah(p) && !diHutan(p) && kosong(p, 16) && terpakai.some((q) => Math.hypot(q[0] - p[0], q[1] - p[1]) < 60)))
+    if (rnd() < 0.45) tambah(p, rnd() < 0.7 ? pohonAcak() : pick(ids.semak), rr(0.8, 1.15));
+} else {
 // rumah berderet di tepi jalan desa
 for (const j of jalanDesa) {
   for (const [x, y, ang] of along(j, 44, rr(0, 20))) {
@@ -419,6 +457,7 @@ for (const p of poisson(zHome, 56, (p) => bebas(p) && distLine(p, zHome.concat([
 }
 for (const p of poisson(zHome, 30, (p) => bebas(p) && kosong(p, 24)).filter(() => rnd() < 0.42)) tambah(p, rnd() < 0.55 ? pick(ids.pohon) : pick(ids.kelapa), rr(0.8, 1.1));
 
+}
 // jalur utama: lampu, umbul-umbul, pejalan kaki, gapura di pintu masuk
 const jalurD = densify(jalur, 10);
 for (const [x, y, ang] of along(jalurD, 48, 24)) {
@@ -437,7 +476,7 @@ for (const [x, y, ang] of along(jalurD, 22, 6).slice(0, 7)) {
 
 // zona UMKM: deret kios menghadap laut, warung, gazebo, rumah toko di belakang
 const dalamUmkm = (p) => inside(p, zUmkm);
-for (const [dist, gap, jenis] of [[-34, 38, "kios"], [-82, 50, "campur"], [-124, 60, "gazebo"], [-205, 46, "rumah"]]) {
+for (const [dist, gap, jenis] of NY ? [] : [[-34, 38, "kios"], [-82, 50, "campur"], [-124, 60, "gazebo"], [-205, 46, "rumah"]]) {
   for (const [x, y] of along(offset(dalamD, dist), gap, rr(0, gap))) {
     const p = [x + rr(-3, 3), y + rr(-3, 3)];
     if (!dalamUmkm(p) || diAir(p) || dekatJalan(p, 18) || !kosong(p, 28)) continue;
@@ -469,7 +508,7 @@ for (const line of [offset(dalamD, -10), offset(spitDalamD, 10)])
   }
 
 // kendaraan di jalan desa
-for (const j of [...jalanKeUtara, ...jalanUtara])
+for (const j of NY ? jalanNyata.filter((x) => x.lebar >= 14).map((x) => x.garis) : [...jalanKeUtara, ...jalanUtara])
   for (const [x, y] of along(j, 150, rr(20, 80))) if (rnd() < 0.7) tambah([x, y], rnd() < 0.6 ? pick(ids.mobil) : "motor");
 
 // sawah: pohon di pematang + gubuk

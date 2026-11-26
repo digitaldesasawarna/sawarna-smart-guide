@@ -1,28 +1,41 @@
+/*
+ * Sawarna Smart Guide — logika peta (docs/PRD.md F1–F6, F9; docs/DESIGN.md §3–4, §6).
+ */
 (function () {
-  const { config, kategori, batas, zona, jalur, titik, ilustrasi, label } = window.PETA;
+  const PETA = window.PETA;
+  const { config, kategori, batas, zona, label, ilustrasi, keselamatan } = PETA;
+  const titik = PETA.titik.filter((x) => x.aktif !== false);
+  const { t, d } = window.I18N;
+  const esc = window.escHtml;
+  const $ = (id) => document.getElementById(id);
+  const params = new URLSearchParams(location.search);
+  const kurangiGerak = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-  // ---------- Peta dasar ----------
+  // ================================================================ peta dasar
   const batasGambar = L.latLngBounds(ilustrasi.batas);
-  const layarKecil = window.innerWidth < 768;
+  const layarKecil = innerWidth < 768;
   const zoomAwal = layarKecil ? config.zoomAwal - 1 : config.zoomAwal;
+  const norm = (v) => ((Math.round(v) % 360) + 360) % 360;
   const map = L.map("map", {
     center: config.pusat,
     zoom: zoomAwal,
-    zoomSnap: 1, // tile ilustrasi hanya ada di zoom bulat (16–19); plugin rotasi tidak membulatkan zoom tile
+    zoomSnap: 1, // tile ilustrasi hanya ada di zoom bulat (16–19)
     minZoom: config.zoomMin,
     maxZoom: config.zoomMaks,
     maxBounds: batasGambar,
-    maxBoundsViscosity: 1.0,
+    maxBoundsViscosity: 1,
     zoomControl: false,
+    zoomAnimation: !kurangiGerak,
+    fadeAnimation: !kurangiGerak,
+    markerZoomAnimation: !kurangiGerak,
     rotate: true,
-    bearing: 0,
+    bearing: norm(-config.arahAwal), // leaflet-rotate memutar isi searah jarum jam → bearing = −arah
     touchRotate: true,
     shiftKeyRotate: true,
     rotateControl: false,
   });
-  L.control.zoom({ position: "bottomright" }).addTo(map);
+  map.attributionControl.setPrefix(false);
 
-  // Zoom minimum menyesuaikan layar agar tepi ilustrasi tidak pernah terlihat
   function aturZoomMin() {
     const z = Math.max(config.zoomMin, Math.ceil(map.getBoundsZoom(batasGambar, true)));
     map.setMinZoom(z);
@@ -30,277 +43,190 @@
   }
   aturZoomMin();
   map.on("resize", aturZoomMin);
+  const aturJauh = () => map.getContainer().classList.toggle("jauh", map.getZoom() <= 16);
+  map.on("zoomend", aturJauh);
+  aturJauh();
 
-  // Lapisan dasar: ilustrasi (bawaan), satelit, peta jalan
-  const lapisLabel = L.layerGroup(
-    label.map((l) =>
-      L.marker(l.lokasi, {
-        interactive: false,
-        keyboard: false,
-        icon: L.divIcon({
-          className: `label-peta label-${l.tipe}`,
-          html: `<span data-putar="${l.putar || 0}" style="${l.warna ? `--c:${l.warna};` : ""}${l.putar ? `transform:rotate(${l.putar}deg)` : ""}">${l.teks}</span>`,
-          iconSize: [0, 0],
-        }),
-      }).on("add", function () { this._zoomMin = l.zoomMin || 0; })
-    )
-  );
-  function aturLabel() {
-    const z = map.getZoom();
-    lapisLabel.eachLayer((m) => m.getElement() && m.getElement().classList.toggle("sembunyi", z < m._zoomMin));
-  }
-  map.on("zoomend", aturLabel);
-  lapisLabel.on("add", () => setTimeout(aturLabel));
+  // Marker yang bisa difokus: Enter/Spasi membuka kartunya, diumumkan sebagai tombol (better-accessibility)
+  const bisaKeyboard = (mk) => mk.on("add", () => {
+    const el = mk.getElement();
+    if (!el || el.dataset.kb) return;
+    el.dataset.kb = "1";
+    el.setAttribute("role", "button");
+    el.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); mk.fire("click", { latlng: mk.getLatLng() }); }
+    });
+  });
 
-  const batasInti = L.latLngBounds(batas).pad(0).extend([
-    [Math.min(...batas.map((b) => b[0])) - ilustrasi.marginInti, Math.min(...batas.map((b) => b[1])) - ilustrasi.marginInti],
-    [Math.max(...batas.map((b) => b[0])) + ilustrasi.marginInti, Math.max(...batas.map((b) => b[1])) + ilustrasi.marginInti],
-  ]);
-  const opsiTile = { arah: 0, bounds: batasGambar, noWrap: true, keepBuffer: 4, className: "ilustrasi", attribution: "Ilustrasi © KKN Sawarna" };
+  // ---------- lapisan ilustrasi (8 arah), satelit, peta jalan
+  const lats = batas.map((b) => b[0]), lngs = batas.map((b) => b[1]), m = ilustrasi.marginInti;
+  const batasInti = L.latLngBounds([Math.min(...lats) - m, Math.min(...lngs) - m], [Math.max(...lats) + m, Math.max(...lngs) + m]);
+  const opsiTile = { arah: config.arahAwal, bounds: batasGambar, noWrap: true, keepBuffer: 4, className: "ilustrasi", attribution: "Ilustrasi © KKN Sawarna · data © kontributor <a href=\"https://www.openstreetmap.org/copyright\">OpenStreetMap</a>" };
   const tileIlustrasi = [
     L.tileLayer(ilustrasi.tiles, { ...opsiTile, minNativeZoom: 16, maxNativeZoom: 18, maxZoom: 19 }),
-    // detail zoom 19 hanya untuk kawasan inti
     L.tileLayer(ilustrasi.tiles, { ...opsiTile, bounds: batasInti, minZoom: 19, minNativeZoom: 19, maxNativeZoom: 19, maxZoom: 19 }),
   ];
-  // ganti set tile sesuai arah pandang (bangunan selalu tegak menghadap layar)
-  function pakaiTileArah(a) {
-    tileIlustrasi.forEach((t) => { if (t.options.arah !== a) { t.options.arah = a; t.redraw(); } });
+  const pakaiTileArah = (a) => tileIlustrasi.forEach((tl) => { if (tl.options.arah !== a) { tl.options.arah = a; tl.redraw(); } });
+
+  // label nama tempat & zona
+  const lapisLabel = L.layerGroup();
+  function buatLabel() {
+    lapisLabel.clearLayers();
+    label.forEach((l) => lapisLabel.addLayer(L.marker(l.lokasi, {
+      interactive: false, keyboard: false, zoomMin: l.zoomMin || 0,
+      icon: L.divIcon({ className: `label-peta label-${l.tipe}`, iconSize: [0, 0],
+        html: `<span data-putar="${l.putar || 0}">${esc(d(l, "teks"))}</span>` }),
+    })));
+    zona.forEach((z) => lapisLabel.addLayer(bisaKeyboard(L.marker(z.label, {
+      interactive: true, keyboard: true, zoomMin: 16, title: d(z, "nama"), alt: d(z, "nama"),
+      icon: L.divIcon({ className: "label-peta label-zona", iconSize: [0, 0], html: `<span style="--c:${z.warna}">${esc(d(z, "nama"))}</span>` }),
+    }).on("click", () => poligonZona[z.id].openPopup(L.latLng(z.label))))));
+    setTimeout(() => { aturLabel(); putarLabel(); });
   }
+  function aturLabel() {
+    const z = map.getZoom();
+    lapisLabel.eachLayer((mk) => mk.getElement() && mk.getElement().classList.toggle("sembunyi", z < mk.options.zoomMin));
+  }
+  map.on("zoomend", aturLabel);
+
   const gambar = L.layerGroup([...tileIlustrasi, lapisLabel]).addTo(map);
-  const satelit = L.tileLayer(
-    "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
-    { maxZoom: 19, attribution: "Citra &copy; Esri" }
-  );
-  const jalan = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-    maxZoom: 19,
-    attribution: "&copy; OpenStreetMap",
+  const satelit = L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", { maxZoom: 19, attribution: "Citra © Esri" });
+  const jalan = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: "© OpenStreetMap" });
+  const LAPIS = { ilustrasi: gambar, satelit, jalan };
+  let lapisKini = "ilustrasi";
+
+  // indikator memuat (garis ombak)
+  const elMuat = $("muat");
+  let memuat = 0;
+  [...tileIlustrasi, satelit, jalan].forEach((tl) => {
+    tl.on("loading", () => { memuat++; elMuat.hidden = false; });
+    tl.on("load", () => { memuat = Math.max(0, memuat - 1); if (!memuat) elMuat.hidden = true; });
   });
 
-  // ---------- Batas, zona, jalur ----------
-  const lapisBatas = L.polygon(batas, {
-    color: "#DF9232", weight: 3, fill: false, dashArray: "8 6", interactive: false,
-  });
-
-  // Di mode ilustrasi zona sudah tergambar → poligon hanya jadi area klik (muncul tipis saat disorot)
+  // ================================================================ zona
   let modeIlustrasi = true;
-  const gayaZona = (z, sorot) =>
-    modeIlustrasi
-      ? { color: "#fff", weight: sorot ? 3 : 0, opacity: 0.9, fillColor: "#fff", fillOpacity: sorot ? 0.18 : 0 }
-      : { color: z.warna, weight: 2.5, opacity: 1, fillColor: z.warna, fillOpacity: sorot ? 0.38 : 0.22 };
-  const lapisZona = L.layerGroup().addTo(map);
+  const gayaZona = (z, sorot) => modeIlustrasi
+    ? { color: "#fff", weight: sorot ? 2.5 : 0, opacity: .9, fillColor: "#fff", fillOpacity: sorot ? .14 : 0 }
+    : { color: z.warna, weight: 2, opacity: 1, fillColor: z.warna, fillOpacity: sorot ? .3 : .16 };
   const poligonZona = {};
+  const lapisZona = L.layerGroup().addTo(map);
+  const opsiPopup = { className: "popup-kartu", maxWidth: 300, minWidth: 240, autoPanPaddingTopLeft: [16, 130], autoPanPaddingBottomRight: [72, 24] };
   zona.forEach((z) => {
-    const p = L.polygon(z.koordinat, gayaZona(z, false));
+    const p = L.polygon(z.koordinat, gayaZona(z, false)).addTo(lapisZona);
     p.on("mouseover", () => p.setStyle(gayaZona(z, true)));
     p.on("mouseout", () => p.setStyle(gayaZona(z, false)));
-    p.bindPopup(() => buatPopupZona(z, ringkasZona(z)), { className: "popup-zona", maxWidth: 280 });
-    p.bindTooltip(z.nama, { sticky: true, className: "tip-zona" });
-    p.addTo(lapisZona);
+    p.bindPopup(() => buatPopupZona(z), opsiPopup);
     poligonZona[z.id] = p;
   });
 
-  const lapisJalur = L.polyline(jalur.koordinat, {
-    color: "#C69A5B", weight: 5, opacity: 0.9, lineCap: "round",
-  }).bindTooltip(`🚶 ${jalur.nama}<br><small>${jalur.keterangan}</small>`, { sticky: true });
-
-  L.control
-    .layers(
-      { "🎨 Ilustrasi": gambar, "🛰️ Satelit": satelit, "🗺️ Peta jalan": jalan },
-      { "Zona kawasan": lapisZona, "Jalur utama": lapisJalur, "Batas kawasan": lapisBatas },
-      { position: "topright", collapsed: true }
-    )
-    .addTo(map);
-
-  // Ganti lapisan dasar → sesuaikan tampilan zona/jalur/batas
-  map.on("baselayerchange", (e) => {
-    modeIlustrasi = e.layer === gambar;
-    map.getContainer().classList.toggle("mode-ilustrasi", modeIlustrasi);
-    zona.forEach((z) => poligonZona[z.id].setStyle(gayaZona(z, false)));
-    [lapisJalur, lapisBatas].forEach((l) => (modeIlustrasi ? map.removeLayer(l) : map.addLayer(l)));
+  // ================================================================ pin titik
+  const ikonPin = (k) => L.divIcon({
+    className: "pin", iconSize: [28, 28], iconAnchor: [14, 14], popupAnchor: [0, -16],
+    html: `<div class="pin-bulat" style="--c:${k.warna}">${ikon(k.ikon)}</div>`,
   });
-  map.getContainer().classList.add("mode-ilustrasi");
-
-  // ---------- Marker titik layanan ----------
-  const ikonPin = (k) =>
-    L.divIcon({
-      className: "pin",
-      html: `<div class="pin-body" style="--c:${k.warna}"><span>${k.ikon}</span></div>`,
-      iconSize: [34, 42],
-      iconAnchor: [17, 40],
-      popupAnchor: [0, -38],
-    });
-
   const grupKategori = {};
   Object.keys(kategori).forEach((id) => (grupKategori[id] = L.layerGroup().addTo(map)));
-
-  titik.forEach((t) => {
-    const k = kategori[t.kategori];
-    if (!k) return console.warn("Kategori tidak dikenal:", t);
-    L.marker(t.lokasi, { icon: ikonPin(k), title: t.nama, riseOnHover: true })
-      .bindPopup(() => buatPopupTitik(t, k), { maxWidth: 300, minWidth: 260, className: "popup-titik", autoPanPadding: [20, 80] })
-      .addTo(grupKategori[t.kategori]);
-  });
-
-  // ---------- Ringkasan zona (titik di dalam poligon) ----------
-  function diDalam([lat, lng], poly) {
-    let masuk = false;
-    for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
-      const [yi, xi] = poly[i], [yj, xj] = poly[j];
-      if (yi > lat !== yj > lat && lng < ((xj - xi) * (lat - yi)) / (yj - yi) + xi) masuk = !masuk;
-    }
-    return masuk;
-  }
-  function ringkasZona(z) {
-    const hitung = {};
-    titik.forEach((t) => { if (diDalam(t.lokasi, z.koordinat)) hitung[t.kategori] = (hitung[t.kategori] || 0) + 1; });
-    return Object.entries(hitung).map(([id, jumlah]) => ({ ...kategori[id], id, jumlah }));
-  }
-
-  // ---------- Filter kategori ----------
-  const aktif = new Set(Object.keys(kategori));
-  const elFilter = document.getElementById("filter");
-  const jumlahPerKategori = titik.reduce((a, t) => ((a[t.kategori] = (a[t.kategori] || 0) + 1), a), {});
-
-  elFilter.innerHTML =
-    `<button class="chip semua" data-kat="*">Semua</button>` +
-    Object.entries(kategori)
-      .filter(([id]) => jumlahPerKategori[id])
-      .map(([id, k]) =>
-        `<button class="chip" data-kat="${id}" style="--c:${k.warna}"><span class="dot"></span>${k.ikon} ${k.label}<span class="n">${jumlahPerKategori[id]}</span></button>`)
-      .join("");
-
-  function terapkanFilter() {
-    Object.entries(grupKategori).forEach(([id, g]) => (aktif.has(id) ? map.addLayer(g) : map.removeLayer(g)));
-    elFilter.querySelectorAll(".chip[data-kat]").forEach((b) => {
-      const id = b.dataset.kat;
-      b.classList.toggle("on", id === "*" ? aktif.size === Object.keys(kategori).length : aktif.has(id));
+  const markerTitik = {};
+  function buatPin() {
+    Object.values(grupKategori).forEach((g) => g.clearLayers());
+    titik.forEach((tt) => {
+      const k = kategori[tt.kategori];
+      if (!k) return console.warn("Kategori tidak dikenal:", tt.kategori);
+      const mk = bisaKeyboard(L.marker([tt.lat, tt.lng], { icon: ikonPin(k), title: d(tt, "nama"), alt: d(tt, "nama"), riseOnHover: true }))
+        .bindPopup(() => buatPopupTitik(tt, k), opsiPopup)
+        .on("popupopen", () => mk.getElement()?.classList.add("dipilih"))
+        .on("popupclose", () => mk.getElement()?.classList.remove("dipilih"))
+        .addTo(grupKategori[tt.kategori]);
+      markerTitik[tt.id] = mk;
     });
   }
-  function setFilter(ids) {
-    aktif.clear();
-    ids.forEach((i) => aktif.add(i));
+
+  // ================================================================ filter
+  const elFilter = $("filter");
+  const semuaKat = Object.keys(kategori).filter((id) => titik.some((x) => x.kategori === id));
+  const aktif = new Set(semuaKat);
+  function buatChip() {
+    elFilter.setAttribute("aria-label", t("filter"));
+    elFilter.innerHTML = `<button type="button" class="chip" data-kat="*">${t("semua")}</button>` +
+      semuaKat.map((id) => `<button type="button" class="chip" data-kat="${id}"><span class="titik" style="--c:${kategori[id].warna}"></span>${esc(d(kategori[id], "label"))}</button>`).join("");
     terapkanFilter();
   }
+  function terapkanFilter() {
+    Object.entries(grupKategori).forEach(([id, g]) => (aktif.has(id) ? map.addLayer(g) : map.removeLayer(g)));
+    elFilter.querySelectorAll(".chip").forEach((b) => {
+      const id = b.dataset.kat;
+      b.setAttribute("aria-pressed", String(id === "*" ? aktif.size === semuaKat.length : aktif.has(id) && aktif.size < semuaKat.length));
+    });
+  }
+  const setFilter = (ids) => { aktif.clear(); ids.forEach((i) => aktif.add(i)); terapkanFilter(); };
   elFilter.addEventListener("click", (e) => {
     const b = e.target.closest(".chip");
     if (!b) return;
     const id = b.dataset.kat;
-    const semua = Object.keys(kategori);
-    if (id === "*") return setFilter(semua);
-    // Klik pertama saat semua aktif = fokus ke satu kategori; berikutnya = toggle
-    if (aktif.size === semua.length) setFilter([id]);
-    else {
-      aktif.has(id) ? aktif.delete(id) : aktif.add(id);
-      if (!aktif.size) semua.forEach((i) => aktif.add(i));
-      terapkanFilter();
-    }
+    if (id === "*") return setFilter(semuaKat);
+    if (aktif.size === semuaKat.length) setFilter([id]);
+    else { aktif.has(id) ? aktif.delete(id) : aktif.add(id); if (!aktif.size) semuaKat.forEach((i) => aktif.add(i)); terapkanFilter(); }
   });
-  terapkanFilter();
 
-  // Tombol "Tampilkan layanan di zona ini" di dalam pop-up zona
-  // (capture phase: Leaflet menghentikan propagasi klik dari dalam pop-up)
+  // klik di dalam pop-up (Leaflet menghentikan propagasi → fase capture)
   map.getContainer().addEventListener("click", (e) => {
-    const btn = e.target.closest("[data-fokus-zona]");
-    if (!btn) return;
-    const z = zona.find((x) => x.id === btn.dataset.fokusZona);
-    const ids = ringkasZona(z).map((r) => r.id);
-    setFilter(ids.length ? ids : z.kategori);
-    map.closePopup();
-    map.flyToBounds(poligonZona[z.id].getBounds(), { padding: [30, 30], duration: 0.6 });
-    toast(`Menampilkan layanan di ${z.nama}`);
+    const fz = e.target.closest("[data-fokus-zona]");
+    if (fz) {
+      const z = zona.find((x) => x.id === fz.dataset.fokusZona);
+      setFilter(semuaKat.filter((id) => id === "kuliner" || id === "sewa"));
+      map.closePopup();
+      map.flyToBounds(poligonZona[z.id].getBounds(), { padding: [40, 40], duration: kurangiGerak ? 0 : .6 });
+      toast(t("menampilkan", { x: d(z, "nama") }));
+    }
+    if (e.target.closest("[data-wa-contoh]")) toast(t("waContoh"));
   }, true);
 
-  // ---------- Legenda zona ----------
-  document.getElementById("legend").innerHTML =
-    zona.map((z) => `<div><span class="sw" style="--c:${z.warna}"></span>${z.nama}</div>`).join("") +
-    `<div><span class="sw line" style="--c:#C69A5B"></span>${jalur.nama}</div>`;
-
-  // ---------- Toast ----------
-  const elToast = document.getElementById("toast");
+  // ================================================================ toast
+  const elToast = $("toast");
   let tToast;
-  function toast(msg) {
-    elToast.textContent = msg;
-    elToast.classList.add("show");
+  function toast(pesan, lama = 2800) {
+    elToast.textContent = pesan;
+    elToast.classList.add("tampil");
     clearTimeout(tToast);
-    tToast = setTimeout(() => elToast.classList.remove("show"), 2800);
+    tToast = setTimeout(() => elToast.classList.remove("tampil"), lama);
   }
 
-  // ---------- Tombol aksi ----------
-  document.getElementById("btn-reset").addEventListener("click", () => {
-    map.setBearing(0);
-    map.flyTo(config.pusat, zoomAwal, { duration: 0.6 });
+  // ================================================================ panel kecil (satu terbuka sekaligus)
+  const PANEL = { "panel-arah": $("btn-kompas"), "panel-lapisan": $("btn-lapisan") };
+  function bukaPanel(id, buka) {
+    Object.entries(PANEL).forEach(([pid, btn]) => {
+      const b = pid === id ? buka : false;
+      $(pid).hidden = !b;
+      btn.setAttribute("aria-expanded", String(b));
+    });
+    if (buka) $(id).querySelector("button, input")?.focus({ preventScroll: true });
+  }
+  document.addEventListener("click", (e) => {
+    const tp = e.target.closest("[data-tutup]");
+    if (!tp) return;
+    const id = tp.dataset.tutup;
+    if (id === "panel-aman") $("panel-aman").close();
+    else { bukaPanel(id, false); PANEL[id].focus(); }
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key !== "Escape") return;
+    const terbuka = Object.keys(PANEL).find((pid) => !$(pid).hidden);
+    if (terbuka) { bukaPanel(terbuka, false); PANEL[terbuka].focus(); }
   });
 
-  // Lokasi saya
-  let posMarker, posAkurasi, lacak = false;
-  const btnLokasi = document.getElementById("btn-lokasi");
-  btnLokasi.addEventListener("click", () => {
-    if (lacak) {
-      map.stopLocate();
-      lacak = false;
-      btnLokasi.classList.remove("active");
-      posMarker && map.removeLayer(posMarker);
-      posAkurasi && map.removeLayer(posAkurasi);
-      posMarker = posAkurasi = null;
-      return;
-    }
-    lacak = true;
-    btnLokasi.classList.add("active");
-    toast("Mencari lokasi Anda…");
-    map.locate({ watch: true, enableHighAccuracy: true });
-  });
-  let pertama = true;
-  map.on("locationfound", (e) => {
-    if (!posMarker) {
-      posMarker = L.marker(e.latlng, {
-        icon: L.divIcon({ className: "me", html: '<div class="me-dot"></div>', iconSize: [20, 20] }),
-        zIndexOffset: 1000,
-      }).bindTooltip("Anda di sini", { direction: "top", offset: [0, -10] }).addTo(map);
-      posAkurasi = L.circle(e.latlng, { radius: e.accuracy, color: "#2563eb", weight: 1, fillOpacity: 0.1, interactive: false }).addTo(map);
-    } else {
-      posMarker.setLatLng(e.latlng);
-      posAkurasi.setLatLng(e.latlng).setRadius(e.accuracy);
-    }
-    if (pertama) {
-      pertama = false;
-      if (L.latLngBounds(batas).contains(e.latlng)) map.flyTo(e.latlng, 18);
-      else toast("Anda berada di luar kawasan Pantai Ciantir");
-    }
-  });
-  map.on("locationerror", () => {
-    toast("Lokasi tidak bisa diakses. Pastikan GPS & izin lokasi aktif.");
-    lacak = false;
-    pertama = true;
-    btnLokasi.classList.remove("active");
-  });
-
-  // ---------- Arah pandang (rotasi peta) ----------
-  const ARAH = [
-    [0, "U", "Utara"], [45, "TL", "Timur Laut"], [90, "T", "Timur"], [135, "TG", "Tenggara"],
-    [180, "S", "Selatan"], [225, "BD", "Barat Daya"], [270, "B", "Barat"], [315, "BL", "Barat Laut"],
-  ];
-  const elPanel = document.getElementById("panel-arah");
-  const btnKompas = document.getElementById("btn-kompas");
-  const elRange = document.getElementById("pa-range");
-  const norm = (d) => ((Math.round(d) % 360) + 360) % 360;
-  const selisih = (a, b) => Math.abs(((a - b + 540) % 360) - 180);
-  document.getElementById("pa-preset").innerHTML = ARAH.map(
-    ([d, s, n]) => `<button class="pa-chip" data-derajat="${d}" title="${n} (${d}°)"><b>${s}</b><span>${d}°</span></button>`
-  ).join("");
-
-  // derajat = arah yang dihadapi (bagian atas layar). leaflet-rotate memutar isi peta searah jarum jam → bearing = -arah
+  // ================================================================ arah pandang (8 arah, kunci 45°)
+  const btnKompas = $("btn-kompas"), elRange = $("pa-range");
+  btnKompas.innerHTML = ikonKompas();
   const arahKini = () => norm(-map.getBearing());
-  const setArah = (deg) => map.setBearing(norm(-deg));
-  function perbaruiArah() {
+  const setArah = (a) => map.setBearing(norm(-a));
+  const selisih = (a, b) => Math.abs(((a - b + 540) % 360) - 180);
+  function buatPreset() {
+    const nama = t("arahNama"), singkat = t("arahSingkat");
+    $("pa-preset").innerHTML = nama.map((n, i) => `<button type="button" data-derajat="${i * 45}" aria-label="${n}, ${i * 45}°">${singkat[i]}</button>`).join("");
+    perbaruiArah();
+  }
+  function putarLabel() {
     const b = arahKini();
-    elRange.value = b;
-    document.getElementById("pa-derajat").textContent = b + "°";
-    const dekat = ARAH.reduce((a, c) => (selisih(c[0], b) < selisih(a[0], b) ? c : a));
-    document.getElementById("pa-nama").textContent = (selisih(dekat[0], b) <= 10 ? "Menghadap " : "Mendekati ") + dekat[2];
-    btnKompas.querySelector(".jarum").style.transform = `rotate(${-b}deg)`;
-    btnKompas.classList.toggle("diputar", b !== 0);
-    elPanel.querySelectorAll(".pa-chip").forEach((c) => c.classList.toggle("on", +c.dataset.derajat === b));
-    // label yang mengikuti garis pantai ikut berputar dan tidak terbalik
     document.querySelectorAll(".label-peta span[data-putar]").forEach((sp) => {
       const p = +sp.dataset.putar;
       if (!p) return;
@@ -309,7 +235,16 @@
       sp.style.transform = `rotate(${a}deg)`;
     });
   }
-  // arah pandang dikunci per 45° karena ilustrasi digambar untuk 8 arah
+  function perbaruiArah() {
+    const b = arahKini(), i = Math.round(b / 45) % 8;
+    elRange.value = Math.round(b / 45) * 45 % 360;
+    $("pa-derajat").textContent = b + "°";
+    $("pa-nama").textContent = t("menghadap", { x: t("arahNama")[i] });
+    btnKompas.querySelector(".jarum").style.transform = `rotate(${-b}deg)`;
+    btnKompas.setAttribute("aria-label", `${t("kompas")}: ${t("menghadap", { x: t("arahNama")[i] })}`);
+    $("pa-preset").querySelectorAll("button").forEach((c) => c.setAttribute("aria-pressed", String(+c.dataset.derajat === b)));
+    putarLabel();
+  }
   let tSnap;
   map.on("rotate", () => {
     perbaruiArah();
@@ -320,40 +255,189 @@
       pakaiTileArah(s);
     }, 250);
   });
-  map.on("zoomend moveend", perbaruiArah);
   elRange.addEventListener("input", () => setArah(+elRange.value));
-  elPanel.addEventListener("click", (e) => {
-    const c = e.target.closest("[data-derajat]");
-    const st = e.target.closest("[data-step]");
+  $("panel-arah").addEventListener("click", (e) => {
+    const c = e.target.closest("[data-derajat]"), st = e.target.closest("[data-step]");
     if (c) setArah(+c.dataset.derajat);
     if (st) setArah(arahKini() + +st.dataset.step);
   });
-  function bukaPanel(buka) {
-    elPanel.hidden = !buka;
-    btnKompas.setAttribute("aria-expanded", String(buka));
-    btnKompas.classList.toggle("active", buka);
+  btnKompas.addEventListener("click", () => bukaPanel("panel-arah", $("panel-arah").hidden));
+  btnKompas.addEventListener("dblclick", () => { bukaPanel("panel-arah", false); keAwal(); });
+  function keAwal() {
+    setArah(config.arahAwal);
+    map.flyTo(config.pusat, zoomAwal, { duration: kurangiGerak ? 0 : .6 });
   }
-  btnKompas.addEventListener("click", () => bukaPanel(elPanel.hidden));
-  btnKompas.addEventListener("dblclick", () => setArah(0));
-  document.getElementById("pa-tutup").addEventListener("click", () => bukaPanel(false));
-  perbaruiArah();
 
-  // Mode ambil koordinat (untuk survei / input data)
-  let modeKoordinat = false;
-  const btnKoor = document.getElementById("btn-koordinat");
+  // ================================================================ tampilan peta
+  $("panel-lapisan").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-lapis]");
+    if (!b || b.dataset.lapis === lapisKini) return;
+    map.removeLayer(LAPIS[lapisKini]);
+    lapisKini = b.dataset.lapis;
+    map.addLayer(LAPIS[lapisKini]);
+    LAPIS[lapisKini].bringToBack?.();
+    modeIlustrasi = lapisKini === "ilustrasi";
+    map.getContainer().classList.toggle("mode-lain", !modeIlustrasi);
+    zona.forEach((z) => poligonZona[z.id].setStyle(gayaZona(z, false)));
+    $("panel-lapisan").querySelectorAll("[data-lapis]").forEach((x) => x.setAttribute("aria-checked", String(x === b)));
+  });
+  $("btn-lapisan").addEventListener("click", () => bukaPanel("panel-lapisan", $("panel-lapisan").hidden));
+  $("btn-plus").addEventListener("click", () => map.zoomIn());
+  $("btn-minus").addEventListener("click", () => map.zoomOut());
+
+  // ================================================================ lokasi saya
+  let posMarker, posAkurasi, lacak = false, pertama = true;
+  const btnLokasi = $("btn-lokasi");
+  const ikonSaya = (teks) => L.divIcon({ className: "saya", iconSize: [18, 18], iconAnchor: [9, 9],
+    html: `<div class="saya-titik"></div>${teks ? `<div class="saya-label">${esc(teks)}</div>` : ""}` });
+  btnLokasi.addEventListener("click", () => {
+    if (lacak) {
+      map.stopLocate(); lacak = false; btnLokasi.setAttribute("aria-pressed", "false");
+      posMarker && map.removeLayer(posMarker); posAkurasi && map.removeLayer(posAkurasi);
+      posMarker = posAkurasi = null; pertama = true;
+      return;
+    }
+    lacak = true; btnLokasi.setAttribute("aria-pressed", "true");
+    toast(t("lokasiCari"));
+    map.locate({ watch: true, enableHighAccuracy: true });
+  });
+  map.on("locationfound", (e) => {
+    if (!posMarker) {
+      posAkurasi = L.circle(e.latlng, { radius: e.accuracy, color: "#3F6DA6", weight: 1, fillOpacity: .08, interactive: false }).addTo(map);
+      posMarker = L.marker(e.latlng, { icon: ikonSaya(), zIndexOffset: 1000, keyboard: false }).addTo(map);
+    } else { posMarker.setLatLng(e.latlng); posAkurasi.setLatLng(e.latlng).setRadius(e.accuracy); }
+    if (pertama) {
+      pertama = false;
+      if (L.latLngBounds(batas).contains(e.latlng)) map.flyTo(e.latlng, 18, { duration: kurangiGerak ? 0 : .6 });
+      else toast(t("lokasiLuar"));
+    }
+  });
+  map.on("locationerror", () => { toast(t("lokasiGagal"), 4000); lacak = false; pertama = true; btnLokasi.setAttribute("aria-pressed", "false"); });
+
+  // ================================================================ keselamatan (dialog)
+  const dlgAman = $("panel-aman");
+  const lapisEvak = L.layerGroup();
+  const bendera = (w) => `<svg viewBox="0 0 28 28" aria-hidden="true"><path d="M7 25V4" stroke="#6B7A8F" stroke-width="1.6" stroke-linecap="round"/><path d="M8 5h13l-2.5 4.5L21 14H8z" fill="${w}"/></svg>`;
+  function buatAman() {
+    const k = keselamatan;
+    $("aman-isi").innerHTML = `
+      <section class="aman-bagian"><h3>${t("benderaJudul")}</h3>
+        <ul class="bendera-daftar">${k.bendera.map((b) => `<li>${bendera(b.warna)}<p><b>${esc(d(b, "nama"))}</b><span>${esc(d(b, "arti"))}</span></p></li>`).join("")}</ul></section>
+      <section class="aman-bagian"><h3>${t("arusJudul")}</h3><p class="aman-info">${esc(d(k, "arusBalik"))}</p></section>
+      <section class="aman-bagian"><h3>${t("evakuasiJudul")}</h3><p>${esc(d(k.evakuasi, "teks"))}</p>
+        <button type="button" class="tombol-teks" id="btn-evak">${ikon("lari")}<span>${t("tunjukkan")}</span></button></section>
+      <section class="aman-bagian"><h3>${t("nomorJudul")}</h3>
+        <ul class="nomor-daftar">${k.nomor.map((n) => `<li><p class="nm"><b>${esc(d(n, "nama"))}</b><span>${n.nomor ? esc(n.nomor) : t("nomorMenyusul")}</span></p>${
+          n.nomor ? `<a href="tel:${esc(n.nomor)}" aria-label="${esc(t("telepon", { x: d(n, "nama") }))}">${ikon("telepon")}</a>` : `<span class="kosong" aria-hidden="true">${ikon("telepon")}</span>`}</li>`).join("")}</ul></section>`;
+    $("btn-evak").addEventListener("click", tunjukkanEvakuasi);
+  }
+  function gambarEvakuasi() {
+    lapisEvak.clearLayers();
+    const ev = keselamatan.evakuasi;
+    L.polyline(ev.jalur, { color: "#fff", weight: 9, opacity: .9, lineCap: "round", lineJoin: "round", interactive: false }).addTo(lapisEvak);
+    L.polyline(ev.jalur, { color: "#2E8B57", weight: 5, dashArray: "1 10", lineCap: "round", interactive: false }).addTo(lapisEvak);
+    L.marker(ev.titikKumpul, { icon: ikonSaya(t("titikKumpul")), keyboard: false }).addTo(lapisEvak);
+  }
+  function tunjukkanEvakuasi() {
+    dlgAman.close();
+    const ev = keselamatan.evakuasi;
+    gambarEvakuasi();
+    lapisEvak.addTo(map);
+    map.flyToBounds(L.latLngBounds(ev.jalur), { padding: [80, 80], duration: kurangiGerak ? 0 : .8 });
+    toast(t("evakuasiTampil"), 4000);
+  }
+  let pemicuAman = null;
+  $("btn-aman").addEventListener("click", (e) => { pemicuAman = e.currentTarget; dlgAman.showModal(); });
+  dlgAman.addEventListener("close", () => pemicuAman?.focus());
+  dlgAman.addEventListener("click", (e) => { if (e.target === dlgAman) dlgAman.close(); }); // klik di luar lembar
+
+  // ================================================================ riak saat ditekan
+  document.addEventListener("pointerdown", (e) => {
+    if (kurangiGerak) return;
+    const el = e.target.closest(".fab, .chip");
+    if (!el) return;
+    el.classList.remove("riak"); void el.offsetWidth; el.classList.add("riak");
+  });
+  document.addEventListener("animationend", (e) => e.target.classList?.remove("riak"));
+
+  // ================================================================ offline
+  const elOff = $("tanda-offline");
+  elOff.innerHTML = `${ikon("offline")}<span></span>`;
+  function aturOnline(beriTahu) {
+    elOff.hidden = navigator.onLine;
+    elOff.querySelector("span").textContent = t("offline");
+    if (beriTahu) toast(navigator.onLine ? t("onlinePesan") : t("offlinePesan"));
+  }
+  addEventListener("online", () => aturOnline(true));
+  addEventListener("offline", () => aturOnline(true));
+
+  // ================================================================ mode survei (?survei=1) — dihapus setelah survei
+  const btnKoor = $("btn-koordinat");
+  let modeKoor = false;
+  if (params.get("survei") === "1") btnKoor.hidden = false;
   btnKoor.addEventListener("click", () => {
-    modeKoordinat = !modeKoordinat;
-    btnKoor.classList.toggle("active", modeKoordinat);
-    map.getContainer().classList.toggle("picking", modeKoordinat);
-    toast(modeKoordinat ? "Klik peta untuk menyalin koordinat" : "Mode koordinat mati");
+    modeKoor = !modeKoor;
+    btnKoor.setAttribute("aria-pressed", String(modeKoor));
+    map.getContainer().style.cursor = modeKoor ? "crosshair" : "";
+    toast(modeKoor ? t("koordinatAktif") : t("koordinatMati"));
   });
   map.on("click", (e) => {
-    if (!modeKoordinat) return;
-    const teks = `[${e.latlng.lat.toFixed(5)}, ${e.latlng.lng.toFixed(5)}]`;
-    L.popup({ className: "popup-koor" })
-      .setLatLng(e.latlng)
-      .setContent(`<code>${teks}</code><br><small>Disalin ke clipboard</small>`)
-      .openOn(map);
+    if (!modeKoor) return;
+    const teks = `${e.latlng.lat.toFixed(5)}, ${e.latlng.lng.toFixed(5)}`;
     navigator.clipboard?.writeText(teks).catch(() => {});
+    toast(`${t("koordinatDisalin")}: ${teks}`);
   });
+
+  // ================================================================ bahasa
+  const FAB = { "btn-aman": ["pelampung", "keselamatan"], "btn-lokasi": ["lokasi", "lokasi"], "btn-lapisan": ["lapisan", "lapisan"],
+    "btn-plus": ["plus", "perbesar"], "btn-minus": ["minus", "perkecil"], "btn-koordinat": ["koordinat", "koordinat"] };
+  Object.entries(FAB).forEach(([id, [ik]]) => ($(id).innerHTML = ikon(ik)));
+  document.querySelectorAll("[data-tutup]").forEach((b) => (b.innerHTML = ikon("tutup")));
+  document.querySelector('[data-step="-45"]').innerHTML = ikon("minus");
+  document.querySelector('[data-step="45"]').innerHTML = ikon("plus");
+  function terapkanBahasa() {
+    document.querySelectorAll("[data-t]").forEach((el) => (el.textContent = t(el.dataset.t)));
+    Object.entries(FAB).forEach(([id, [, kunci]]) => $(id).setAttribute("aria-label", t(kunci)));
+    document.querySelectorAll("[data-tutup]").forEach((b) => b.setAttribute("aria-label", t("tutup")));
+    document.querySelector('[data-step="-45"]').setAttribute("aria-label", t("putarKiri"));
+    document.querySelector('[data-step="45"]').setAttribute("aria-label", t("putarKanan"));
+    elRange.setAttribute("aria-label", t("arahPandang"));
+    $("muat").setAttribute("aria-label", t("memuat"));
+    document.querySelector(".bahasa").setAttribute("aria-label", t("bahasa"));
+    document.querySelectorAll("[data-bahasa]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.bahasa === window.I18N.bahasa)));
+    map.closePopup();
+    buatChip(); buatPin(); buatLabel(); buatPreset(); buatAman(); aturOnline(false);
+    if (map.hasLayer(lapisEvak)) gambarEvakuasi();
+  }
+  document.querySelector(".bahasa").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-bahasa]");
+    if (b) window.I18N.set(b.dataset.bahasa);
+  });
+  window.I18N.onChange(terapkanBahasa);
+  terapkanBahasa();
+
+  // ================================================================ dibuka dari QR (?dari=gerbang)
+  const dari = params.get("dari");
+  const idQr = dari && (PETA.qr[dari] || dari);
+  const titikQr = idQr && titik.find((x) => x.id === idQr);
+  if (titikQr) {
+    map.setView([titikQr.lat, titikQr.lng], 18, { animate: false });
+    L.marker([titikQr.lat, titikQr.lng], { icon: ikonSaya(`${t("andaDiSini")} · ${d(titikQr, "nama")}`), zIndexOffset: 900, keyboard: false, interactive: false }).addTo(map);
+  }
+
+  // ================================================================ layar pembuka (±1 detik, bisa dilewati)
+  const elPembuka = $("pembuka");
+  const mulai = performance.now();
+  let pembukaSelesai = false;
+  function tutupPembuka() {
+    if (pembukaSelesai) return;
+    pembukaSelesai = true;
+    elPembuka.classList.add("selesai");
+    setTimeout(() => elPembuka.remove(), 350);
+  }
+  elPembuka.addEventListener("pointerdown", tutupPembuka);
+  addEventListener("keydown", tutupPembuka, { once: true });
+  const minimal = kurangiGerak ? 500 : 1000;
+  tileIlustrasi[0].once("load", () => setTimeout(tutupPembuka, Math.max(0, minimal - (performance.now() - mulai))));
+  setTimeout(tutupPembuka, 2200); // batas atas bila tile lambat (sinyal lemah)
 })();

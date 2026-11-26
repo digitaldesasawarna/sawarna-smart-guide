@@ -1,104 +1,62 @@
 /*
- * Pembuat isi pop-up. Struktur setiap pop-up:
- *   1. Kepala   : foto (atau ikon kategori), label kategori, nama
- *   2. Deskripsi
- *   3. Detail   : khusus per kategori (lihat BAGIAN_KHUSUS)
- *   4. Tombol   : Petunjuk Arah + kontak (WhatsApp / Telepon) bila ada
+ * Isi kartu pop-up (DESIGN §4.5, §4.6): foto → kategori → nama → deskripsi → jam → tombol.
+ * Tanpa harga. WhatsApp hanya untuk UMKM yang sudah memberi izin.
  */
 (function () {
-  const esc = (s) =>
-    String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const { t, d } = window.I18N;
+  const KATEGORI_WA = ["kuliner", "sewa"];
 
-  const baris = (ikon, label, nilai) =>
-    nilai == null || nilai === "" ? "" :
-    `<div class="pp-row"><span class="pp-ico">${ikon}</span><span class="pp-key">${esc(label)}</span><span class="pp-val">${esc(nilai)}</span></div>`;
-
-  const daftarHarga = (judul, items) =>
-    !items || !items.length ? "" :
-    `<div class="pp-sub">${esc(judul)}</div><table class="pp-price">${items
-      .map(([a, b]) => `<tr><td>${esc(a)}</td><td>${esc(b)}</td></tr>`).join("")}</table>`;
-
-  const chips = (items) =>
-    !items || !items.length ? "" :
-    `<div class="pp-chips">${items.map((f) => `<span>${esc(f)}</span>`).join("")}</div>`;
-
-  const BENDERA = {
-    hijau:  { teks: "Aman untuk berenang", warna: "#16a34a" },
-    kuning: { teks: "Hati-hati, ombak sedang", warna: "#ca8a04" },
-    merah:  { teks: "Dilarang berenang", warna: "#dc2626" },
-  };
-
-  // Bagian detail khusus per kategori
-  const BAGIAN_KHUSUS = {
-    homestay: (i) =>
-      baris("💰", "Harga", i.harga) +
-      baris("🛏️", "Kamar", i.kamar && `${i.kamar} kamar`) +
-      baris("📍", "Ke pantai", i.jarakPantai) +
-      baris("👤", "Pemilik", i.pemilik) +
-      chips(i.fasilitas),
-    kuliner: (i) => baris("🕒", "Jam buka", i.jam) + daftarHarga("Menu andalan", i.menu),
-    sewa: (i) =>
-      baris("🕒", "Jam buka", i.jam) +
-      baris("🧑‍🏫", "Instruktur", i.instruktur ? "Tersedia" : "Tidak tersedia") +
-      daftarHarga("Harga sewa", i.harga),
-    fasilitas: (i) => baris("🕒", "Jam", i.jam) + baris("📦", "Kapasitas", i.kapasitas) + daftarHarga("Tarif", i.tarif),
-    dasar: (i) => baris("💰", "Biaya", i.biaya) + baris("🕒", "Jam", i.jam) + baris("💧", "Air", i.air),
-    keselamatan: (i) => {
-      const b = BENDERA[i.bendera];
-      const bendera = b
-        ? `<div class="pp-flag" style="--flag:${b.warna}"><span class="pp-flag-dot"></span>Bendera ${esc(i.bendera)}: ${esc(b.teks)}</div>`
-        : "";
-      return bendera + baris("🕒", "Jam jaga", i.jam) + baris("⚠️", "Catatan", i.catatan);
-    },
-    spot: (i) =>
-      baris("⏰", "Waktu terbaik", i.waktuTerbaik) + baris("🥾", "Kesulitan", i.kesulitan) + baris("⚠️", "Catatan", i.catatan),
-    akses: (i) =>
-      baris("🛣️", "Kondisi jalan", i.kondisiJalan) + baris("🚗", "Mobil", i.aksesMobil) + baris("🕒", "Jam", i.jam),
-  };
-
-  function tombol(t) {
-    const [lat, lng] = t.lokasi;
-    const arah = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=walking`;
-    const k = t.kontak || {};
-    let html = `<a class="pp-btn primary" href="${arah}" target="_blank" rel="noopener">🧭 Petunjuk Arah</a>`;
-    if (k.wa) html += `<a class="pp-btn wa" href="https://wa.me/${encodeURIComponent(k.wa)}" target="_blank" rel="noopener">💬 WhatsApp</a>`;
-    if (k.telp) html += `<a class="pp-btn" href="tel:${encodeURIComponent(k.telp)}">📞 Telepon</a>`;
-    if (!k.wa && !k.telp && ["homestay", "kuliner", "sewa", "keselamatan"].includes(t.kategori))
-      html += `<span class="pp-btn disabled" title="Belum ada izin/kontak dari pemilik">💬 Kontak belum tersedia</span>`;
-    return `<div class="pp-actions">${html}</div>`;
+  function foto(tt, k) {
+    const src = tt.foto || `assets/foto/${tt.id}.webp`;
+    return `<figure class="kt-foto" style="--c:${k.warna}">
+      <img src="${esc(src)}" alt="${esc(d(tt, "nama"))}" loading="lazy" decoding="async"
+        onerror="this.parentNode.classList.add('kosong');this.remove()">
+      <span class="kt-foto-kosong" aria-hidden="true">${ikon(k.ikon)}</span>
+    </figure>`;
   }
 
-  window.buatPopupTitik = function (t, kat) {
-    const foto = t.foto
-      ? `<img class="pp-photo" src="${esc(t.foto)}" alt="${esc(t.nama)}" loading="lazy">`
-      : `<div class="pp-photo placeholder" style="--c:${kat.warna}"><span>${kat.ikon}</span></div>`;
-    const detail = (BAGIAN_KHUSUS[t.kategori] || (() => ""))(t.info || {});
-    return `
-      <article class="pp">
-        ${foto}
-        <div class="pp-body">
-          <div class="pp-tags">
-            <span class="pp-badge" style="--c:${kat.warna}">${kat.ikon} ${esc(kat.label)}</span>
-            ${t.contoh ? '<span class="pp-dummy">Data contoh</span>' : ""}
-          </div>
-          <h3 class="pp-title">${esc(t.nama)}</h3>
-          ${t.deskripsi ? `<p class="pp-desc">${esc(t.deskripsi)}</p>` : ""}
-          ${detail ? `<div class="pp-detail">${detail}</div>` : ""}
-          ${tombol(t)}
+  function tombolWa(tt) {
+    if (!KATEGORI_WA.includes(tt.kategori)) return "";
+    if (tt.whatsapp) {
+      const pesan = window.PETA.config.pesanWhatsApp[window.I18N.bahasa].replace("{nama}", d(tt, "nama"));
+      return `<a class="tombol garis wa" href="https://wa.me/${encodeURIComponent(tt.whatsapp)}?text=${encodeURIComponent(pesan)}" target="_blank" rel="noopener">${ikon("whatsapp")}<span>${t("whatsapp")}</span></a>`;
+    }
+    if (tt.contoh) return `<button type="button" class="tombol garis wa" data-wa-contoh>${ikon("whatsapp")}<span>${t("whatsapp")}</span></button>`;
+    return "";
+  }
+
+  window.buatPopupTitik = function (tt, k) {
+    const arah = `https://www.google.com/maps/dir/?api=1&destination=${tt.lat},${tt.lng}&travelmode=walking`;
+    const jam = tt.jam ? `<p class="kt-jam"><span>${t("buka")}</span> ${esc(tt.jam)}</p>` : "";
+    return `<article class="kartu kt" aria-label="${esc(d(tt, "nama"))}">
+      ${foto(tt, k)}
+      <div class="kt-isi">
+        <p class="kt-kategori"><span class="titik" style="--c:${k.warna}"></span>${esc(d(k, "label"))}${tt.contoh ? `<span class="kt-contoh">${t("dataContoh")}</span>` : ""}</p>
+        <h2 class="kt-nama">${esc(d(tt, "nama"))}</h2>
+        ${d(tt, "deskripsi") ? `<p class="kt-desk">${esc(d(tt, "deskripsi"))}</p>` : ""}
+        ${jam}
+        <div class="kt-aksi">
+          <a class="tombol utama" href="${arah}" target="_blank" rel="noopener">${ikon("arah")}<span>${t("arah")}</span></a>
+          ${tombolWa(tt)}
         </div>
-      </article>`;
+      </div>
+    </article>`;
   };
 
-  window.buatPopupZona = function (z, ringkasan) {
-    const isi = ringkasan.length
-      ? `<ul class="pz-list">${ringkasan.map((r) => `<li>${r.ikon} ${esc(r.label)} <b>${r.jumlah}</b></li>`).join("")}</ul>`
-      : "";
-    return `
-      <article class="pz" style="--c:${z.warna}">
-        <div class="pz-head"><span class="pz-swatch"></span><h3>${esc(z.nama)}</h3></div>
-        <p>${esc(z.deskripsi)}</p>
-        ${isi}
-        <button class="pp-btn primary" data-fokus-zona="${esc(z.id)}">Tampilkan layanan di zona ini</button>
-      </article>`;
+  window.buatPopupZona = function (z) {
+    const tombol = z.tautan === "visitSawarna"
+      ? `<a class="tombol utama" href="${esc(window.PETA.config.visitSawarna)}" target="_blank" rel="noopener"><span>${t("zonaHomestay")}</span>${ikon("luar")}</a>`
+      : `<button type="button" class="tombol utama" data-fokus-zona="${esc(z.id)}">${ikon("filter")}<span>${t("zonaUmkm")}</span></button>`;
+    return `<article class="kartu kt kz" aria-label="${esc(d(z, "nama"))}">
+      <div class="kt-isi">
+        <p class="kt-kategori"><span class="titik" style="--c:${z.warna}"></span>${window.I18N.bahasa === "en" ? "Area" : "Zona"}</p>
+        <h2 class="kt-nama">${esc(d(z, "nama"))}</h2>
+        <p class="kt-desk">${esc(d(z, "deskripsi"))}</p>
+        <div class="kt-aksi">${tombol}</div>
+      </div>
+    </article>`;
   };
+
+  window.escHtml = esc;
 })();

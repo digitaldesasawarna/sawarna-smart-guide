@@ -109,4 +109,28 @@
 
   /* Ukuran sentuh minimum (HP) */
   --sw-sentuh: 44px;
+
+  /* ---------- Tema pesisir "pantai pagi" (DESIGN §2.1) ---------- */
+  --sw-buih: #F7FBFC;            /* permukaan utama */
+  --sw-kaca-laut: #D6ECE8;       /* latar info ringan */
+  --sw-senja: #FAE6CB;           /* penanda kecil "baru/penting" */
+
+  /* Bayangan berlapis (better-ui): cincin 1px + angkat + kedalaman */
+  --sw-bayangan-kartu:
+    0 0 0 1px oklch(0 0 0 / 0.06),
+    0 1px 2px -1px oklch(0 0 0 / 0.06),
+    0 2px 4px 0 oklch(0 0 0 / 0.04),
+    0 8px 24px -6px oklch(0.25 0.03 250 / 0.14);
+  --sw-bayangan-kartu-hover:
+    0 0 0 1px oklch(0 0 0 / 0.08),
+    0 1px 2px -1px oklch(0 0 0 / 0.08),
+    0 2px 4px 0 oklch(0 0 0 / 0.06),
+    0 10px 28px -6px oklch(0.25 0.03 250 / 0.18);
+  --sw-garis-gambar: oklch(0 0 0 / 0.1);
+  --sw-ease: cubic-bezier(0.2, 0, 0, 1);
+  --sw-teks-buka: #1F7A47;        /* status "buka", 5,3:1 di putih */
+  --sw-bahaya-ikon: #C94545;      /* ikon keselamatan (non-teks ≥ 3:1) */
+  --sw-bahaya-teks: #B23A3A;      /* ikon telepon darurat */
+  --sw-bahaya-latar: #FBEAEA;
+  --sw-laut-halo: #1F4E7A;        /* halo label peta di atas air */
 }
