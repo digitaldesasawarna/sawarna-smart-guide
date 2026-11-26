@@ -23,7 +23,7 @@ window.PETA = {
   // Peta ilustrasi: tile WebP hasil tools/gen-ilustrasi.mjs + tools/render-tiles.mjs.
   // Batas HARUS sama dengan data/geografi.json → batasGambar. Zoom 19 hanya ada di kawasan inti.
   ilustrasi: {
-    tiles: "assets/tiles/{arah}/{z}/{x}/{y}.webp?v=iso4", // naikkan ?v= setiap tile dirender ulang (hindari cache lama) // satu set per arah pandang (0, 45, … 315)
+    tiles: "assets/tiles/{arah}/{z}/{x}/{y}.webp?v=iso5", // naikkan ?v= setiap tile dirender ulang (hindari cache lama) // satu set per arah pandang (0, 45, … 315)
     batas: [[-6.9960, 106.2960], [-6.9735, 106.3180]],
     marginInti: 0.0015,
   },
@@ -89,12 +89,12 @@ window.PETA = {
     },
   ],
 
-  // Jalur utama: pintu masuk (Jl. Sawarna) → jembatan Cisawarna → homestay → pantai (dipakai generator ilustrasi).
+  // Jalur utama: Pintu Masuk Ciantir 1 (±22 m di utara jembatan) → jembatan Cisawarna → homestay → pantai (dipakai generator ilustrasi).
   // Titik ke-2 & ke-3 = ujung jembatan menurut OpenStreetMap.
   jalur: {
     nama: "Jalur Utama ke Pantai", nama_en: "Main path to the beach",
     koordinat: [
-      [-6.97961, 106.30960], [-6.980036, 106.310231], [-6.980329, 106.310302], [-6.98092, 106.30960],
+      [-6.979842, 106.310189], [-6.980036, 106.310231], [-6.980329, 106.310302], [-6.98092, 106.30960],
       [-6.98169, 106.30927], [-6.98256, 106.30932], [-6.98392, 106.30877],
       [-6.98474, 106.30850], [-6.98496, 106.30830],
     ],
@@ -131,12 +131,11 @@ window.PETA = {
 
   // Titik layanan (data contoh). Homestay tidak diberi pin — lihat zona-homestay.
   titik: [
-    { id: "pintu-masuk", kategori: "akses", nama: "Pintu Masuk Pantai", nama_en: "Beach entrance", lat: -6.97961, lng: 106.30960, jam: "24 jam",
-      deskripsi: "Gerbang utama dari jalan desa. Jalan kaki ±10 menit ke pantai.", deskripsi_en: "Main gate from the village road. About a 10-minute walk to the beach.", contoh: true, aktif: true },
-    { id: "loket-tiket", kategori: "fasilitas", nama: "Loket Tiket", nama_en: "Ticket booth", lat: -6.98000, lng: 106.30925, jam: "06.00–18.00",
-      deskripsi: "Tempat membayar retribusi masuk kawasan.", deskripsi_en: "Pay the area entrance fee here.", contoh: true, aktif: true },
-    { id: "parkir-motor", kategori: "fasilitas", nama: "Parkir Motor", nama_en: "Motorbike parking", lat: -6.98045, lng: 106.31010, jam: "24 jam",
-      deskripsi: "Area parkir motor dekat pintu masuk.", deskripsi_en: "Motorbike parking near the entrance.", contoh: true, aktif: true },
+    // Koordinat pintu masuk dari Google Maps (dikirim pengguna, 27 Nov 2026). Loket tiket berada di titik Pintu 1.
+    { id: "pintu-masuk", kategori: "akses", nama: "Pintu Masuk Ciantir 1 & Loket Tiket", nama_en: "Ciantir Entrance 1 & ticket booth", lat: -6.979842, lng: 106.310189, jam: "24 jam",
+      deskripsi: "Khusus motor, lewat jembatan biru. Bayar retribusi masuk di loket di sini.", deskripsi_en: "Motorbikes only, across the blue bridge. Pay the entrance fee at the booth here.", contoh: true, aktif: true },
+    { id: "pintu-masuk-2", kategori: "akses", nama: "Pintu Masuk Ciantir 2", nama_en: "Ciantir Entrance 2", lat: -6.978961, lng: 106.306647, jam: "24 jam",
+      deskripsi: "Bisa dilalui mobil dan motor.", deskripsi_en: "Open to cars and motorbikes.", contoh: true, aktif: true },
     { id: "warung-seafood", kategori: "kuliner", nama: "Warung Seafood Bu Ani", nama_en: "Bu Ani's Seafood", lat: -6.98532, lng: 106.30844, jam: "08.00–21.00", whatsapp: "",
       deskripsi: "Ikan dan cumi bakar segar hasil tangkapan nelayan setempat.", deskripsi_en: "Fresh grilled fish and squid from local fishermen.", contoh: true, aktif: true },
     { id: "warung-kelapa", kategori: "kuliner", nama: "Kelapa Muda Pak Udin", nama_en: "Pak Udin's Coconuts", lat: -6.98719, lng: 106.30926, jam: "07.00–18.30", whatsapp: "",
@@ -162,5 +161,5 @@ window.PETA = {
   ],
 
   // Kode titik QR (?dari=...) → id titik tempat QR dipasang
-  qr: { gerbang: "pintu-masuk", loket: "loket-tiket", umkm: "warung-seafood", balawista: "pos-balawista" },
+  qr: { gerbang: "pintu-masuk", loket: "pintu-masuk", gerbang2: "pintu-masuk-2", umkm: "warung-seafood", balawista: "pos-balawista" },
 };

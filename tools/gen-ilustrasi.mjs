@@ -187,8 +187,18 @@ const TP = (() => {
     }
     a = b;
   }
-  return { sel: t.sel, w: t.lebar, h: t.tinggi, g: a };
+  const nada = new Uint8Array(t.lebar * t.tinggi);
+  (t.nada || []).forEach((rl, j) => { let i = j * t.lebar; for (const seg of rl.split(".")) { const n = seg.length > 1 ? +seg.slice(1) : 1; nada.fill(+seg[0], i, i + n); i += n; } });
+  return { sel: t.sel, w: t.lebar, h: t.tinggi, g: a, nada };
 })();
+// nada sawah di sekitar titik (mayoritas 3×3 sel kelas sawah): 0 kering terang · 1 kering gelap · 2 tergenang · 3 hijau muda · 4 hijau
+const nadaDi = ([x, y]) => {
+  if (!TP) return -1;
+  const i0 = Math.floor(x / TP.sel), j0 = Math.floor(y / TP.sel), hit = [0, 0, 0, 0, 0];
+  for (let j = j0 - 2; j <= j0 + 2; j++) for (let i = i0 - 2; i <= i0 + 2; i++) if (i >= 0 && j >= 0 && i < TP.w && j < TP.h && TP.g[j * TP.w + i] === 2) hit[TP.nada[j * TP.w + i]]++;
+  const m = hit.indexOf(Math.max(...hit));
+  return hit[m] ? m : -1;
+};
 const kelasDi = ([x, y]) => { if (!TP) return 0; const i = Math.floor(x / TP.sel), j = Math.floor(y / TP.sel); return i < 0 || j < 0 || i >= TP.w || j >= TP.h ? 0 : TP.g[j * TP.w + i]; };
 // PNG kecil (RGBA) tanpa pustaka luar
 function png(w, h, rgba) {
@@ -324,6 +334,7 @@ if (TP) {
 } else L.push(`<path d="${smooth(hutan, true)}" fill="#3F7F4C" filter="url(#b8)"/>`);
 
 // 4. sawah
+const terangkan = (c, k) => "#" + [1, 3, 5].map((i) => { const v = parseInt(c.slice(i, i + 2), 16); return Math.max(0, Math.min(255, Math.round(k > 0 ? v + (255 - v) * k : v * (1 + k)))).toString(16).padStart(2, "0"); }).join("");
 const nSw = noise(190, 5);
 function sawahPetak(poly, ang, cw, ch) {
   const xs = poly.map((p) => p[0]), ys = poly.map((p) => p[1]);
@@ -339,8 +350,8 @@ function sawahPetak(poly, ang, cw, ch) {
     for (let j = 0; j <= nj; j++) {
       const x0 = -Rr + i * cw, y0 = -Rr + j * ch;
       const wx = cx + x0 * ca - y0 * sa, wy = cy + x0 * sa + y0 * ca;
-      const warp = (lengkung([wx, wy]) - 0.5) * ch * 2.2;
-      V[i][j] = [x0 + rr(-cw * 0.18, cw * 0.18), y0 + warp + rr(-ch * 0.14, ch * 0.14)];
+      const warp = (lengkung([wx, wy]) - 0.5) * ch * (TP ? 0.6 : 2.2); // petak di citra hampir persegi
+      V[i][j] = [x0 + rr(-cw * 0.1, cw * 0.1), y0 + warp + rr(-ch * 0.08, ch * 0.08)];
     }
   }
   let s = "", kanal = "";
@@ -355,12 +366,14 @@ function sawahPetak(poly, ang, cw, ch) {
       const inset = q.map(([x, y]) => [mx + (x - mx) * 0.9, my + (y - my) * 0.9]);
       const n = nSw([wx, wy]) + rr(-0.07, 0.07);
       // dominan hijau (padi tumbuh), sesekali baru tanam / menguning / panen
-      // campuran musim seperti di citra: banyak petak selesai panen (cokelat kusam), sebagian tumbuh hijau
-      const [fill, pat] = n < 0.3 ? ["#CDB884", "pSwPanen"] : n < 0.4 ? ["#BFAE86", "pSwPanen"] : n < 0.5 ? ["#9FD0BE", "pSwMuda"] : n < 0.72 ? ["#8CC559", "pSwTumbuh"] : n < 0.88 ? ["#A9D46A", "pSwTumbuh"] : ["#D3D069", "pSwMatang"];
-      const rot = rr(-12, 12), dd = smooth(inset, true);
+      // warna petak = nada sawah di citra pada titik itu; tanpa data citra: campuran musim acak
+      const nd = nadaDi([wx, wy]);
+      const [fill, pat] = nd >= 0 ? [["#D3C7A2", "pSwPanen"], ["#BBAB86", "pSwPanen"], ["#B0AA94", "pSwPanen"], ["#B3D07A", "pSwTumbuh"], ["#8CC559", "pSwTumbuh"]][nd].map((v, k) => (k === 0 ? terangkan(v, rr(-0.04, 0.04)) : v))
+        : n < 0.3 ? ["#CDB884", "pSwPanen"] : n < 0.4 ? ["#BFAE86", "pSwPanen"] : n < 0.5 ? ["#9FD0BE", "pSwMuda"] : n < 0.72 ? ["#8CC559", "pSwTumbuh"] : n < 0.88 ? ["#A9D46A", "pSwTumbuh"] : ["#D3D069", "pSwMatang"];
+      const rot = rr(-12, 12), dd = TP ? dz(inset) : smooth(inset, true);
       s += `<path d="${dd}" fill="${fill}"/><g transform="rotate(${f1(rot)} ${f1(mx)} ${f1(my)})"><path d="${dd}" fill="url(#${pat})" transform="rotate(${f1(-rot)} ${f1(mx)} ${f1(my)})"/></g>`;
       if (pat === "pSwMuda" && rnd() < 0.6) s += `<path d="${dd}" fill="url(#pSwAir)"/>`;
-      s += `<path d="${dd}" fill="none" stroke="#F3EED6" stroke-opacity=".8" stroke-width="2.2"/>`; // pematang terang seperti di citra
+      s += `<path d="${dd}" fill="none" stroke="#EDE6CB" stroke-opacity=".75" stroke-width="1.3"/>`; // pematang terang tipis seperti di citra
       if (lebar === 2) i += 0; // simpul dipakai bersama; petak berikutnya tetap jalan
     }
     if (rnd() < 0.07) kanal += `<path d="${smooth(V[i].map(([x, y]) => [x - 2, y]))}" stroke="#7FB8D8" stroke-width="3.2" fill="none"/>`;
@@ -420,7 +433,8 @@ for (const j of daftarJalan) {
   const tanah = j.kelas === "track" || j.kelas === "path" || j.kelas === "footway";
   L.push(`<path d="${smooth(j.garis)}" stroke="#152638" stroke-width="${j.lebar + 2}" fill="none" stroke-linecap="round" opacity=".16" filter="url(#b4)" transform="translate(3 4)"/>`);
   L.push(`<path d="${smooth(j.garis)}" stroke="#FFFFFF" stroke-width="${j.lebar}" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`);
-  L.push(`<path d="${smooth(j.garis)}" stroke="${tanah ? "#E8DCC0" : j.lebar >= 20 ? "#C9CED4" : "#D9EBC6"}" stroke-width="${j.lebar - 5}" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`);
+  // jalan desa di citra beraspal/beton abu-abu; hanya jalan tanah & setapak berwarna tanah
+  L.push(`<path d="${smooth(j.garis)}" stroke="${tanah ? "#E8DCC0" : j.lebar >= 20 ? "#C3C8CE" : "#CDD1D5"}" stroke-width="${j.lebar - 5}" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`);
   if (j.lebar >= 20) L.push(`<path d="${smooth(j.garis)}" stroke="#FFFFFF" stroke-width="1.4" fill="none" stroke-dasharray="10 12" opacity=".9"/>`);
 }
 L.push(`<path d="${smooth(jalur)}" stroke="#152638" stroke-width="30" fill="none" stroke-linecap="round" opacity=".18" filter="url(#b4)" transform="translate(3 4)"/>`);
@@ -485,7 +499,7 @@ const halamanDi = (p, rx, ry, c = "#E3D9B5", op = 0.55) => halaman.push(`<ellips
 
 const daftarGedung = [];
 // bangunan di simpang pintu masuk (id OSM) → jenis khusus sesuai foto survei
-const PINTU_KHUSUS = { 630693849: "minimarket1", 630693960: "minimarket2", 630693847: "rumahKayu" };
+const PINTU_KHUSUS = { 630693845: "minimarket1", 630693844: "minimarket2", 630693846: "rumahKayu" }; // atap terang di ujung utara jembatan
 if (NY) {
   // setiap bangunan OSM digambar di jejak aslinya: tapak + objek 2.5D dengan warna atap dari citra
   const jejak = [];
@@ -550,7 +564,7 @@ for (const [x, y, ang] of along(jalurD, 48, 24)) {
   // simpang Jl. Sawarna: reklame & motor di depan minimarket, spanduk kopi, papan info, mobil putih di depan rumah kayu
   const pintu = jalur[0], gd = (osm) => daftarGedung.find((g) => g.osm === osm);
   const ke = (u, v, t) => [u[0] + (v[0] - u[0]) * t, u[1] + (v[1] - u[1]) * t];
-  const m1 = gd(630693849), m2 = gd(630693960), rk = gd(630693847);
+  const m1 = gd(630693845), m2 = gd(630693844), rk = gd(630693846);
   if (m1) {
     const depan = ke(m1.c, pintu, 0.62);
     tambah(ke(m1.c, pintu, 0.85), "reklame");
@@ -565,6 +579,9 @@ for (const [x, y, ang] of along(jalurD, 48, 24)) {
   if (rk) tambah(ke(rk.c, pintu, 0.55), "m1");
   const [a, b] = jalurD;
   tambah([pintu[0] + (b[0] - a[0]) * 1.4 + 12, pintu[1] + (b[1] - a[1]) * 1.4], "papan");
+  // Pintu Masuk Ciantir 2 (mobil & motor): papan informasi di tepi jalan
+  const t2 = PETA.titik.find((t) => t.id === "pintu-masuk-2");
+  if (t2) { const q = P([t2.lat, t2.lng]); tambah([q[0] + 12, q[1] + 4], "papan"); }
 }
 
 // zona UMKM: deret kios menghadap laut, warung, gazebo, rumah toko di belakang

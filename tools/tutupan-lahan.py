@@ -10,6 +10,7 @@ di ilustrasi berada di tempat yang sama dengan kenyataan, bukan poligon gambar t
 3. Menulis data/tutupan.json: kisi kelas (dikodekan run-length per baris) di ruang unit generator.
 
 Kelas: 0 tanah/rumput · 1 pepohonan · 2 sawah/ladang terbuka · 3 permukiman · 4 air
+Nada sawah (untuk sel kelas 2, dari warna citra): 0 kering terang · 1 kering gelap · 2 tergenang · 3 hijau muda · 4 hijau
 --debug FOLDER menyimpan citra & peta kelas berwarna ke FOLDER untuk dicek (jangan ke repo).
 Butuh: Python 3 + Pillow.
 """
@@ -70,11 +71,26 @@ def kelas(r, g, b, kasar):
     if v < 0.24: return 1                                                   # bayangan kanopi
     if kasar < 11 and (s < 0.30 or 40 <= h < 75): return 2                  # bidang rata kusam = sawah/ladang
     return 0
-baris = []
+def nada(r, g, b):
+    h, s, v = colorsys.rgb_to_hsv(r / 255, g / 255, b / 255)
+    h *= 360
+    if 60 <= h < 170 and s > 0.22: return 3 if v > 0.5 else 4
+    if v > 0.6: return 0
+    if v > 0.44: return 1
+    return 2
+rle = lambda kode: ".".join((f"{kode[i]}{k - i}" if k - i > 1 else f"{kode[i]}") for i, k in _runs(kode))
+def _runs(kode):
+    i = 0
+    while i < len(kode):
+        k = i
+        while k < len(kode) and kode[k] == kode[i]: k += 1
+        yield i, k
+        i = k
+baris, barisNada = [], []
 hitung = [0] * 5
 px = halus.load()
 for j in range(GH):
-    kode = []
+    kode, kodeNada = [], []
     for i in range(GW):
         kotak_sel = (i * K, j * K, i * K + K, j * K + K)
         st = ImageStat.Stat(kecil.crop(kotak_sel))
@@ -83,14 +99,9 @@ for j in range(GH):
         c = kelas(r, g, b, kasar)
         hitung[c] += 1
         kode.append(c)
-    # run-length: "kelas,panjang;…"
-    rl, i = [], 0
-    while i < GW:
-        k = i
-        while k < GW and kode[k] == kode[i]: k += 1
-        rl.append(f"{kode[i]}{k - i}" if k - i > 1 else f"{kode[i]}")
-        i = k
-    baris.append(".".join(rl))
+        kodeNada.append(nada(r, g, b))
+    baris.append(rle(kode))
+    barisNada.append(rle(kodeNada))
 total = GW * GH
 print("  kelas:", {n: f"{c * 100 / total:.0f}%" for n, c in zip(["tanah", "pohon", "sawah", "permukiman", "air"], hitung)})
 
@@ -109,6 +120,6 @@ with open(os.path.join(AKAR, "data", "tutupan.json"), "w", encoding="utf-8") as 
     json.dump({
         "_catatan": "Dibuat oleh tools/tutupan-lahan.py dari citra Esri World Imagery (acuan; citra tidak disimpan). "
                     "Kelas: 0 tanah/rumput, 1 pepohonan, 2 sawah/ladang, 3 permukiman, 4 air. Baris = run-length 'kelas[panjang]' dipisah titik.",
-        "diambil": time.strftime("%Y-%m-%d"), "sel": SEL, "lebar": GW, "tinggi": GH, "baris": baris,
+        "diambil": time.strftime("%Y-%m-%d"), "sel": SEL, "lebar": GW, "tinggi": GH, "baris": baris, "nada": barisNada,
     }, f, separators=(",", ":"))
 print(f"data/tutupan.json ditulis ({GW}×{GH} sel)")
