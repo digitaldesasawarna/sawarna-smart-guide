@@ -56,8 +56,6 @@
     zoomSnap: 1, // tile ilustrasi hanya ada di zoom bulat (16–19)
     minZoom: config.zoomMin,
     maxZoom: config.zoomMaks,
-    maxBounds: batasGambar.pad(0.05),
-    maxBoundsViscosity: 1,
     zoomControl: false,
     zoomAnimation: !kurangiGerak,
     fadeAnimation: !kurangiGerak,
@@ -65,13 +63,31 @@
   });
   map.attributionControl.setPrefix(false);
 
+  // Batas peta dihitung di ruang piksel gambar. maxBounds & getBoundsZoom Leaflet memakai kotak lintang/bujur
+  // dan hanya dua sudutnya, sehingga salah pada proyeksi isometrik yang berputar (zoom & geser terkunci).
+  const isoAktif = () => map.options.crs !== L.CRS.EPSG3857;
   function aturZoomMin() {
-    const z = Math.max(config.zoomMin, Math.ceil(map.getBoundsZoom(batasGambar, true)));
+    let z;
+    if (isoAktif()) {
+      const { w, h } = ISO.arah[arahAktif], s = map.getSize();
+      z = 18 + Math.log2((Math.max(s.x / w, s.y / h) * 0.85) / ISO.S0); // gambar (hampir) menutupi layar
+    } else z = map.getBoundsZoom(batasGambar, true);
+    z = Math.min(config.zoomMaks, Math.max(config.zoomMin, Math.ceil(z)));
     map.setMinZoom(z);
     if (map.getZoom() < z) map.setZoom(z);
   }
+  // pusat peta dijaga agar layar tidak keluar dari gambar
+  function jagaBatas() {
+    if (!isoAktif()) return;
+    const { w, h } = ISO.arah[arahAktif], sk = map.options.crs.scale(map.getZoom()), s = map.getSize();
+    const c = map.project(map.getCenter());
+    const jepit = (v, uk, layar) => (uk <= layar ? uk / 2 : Math.min(uk - layar / 2, Math.max(layar / 2, v)));
+    const x = jepit(c.x, w * sk, s.x), y = jepit(c.y, h * sk, s.y);
+    if (Math.abs(x - c.x) > 0.5 || Math.abs(y - c.y) > 0.5) map.panTo(map.unproject([x, y]), { animate: !kurangiGerak, duration: 0.3 });
+  }
   aturZoomMin();
   map.on("resize", aturZoomMin);
+  map.on("moveend", jagaBatas);
   const aturJauh = () => map.getContainer().classList.toggle("jauh", map.getZoom() <= 16);
   map.on("zoomend", aturJauh);
   aturJauh();
@@ -253,8 +269,12 @@
     const crs = lapisKini === "ilustrasi" ? crsArah(arahAktif) : L.CRS.EPSG3857;
     batasGambar = lapisKini === "ilustrasi" ? batasLatLng(arahAktif) : L.latLngBounds(ilustrasi.batas);
     map.options.crs = crs;
-    map.setMaxBounds(batasGambar.pad(0.05));
+    // maxBounds Leaflet hanya benar untuk lapisan satelit/OSM (Mercator biasa)
+    map.setMaxBounds(lapisKini === "ilustrasi" ? null : batasGambar.pad(0.05));
+    map.options.maxBoundsViscosity = 1;
     map.setView(pusat, z, { reset: true });
+    aturZoomMin();
+    jagaBatas();
   }
   function setArah(a) {
     a = (Math.round(norm(a) / 45) * 45) % 360;
