@@ -764,7 +764,7 @@ const dasar = L.join("\n") + "\n" + luar.join("\n");
 // ================================================================ pulau di atas awan
 // Hanya wilayah Ciantir (PETA.pulau) yang digambar. Laut di dalam batas dibatasi ±50 m dari garis pantai,
 // lalu pulau diberi tebing tanah menggantung dan dikelilingi awan; di luar pulau gambar transparan (langit dari CSS).
-const LAUT_PULAU = 90; // unit (±50 m) laut yang ikut menjadi bagian pulau
+const LAUT_PULAU = 170; // unit (±95 m) laut yang ikut menjadi bagian pulau
 const garisLautPulau = offset(garisPantai, LAUT_PULAU);
 const darat50 = [[0, 0], [W, 0], [W, H], [garisLautPulau.at(-1)[0], H], ...garisLautPulau.slice().reverse(), [0, garisLautPulau[0][1]]];
 const titikTerdekat = (g, p) => { let best = g[0], m = Infinity;
@@ -774,6 +774,21 @@ const titikTerdekat = (g, p) => { let best = g[0], m = Infinity;
   return best; };
 const pulau = PETA.pulau ? densify([...pts(PETA.pulau), pts(PETA.pulau)[0]], 10).slice(0, -1).map((p) => (inside(p, darat50) ? p : titikTerdekat(garisLautPulau, p))) : null;
 const diPulau = (p) => !pulau || inside(p, pulau);
+// laut pulau: peselancar di ombak, kapal & perahu nelayan, banana boat (di dalam pita laut pulau)
+if (pulau) {
+  for (const [x, y] of along(offset(garisPantai, 70), 55, 20)) {
+    const p = [x + rr(-12, 12), y + rr(-30, 40)];
+    if (rnd() < 0.6 && diPulau(p) && !inside(p, daratan)) spriteLaut.push({ x: p[0], y: p[1], id: "selancar", s: rr(0.9, 1.15) });
+  }
+  for (const [x, y] of along(offset(garisPantai, LAUT_PULAU - 35), 170, 60)) {
+    const p = [x + rr(-20, 20), y + rr(-12, 12)];
+    if (diPulau(p) && !inside(p, daratan)) spriteLaut.push({ x: p[0], y: p[1], id: rnd() < 0.45 ? "kapal" : "perahu2", s: rr(0.95, 1.15) });
+  }
+  for (const [x, y] of along(offset(garisPantai, LAUT_PULAU - 70), 420, 150)) {
+    const p = [x, y];
+    if (diPulau(p) && !inside(p, daratan)) spriteLaut.push({ x: p[0], y: p[1], id: "banana", s: 1 });
+  }
+}
 const KEDALAMAN_TEBING = 170; // unit layar pada sudut kamera bawaan
 const MARGIN = { kiri: 280, kanan: 280, atas: 240, bawah: 280 }; // ruang untuk awan di sekeliling pulau
 
