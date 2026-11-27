@@ -822,7 +822,9 @@ const defsAwan = [
   ${bola.map(([x, y, r]) => `<circle cx="${x}" cy="${y + 5}" r="${r}" fill="#DCEAF3"/>`).join("")}
   ${bola.map(([x, y, r]) => `<circle cx="${x}" cy="${y}" r="${r}" fill="#FFFFFF"/>`).join("")}
   <rect x="${Math.min(...bola.map((b) => b[0] - b[2] * 0.7))}" y="2" width="${f1(Math.max(...bola.map((b) => b[0] + b[2] * 0.7)) - Math.min(...bola.map((b) => b[0] - b[2] * 0.7)))}" height="14" rx="7" fill="#FFFFFF"/></g>`).join("") +
-  `<linearGradient id="gTebing" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6FA84E"/><stop offset=".07" stop-color="#5E9444"/><stop offset=".08" stop-color="#A4744B"/>
+  `<linearGradient id="gAirTerjun" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4E98CB"/><stop offset=".12" stop-color="#6FB3E0"/>
+   <stop offset=".55" stop-color="#A9D8F2" stop-opacity=".95"/><stop offset=".85" stop-color="#E4F4FC" stop-opacity=".75"/><stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/></linearGradient>
+   <linearGradient id="gTebing" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6FA84E"/><stop offset=".07" stop-color="#5E9444"/><stop offset=".08" stop-color="#A4744B"/>
    <stop offset=".45" stop-color="#8A5E3D"/><stop offset=".7" stop-color="#755645"/><stop offset="1" stop-color="#5C4538"/></linearGradient>`;
 
 // tebing tanah di bawah tepi pulau + awan di belakang/depan, untuk satu tampilan (proyektor P).
@@ -835,7 +837,11 @@ function lapisPulau(P) {
   const D = KEDALAMAN_TEBING * kt, acak = (i, s) => { const v = Math.sin(i * 12.9898 + s * 78.233) * 43758.5453; return v - Math.floor(v); };
   // titik bawah tebing: turun tegak lurus (aman untuk garis tepi cekung), sedikit menyempit, dan bergerigi halus
   const gerigi = (i) => { const u = i / 6, k = Math.floor(u), t = u - k, h = t * t * (3 - 2 * t); return 0.8 + 0.35 * (acak(k, 1) * (1 - h) + acak(k + 1, 1) * h); };
-  const bawah = pp.map(([x, y], i) => [x - (x - cp[0]) * 0.06, y + D * gerigi(i)]);
+  // sisi air: permukaan di tepi ini laut atau muara sungai → air terjun yang jatuh ke awan, bukan tebing tanah
+  const air = pulau.map((q, i) => { const r = pulau[(i + 1) % n], m = [(q[0] + r[0]) / 2, (q[1] + r[1]) / 2];
+    return !inside(m, daratan) || distLine(m, sungai) < LS / 2 + 4; });
+  const titikAir = (i) => air[i] || air[(i - 1 + n) % n];
+  const bawah = pp.map(([x, y], i) => [x - (x - cp[0]) * 0.06, y + D * (titikAir(i) ? 1.25 : gerigi(i))]);
   const muka = [];
   for (let i = 0; i < n; i++) {
     const a = pp[i], b = pp[(i + 1) % n];
@@ -849,10 +855,24 @@ function lapisPulau(P) {
   // latar tanah gelap: semua sisi (juga yang membelakangi) agar tidak ada celah langit di lekuk garis tepi
   // (digambar di lapisan belakang, sebelum permukaan pulau, sehingga hanya terlihat di celah)
   let latarTanah = "";
-  for (let i = 0; i < n; i++) latarTanah += `<path d="${dd([pp[i], pp[(i + 1) % n], bawah[(i + 1) % n], bawah[i]])}" fill="#5E4535" stroke="#5E4535" stroke-width="1.5"/>`;
-  latarTanah += `<path d="${dd(bawah)}" fill="#5E4535"/>`;
-  let tebing = "", lapisan = "", akar = "";
+  for (let i = 0; i < n; i++) { const w = air[i] ? "#6FB3E0" : "#5E4535";
+    latarTanah += `<path d="${dd([pp[i], pp[(i + 1) % n], bawah[(i + 1) % n], bawah[i]])}" fill="${air[i] ? "url(#gAirTerjun)" : w}" stroke="${w}" stroke-width="${air[i] ? 0 : 1.5}"/>`; }
+  latarTanah += `<path d="${dd(bawah.filter((_, i) => !titikAir(i)))}" fill="#5E4535"/>`;
+  let tebing = "", lapisan = "", akar = "", aliran = "", kabut = "", buih = "";
   for (const f of muka) {
+    if (air[f.i]) { // air terjun: tirai air bergradasi + garis aliran + buih di bibir + kabut di bawah
+      tebing += `<path d="${dd([f.a, f.b, f.bb, f.ba])}" fill="url(#gAirTerjun)"/>`;
+      const pj = Math.hypot(f.b[0] - f.a[0], f.b[1] - f.a[1]), jml = Math.max(1, Math.round(pj / 7));
+      for (let k = 0; k < jml; k++) {
+        const t = (k + 0.5) / jml, x = f.a[0] + (f.b[0] - f.a[0]) * t, y = f.a[1] + (f.b[1] - f.a[1]) * t, yb = f.ba[1] + (f.bb[1] - f.ba[1]) * t;
+        const panjang = (yb - y) * (0.45 + 0.5 * acak(f.i * 7 + k, 12));
+        aliran += `M${f1(x)} ${f1(y + 2)}V${f1(y + panjang)}`;
+      }
+      buih += `M${f1(f.a[0])} ${f1(f.a[1])}L${f1(f.b[0])} ${f1(f.b[1])}`;
+      const xm = (f.ba[0] + f.bb[0]) / 2, ym = (f.ba[1] + f.bb[1]) / 2;
+      kabut += `<circle cx="${f1(xm + (acak(f.i, 13) - 0.5) * 10)}" cy="${f1(ym - 6)}" r="${f1(14 + 12 * acak(f.i, 14))}"/>`;
+      continue;
+    }
     tebing += `<path d="${dd([f.a, f.b, f.bb, f.ba])}" fill="url(#gTebing)" stroke="url(#gTebing)" stroke-width="1.2"/>`;
     if (f.terang > 0.2) tebing += `<path d="${dd([f.a, f.b, f.bb, f.ba])}" fill="#FFFFFF" opacity="${f1(f.terang * 0.12)}"/>`;
     for (const t of [0.3, 0.55, 0.8]) {
@@ -878,7 +898,10 @@ function lapisPulau(P) {
     depan += `<use href="#awan${f.i % 3}" transform="translate(${f1(x)} ${f1(y)}) scale(${f1(s)})"/>`;
   }
   const tepi = `<g>${tebing}<path d="${lapisan}" stroke="#4E3A2C" stroke-opacity=".35" stroke-width="1.6" fill="none"/><path d="${akar}" stroke="#4E3A2C" stroke-opacity=".6" stroke-width="1" fill="none"/>
-    ${muka.map((f) => `<path d="M${f1(f.a[0])} ${f1(f.a[1])}L${f1(f.b[0])} ${f1(f.b[1])}" stroke="#5E9A45" stroke-width="4" stroke-linecap="round"/>`).join("")}</g>`;
+    ${muka.filter((f) => !air[f.i]).map((f) => `<path d="M${f1(f.a[0])} ${f1(f.a[1])}L${f1(f.b[0])} ${f1(f.b[1])}" stroke="#5E9A45" stroke-width="4" stroke-linecap="round"/>`).join("")}
+    <path d="${aliran}" stroke="#FFFFFF" stroke-opacity=".6" stroke-width="1.3" stroke-linecap="round" fill="none" stroke-dasharray="14 6 4 6"/>
+    <path d="${buih}" stroke="#F2FAFE" stroke-width="3.2" stroke-linecap="round" fill="none"/>
+    <g fill="#FFFFFF" opacity=".85" filter="url(#b4)">${kabut}</g></g>`;
   const hasil = { belakang: `<g>${belakang}${latarTanah}</g>`, tepi, depan: `<g>${depan}</g>` };
   cacheLapis.set(P, hasil);
   return hasil;
