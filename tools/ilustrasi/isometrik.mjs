@@ -52,6 +52,7 @@ const bayangBidang = (warna, nx, ny) => {
  */
 export function gedung(g, P, TENDA, kt = 1) {
   if (g.jenis === "panggung") return panggung(g, P, kt);
+  if (g.jenis === "papanNama") return papanNama(g, P, kt);
   const r = hashAngka(g.id);
   const base = g.poly.map(([x, y]) => P(x, y));
   const n = base.length;
@@ -246,6 +247,37 @@ function panggung(g, P, kt) {
   return s;
 }
 
+/*
+ * Tulisan "PANTAI CIANTIR" (foto Street View): pelataran bertepi biru, dinding batu kali di tepi g.belakang
+ * dengan papan "DESA SAWARNA", dan huruf merah besar berdiri di atas dinding. Huruf digambar di bidang dinding
+ * (ikut perspektif isometrik) dan selalu terbaca dari kiri ke kanan.
+ */
+function papanNama(g, P, kt) {
+  const base = g.poly.map(([x, y]) => P(x, y)), n = base.length;
+  const c = base.reduce((s, p) => [s[0] + p[0] / n, s[1] + p[1] / n], [0, 0]);
+  const hp = 1.6 * kt, hd = 8 * kt, hh = 13 * kt; // tinggi pelataran, dinding, huruf
+  let s = `<path d="${d(base.map(([x, y]) => [x + 4, y + 2]))}" fill="#152638" opacity=".14"/>`;
+  // pelataran batu berbingkai biru
+  s += `<path d="${d(base)}" fill="#3F6FB5"/>`;
+  s += `<path d="${d(base.map(([x, y]) => [c[0] + (x - c[0]) * 0.94, c[1] + (y - c[1]) * 0.9 - hp]))}" fill="#A9A397"/>`;
+  s += `<path d="${d(base.map(([x, y]) => [c[0] + (x - c[0]) * 0.94, c[1] + (y - c[1]) * 0.9 - hp]))}" fill="url(#pBatuKali)" opacity=".55"/>`;
+  // dinding batu di tepi belakang
+  let A = base[g.belakang], Bp = base[(g.belakang + 1) % n];
+  if (Bp[0] < A[0]) [A, Bp] = [Bp, A]; // selalu kiri → kanan agar huruf terbaca
+  const dinding = `<path d="${d([[A[0], A[1] - hp], [Bp[0], Bp[1] - hp], [Bp[0], Bp[1] - hp - hd], [A[0], A[1] - hp - hd]])}" fill="#8F897D" ${GARIS}/>
+    <path d="${d([[A[0], A[1] - hp], [Bp[0], Bp[1] - hp], [Bp[0], Bp[1] - hp - hd], [A[0], A[1] - hp - hd]])}" fill="url(#pBatuKali)"/>
+    <path d="M${f1(A[0])} ${f1(A[1] - hp - hd)}L${f1(Bp[0])} ${f1(Bp[1] - hp - hd)}" stroke="#3F6FB5" stroke-width="1.6"/>`;
+  // bidang huruf: sumbu x mengikuti dinding di layar, sumbu y tegak
+  const ux = (Bp[0] - A[0]), uy = (Bp[1] - A[1]), pj = Math.hypot(ux, uy) || 1;
+  const sk = pj / 100; // teks digambar di ruang 100 unit sepanjang dinding
+  const bidang = (x0, y0) => `matrix(${f1(ux / 100 * 100) / 100} ${f1(uy / 100 * 100) / 100} 0 1 ${f1(x0)} ${f1(y0)})`;
+  void sk;
+  const huruf = (dx, dy, warna) => `<text transform="${bidang(A[0] + dx, A[1] - hp - hd + dy)}" x="50" y="0" font-family="Arial Black, Arial, Helvetica, sans-serif" font-weight="900" font-size="${f1(hh * 1.25)}" text-anchor="middle" textLength="96" lengthAdjust="spacingAndGlyphs" fill="${warna}">PANTAI CIANTIR</text>`;
+  const papan = `<g transform="${bidang(A[0], A[1] - hp - hd * 0.45)}"><rect x="38" y="-2.2" width="24" height="3.4" fill="#fff" stroke="#3F6FB5" stroke-width=".5"/><text x="50" y=".5" font-family="Arial, Helvetica, sans-serif" font-size="2.2" font-weight="700" text-anchor="middle" fill="#3F6FB5">DESA SAWARNA</text></g>`;
+  s += dinding + papan + huruf(1.2, 0.8, "#A8323B") + huruf(0, 0, "#E5525C");
+  return s;
+}
+
 // pita papan nama minimarket (dari atas ke bawah), mengikuti warna toko di foto survei pintu masuk
 export const MINIMARKET = {
   minimarket1: ["#D9353B", "#F4C21F", "#2059A8"],
@@ -281,4 +313,4 @@ export function jembatanBusur(a, b, P, { lebar = 20, tinggi = 22, ruas = 12, war
   });
 }
 
-export const defsIso = () => `<pattern id="pGarisTenda" width="4" height="4" patternUnits="userSpaceOnUse" patternTransform="rotate(30)"><rect width="2" height="4" fill="#fff" opacity=".75"/></pattern>`;
+export const defsIso = () => `<pattern id="pBatuKali" width="9" height="6" patternUnits="userSpaceOnUse"><path d="M0 0h9M0 3h9M3 0v3M7 3v3" stroke="#6E6960" stroke-width=".6" opacity=".7"/><circle cx="5" cy="1.5" r="1" fill="#B9B3A7" opacity=".6"/></pattern><pattern id="pGarisTenda" width="4" height="4" patternUnits="userSpaceOnUse" patternTransform="rotate(30)"><rect width="2" height="4" fill="#fff" opacity=".75"/></pattern>`;

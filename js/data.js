@@ -23,7 +23,7 @@ window.PETA = {
   // Peta ilustrasi: tile WebP hasil tools/gen-ilustrasi.mjs + tools/render-tiles.mjs.
   // Batas HARUS sama dengan data/geografi.json → batasGambar. Zoom 19 hanya ada di kawasan inti.
   ilustrasi: {
-    tiles: "assets/tiles/{arah}/{z}/{x}/{y}.webp?v=iso8", // naikkan ?v= setiap tile dirender ulang (hindari cache lama) // satu set per arah pandang (0, 45, … 315)
+    tiles: "assets/tiles/{arah}/{z}/{x}/{y}.webp?v=iso9", // naikkan ?v= setiap tile dirender ulang (hindari cache lama) // satu set per arah pandang (0, 45, … 315)
     batas: [[-6.9960, 106.2960], [-6.9735, 106.3180]],
     marginInti: 0.0015,
   },
@@ -61,7 +61,7 @@ window.PETA = {
       id: "zona-umkm",
       nama: "Kawasan UMKM Pantai", nama_en: "Beach market",
       warna: "#E0674F", ikon: "toko",
-      label: [-6.9876, 106.3085],
+      label: [-6.985575, 106.3086], // titik marker kawasan dari Google Maps (dikirim pengguna, 27 Nov 2026)
       deskripsi: "Deretan warung, kuliner laut, sewa papan selancar, dan fasilitas bilas di sepanjang Pantai Ciantir.",
       deskripsi_en: "Food stalls, seafood, surfboard rentals and showers along Ciantir Beach.",
       koordinat: [
