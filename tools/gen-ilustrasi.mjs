@@ -825,26 +825,32 @@ const defsAwan = [
   `<linearGradient id="gTebing" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6FA84E"/><stop offset=".07" stop-color="#5E9444"/><stop offset=".08" stop-color="#A4744B"/>
    <stop offset=".45" stop-color="#8A5E3D"/><stop offset=".7" stop-color="#755645"/><stop offset="1" stop-color="#5C4538"/></linearGradient>`;
 
-// tebing tanah di bawah tepi pulau + awan di belakang/depan, untuk satu tampilan (proyektor P)
+// tebing tanah di bawah tepi pulau + awan di belakang/depan, untuk satu tampilan (proyektor P).
+// Tebing digambar SEBELUM permukaan pulau: bagian tebing yang jatuh di atas permukaan (lekuk garis tepi) tertutup.
 const cacheLapis = new Map();
 function lapisPulau(P) {
   if (cacheLapis.has(P)) return cacheLapis.get(P);
   const pp = pulau.map(([x, y]) => P(x, y)), n = pp.length;
   const cp = [pp.reduce((t, q) => t + q[0], 0) / n, pp.reduce((t, q) => t + q[1], 0) / n];
   const D = KEDALAMAN_TEBING * kt, acak = (i, s) => { const v = Math.sin(i * 12.9898 + s * 78.233) * 43758.5453; return v - Math.floor(v); };
-  // titik bawah tebing: menyempit ke tengah dan bergerigi seperti bongkah tanah
-  const bawah = pp.map(([x, y], i) => { const g = 0.75 + 0.4 * (0.5 * acak(Math.floor(i / 3), 1) + 0.5 * acak(Math.floor(i / 3) + 1, 1));
-    return [cp[0] + (x - cp[0]) * 0.86, cp[1] + (y - cp[1]) * 0.8 + D * g]; });
+  // titik bawah tebing: turun tegak lurus (aman untuk garis tepi cekung), sedikit menyempit, dan bergerigi halus
+  const gerigi = (i) => { const u = i / 6, k = Math.floor(u), t = u - k, h = t * t * (3 - 2 * t); return 0.8 + 0.35 * (acak(k, 1) * (1 - h) + acak(k + 1, 1) * h); };
+  const bawah = pp.map(([x, y], i) => [x - (x - cp[0]) * 0.06, y + D * gerigi(i)]);
   const muka = [];
   for (let i = 0; i < n; i++) {
     const a = pp[i], b = pp[(i + 1) % n];
     let nx = b[1] - a[1], ny = -(b[0] - a[0]);
     if (nx * ((a[0] + b[0]) / 2 - cp[0]) + ny * ((a[1] + b[1]) / 2 - cp[1]) < 0) { nx = -nx; ny = -ny; }
-    if (ny <= 0) continue;
+    if (ny < -0.5 * Math.hypot(nx, ny)) continue; // sisi yang hampir tegak di layar ikut digambar agar tak ada celah
     muka.push({ i, z: (a[1] + b[1]) / 2, a, b, ba: bawah[i], bb: bawah[(i + 1) % n], terang: -nx / (Math.hypot(nx, ny) || 1) });
   }
   muka.sort((u, v) => u.z - v.z);
   const dd = (q) => q.map(([x, y], k) => `${k ? "L" : "M"}${f1(x)} ${f1(y)}`).join("") + "Z";
+  // latar tanah gelap: semua sisi (juga yang membelakangi) agar tidak ada celah langit di lekuk garis tepi
+  // (digambar di lapisan belakang, sebelum permukaan pulau, sehingga hanya terlihat di celah)
+  let latarTanah = "";
+  for (let i = 0; i < n; i++) latarTanah += `<path d="${dd([pp[i], pp[(i + 1) % n], bawah[(i + 1) % n], bawah[i]])}" fill="#5E4535" stroke="#5E4535" stroke-width="1.5"/>`;
+  latarTanah += `<path d="${dd(bawah)}" fill="#5E4535"/>`;
   let tebing = "", lapisan = "", akar = "";
   for (const f of muka) {
     tebing += `<path d="${dd([f.a, f.b, f.bb, f.ba])}" fill="url(#gTebing)" stroke="url(#gTebing)" stroke-width="1.2"/>`;
@@ -873,7 +879,7 @@ function lapisPulau(P) {
   }
   const tepi = `<g>${tebing}<path d="${lapisan}" stroke="#4E3A2C" stroke-opacity=".35" stroke-width="1.6" fill="none"/><path d="${akar}" stroke="#4E3A2C" stroke-opacity=".6" stroke-width="1" fill="none"/>
     ${muka.map((f) => `<path d="M${f1(f.a[0])} ${f1(f.a[1])}L${f1(f.b[0])} ${f1(f.b[1])}" stroke="#5E9A45" stroke-width="4" stroke-linecap="round"/>`).join("")}</g>`;
-  const hasil = { belakang: `<g>${belakang}</g>`, tepi, depan: `<g>${depan}</g>` };
+  const hasil = { belakang: `<g>${belakang}${latarTanah}</g>`, tepi, depan: `<g>${depan}</g>` };
   cacheLapis.set(P, hasil);
   return hasil;
 }
@@ -902,8 +908,8 @@ for (const a of ARAH) {
 <!-- Dibuat oleh tools/gen-ilustrasi.mjs (isometrik), jangan edit manual. Arah pandang ${a}°, sudut kamera ${pilihMiring.id}. -->
 <defs>${defs.join("\n")}${ISO.defsIso()}${defsAwan}${pulau ? `<clipPath id="cPulau"><path d="${smooth(pulau, true)}"/></clipPath>` : ""}</defs>
 ${pulau ? lapisPulau(P).belakang : `<rect width="${w}" height="${h}" fill="#3F86C4"/>`}
-<g transform="matrix(${m.join(" ")})"${pulau ? ` clip-path="url(#cPulau)"` : ""}>${dasar}</g>
 ${pulau ? lapisPulau(P).tepi : ""}
+<g transform="matrix(${m.join(" ")})"${pulau ? ` clip-path="url(#cPulau)"` : ""}>${dasar}</g>
 <g>${isi.map((i) => i[1]).join("")}</g>
 ${pulau ? lapisPulau(P).depan : ""}
 </svg>`;
