@@ -54,10 +54,13 @@
   // kunci tampilan = arah + akhiran sudut kamera, mis. "225" (bawaan) atau "225-t38"
   const kunci = (a = arahAktif, mr = miringAktif) => `${a}${(MIRING.find((m) => m.id === mr) || MIRING[0]).akhiran}`;
   // HP: satu tingkat lebih jauh agar semua marker kawasan (gambaran besar) muat di layar sempit
-  const zoomAwal = innerWidth < 768 ? config.zoomAwal - 1 : config.zoomAwal;
+  const zoomAwalDasar = innerWidth < 768 ? config.zoomAwal - 1 : config.zoomAwal;
+  // tampilan awal berpusat di tengah pulau (wilayah Ciantir); di HP seluruh pulau terlihat (zoom terjauh)
+  const pusatAwal = PETA.pulau ? [PETA.pulau.reduce((t, q) => t + q[0], 0) / PETA.pulau.length, PETA.pulau.reduce((t, q) => t + q[1], 0) / PETA.pulau.length] : config.pusat;
+  let zoomAwal = zoomAwalDasar;
   const norm = (v) => ((Math.round(v) % 360) + 360) % 360;
   const map = L.map("map", {
-    center: config.pusat,
+    center: pusatAwal,
     zoom: zoomAwal,
     crs: crsArah(kunci()),
     // zoom halus: berhenti tiap ¼ tingkat (roda mouse & cubit), tombol +/− tetap satu tingkat.
@@ -78,9 +81,10 @@
   // Batas peta dihitung di ruang piksel gambar. maxBounds & getBoundsZoom Leaflet memakai kotak lintang/bujur
   // dan hanya dua sudutnya, sehingga salah pada proyeksi isometrik yang berputar (zoom & geser terkunci).
   function aturZoomMin() {
+    // gambar = pulau + awan di sekelilingnya: zoom terjauh = seluruh pulau muat di layar (di luar itu langit)
     const { w, h } = ISO.arah[kunci()], s = map.getSize();
-    let z = 18 + Math.log2((Math.max(s.x / w, s.y / h) * 0.85) / ISO.S0); // gambar (hampir) menutupi layar
-    z = Math.min(config.zoomMaks, Math.max(config.zoomMin, Math.ceil(z)));
+    let z = 18 + Math.log2((Math.min(s.x / w, s.y / h) * 1.05) / ISO.S0);
+    z = Math.min(config.zoomMaks, Math.max(config.zoomMin, Math.ceil(z * 4) / 4));
     map.setMinZoom(z);
     if (map.getZoom() < z) map.setZoom(z);
   }
@@ -93,6 +97,7 @@
     if (Math.abs(x - c.x) > 0.5 || Math.abs(y - c.y) > 0.5) map.panTo(map.unproject([x, y]), { animate: !kurangiGerak, duration: 0.3 });
   }
   aturZoomMin();
+  if (innerWidth < 768 && PETA.pulau) { zoomAwal = map.getMinZoom(); map.setView(pusatAwal, zoomAwal, { animate: false }); }
   map.on("resize", aturZoomMin);
   map.on("moveend", jagaBatas);
   // ukuran marker mengikuti zoom secara bertahap (CSS --skala-*, transisi 250 ms selaras animasi zoom)
@@ -117,13 +122,19 @@
 
   // ---------- lapisan ilustrasi (8 arah pandang)
   const opsiTile = { arah: kunci(), noWrap: true, keepBuffer: 4, className: "ilustrasi", attribution: "Ilustrasi © KKN Sawarna · data © kontributor <a href=\"https://www.openstreetmap.org/copyright\">OpenStreetMap</a>" };
+  // Tile hanya diminta di dalam gambar (dan kotak "inti" untuk zoom 19), dicek di ruang piksel:
+  // opsi bounds Leaflet memakai kotak lintang/bujur yang salah pada proyeksi isometrik berputar.
+  const TileIlustrasi = L.TileLayer.extend({
+    _isValidTile(c) {
+      const v = ISO.arah[this.options.arah], sk = ISO.S0 * Math.pow(2, c.z - 18), k = c.z >= 19 && v.inti ? v.inti : [0, 0, v.w, v.h];
+      return c.x >= 0 && c.y >= 0 && (c.x + 1) * 256 > k[0] * sk && c.x * 256 < k[2] * sk && (c.y + 1) * 256 > k[1] * sk && c.y * 256 < k[3] * sk;
+    },
+  });
   const tileIlustrasi = [
-    L.tileLayer(ilustrasi.tiles, { ...opsiTile, minNativeZoom: 16, maxNativeZoom: 18, maxZoom: 19 }),
-    L.tileLayer(ilustrasi.tiles, { ...opsiTile, minZoom: 19, minNativeZoom: 19, maxNativeZoom: 19, maxZoom: 19 }),
+    new TileIlustrasi(ilustrasi.tiles, { ...opsiTile, minNativeZoom: 16, maxNativeZoom: 18, maxZoom: 19 }),
+    new TileIlustrasi(ilustrasi.tiles, { ...opsiTile, minZoom: 19, minNativeZoom: 19, maxNativeZoom: 19, maxZoom: 19 }),
   ];
-  // zoom 19 hanya dirender untuk kawasan inti
-  const aturBatasInti = (a) => { tileIlustrasi[1].options.bounds = batasLatLng(a, ISO.arah[a].inti); };
-  aturBatasInti(kunci());
+  const aturBatasInti = () => {}; // batas tile kini dicek oleh TileIlustrasi._isValidTile
 
   // label nama tempat & zona
   const lapisLabel = L.layerGroup();
@@ -354,7 +365,7 @@
   function keAwal() {
     setMiring(MIRING_AWAL);
     setArah(config.arahAwal);
-    map.flyTo(config.pusat, zoomAwal, { duration: kurangiGerak ? 0 : .6 });
+    map.flyTo(pusatAwal, zoomAwal, { duration: kurangiGerak ? 0 : .6 });
   }
 
   // ================================================================ zoom

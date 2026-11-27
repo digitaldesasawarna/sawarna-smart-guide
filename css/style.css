@@ -29,7 +29,14 @@ h1, h2, p { margin: 0; }
 .ikon { width: 20px; height: 20px; stroke-width: var(--ikon-garis); flex: none; }
 
 /* ---------- Peta ---------- */
-#map { position: fixed; inset: 0; background: #4C93CD; }
+/* langit di sekeliling "pulau di atas awan" (tile di luar pulau transparan) */
+#map {
+  position: fixed; inset: 0;
+  background:
+    radial-gradient(60% 40% at 18% 78%, oklch(1 0 0 / .55), transparent 70%),
+    radial-gradient(50% 35% at 85% 88%, oklch(1 0 0 / .5), transparent 70%),
+    linear-gradient(180deg, #9FD2F0 0%, #C6E6F7 50%, #EAF6FC 100%);
+}
 .leaflet-container { font: inherit; }
 .leaflet-interactive:focus { outline: none; }
 .leaflet-control-attribution {

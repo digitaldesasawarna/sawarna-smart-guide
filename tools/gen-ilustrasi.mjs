@@ -755,47 +755,142 @@ const argumen = process.argv.slice(2);
 const iMiring = argumen.indexOf("--miring");
 const pilihMiring = iMiring >= 0 ? ISO.MIRING.find((m) => m.id === argumen[iMiring + 1]) : ISO.MIRING.find((m) => m.k === ISO.ISO_K);
 if (!pilihMiring) { console.error("--miring harus salah satu dari:", ISO.MIRING.map((m) => m.id).join(", ")); process.exit(1); }
-const argArah = argumen.filter((v, i) => /^\d+$/.test(v) && i !== iMiring + 1);
+const argArah = argumen.filter((v, i) => /^\d+$/.test(v) && (iMiring < 0 || i !== iMiring + 1)); // jangan buang argumen pertama bila tanpa --miring
 const ARAH = argArah.length ? argArah.map(Number) : [0, 45, 90, 135, 180, 225, 270, 315];
 const DIR = path.join(ROOT, "assets/ilustrasi");
 fs.mkdirSync(DIR, { recursive: true });
 const dasar = L.join("\n") + "\n" + luar.join("\n");
-// matriks semua tampilan (8 arah × tiap sudut kamera) → js/iso.js; kunci "225" (bawaan) atau "225-t38"
+
+// ================================================================ pulau di atas awan
+// Hanya wilayah Ciantir (PETA.pulau) yang digambar. Laut di dalam batas dibatasi ±50 m dari garis pantai,
+// lalu pulau diberi tebing tanah menggantung dan dikelilingi awan; di luar pulau gambar transparan (langit dari CSS).
+const LAUT_PULAU = 90; // unit (±50 m) laut yang ikut menjadi bagian pulau
+const garisLautPulau = offset(garisPantai, LAUT_PULAU);
+const darat50 = [[0, 0], [W, 0], [W, H], [garisLautPulau.at(-1)[0], H], ...garisLautPulau.slice().reverse(), [0, garisLautPulau[0][1]]];
+const titikTerdekat = (g, p) => { let best = g[0], m = Infinity;
+  for (let i = 1; i < g.length; i++) { const [ax, ay] = g[i - 1], [bx, by] = g[i], dx = bx - ax, dy = by - ay, l = dx * dx + dy * dy || 1;
+    const t = Math.max(0, Math.min(1, ((p[0] - ax) * dx + (p[1] - ay) * dy) / l)), q = [ax + dx * t, ay + dy * t], dd = Math.hypot(q[0] - p[0], q[1] - p[1]);
+    if (dd < m) { m = dd; best = q; } }
+  return best; };
+const pulau = PETA.pulau ? densify([...pts(PETA.pulau), pts(PETA.pulau)[0]], 10).slice(0, -1).map((p) => (inside(p, darat50) ? p : titikTerdekat(garisLautPulau, p))) : null;
+const diPulau = (p) => !pulau || inside(p, pulau);
+const KEDALAMAN_TEBING = 170; // unit layar pada sudut kamera bawaan
+const MARGIN = { kiri: 280, kanan: 280, atas: 240, bawah: 280 }; // ruang untuk awan di sekeliling pulau
+
+// matriks semua tampilan (8 arah × tiap sudut kamera) → js/iso.js; kunci "225" (bawaan) atau "225-t38".
+// Gambar dipangkas ke pulau (+ awan di sekeliling) agar tile sedikit.
 const semuaArah = {};
 for (const { k } of ISO.MIRING) for (const a of [0, 45, 90, 135, 180, 225, 270, 315]) {
   const kunci = ISO.kunciTampilan(a, k);
-  semuaArah[kunci] = ISO.matriks(a, W, H, k);
-  const Pa = ISO.proyektor(semuaArah[kunci].m), bi = batas.map(([x, y]) => Pa(x, y));
-  // kotak kawasan inti (untuk tile zoom 19)
-  semuaArah[kunci].inti = [Math.min(...bi.map((p) => p[0])) - 120, Math.min(...bi.map((p) => p[1])) - 140, Math.max(...bi.map((p) => p[0])) + 120, Math.max(...bi.map((p) => p[1])) + 80].map(Math.round);
+  const t = ISO.matriks(a, W, H, k);
+  if (pulau) {
+    const Pa = ISO.proyektor(t.m), pp = pulau.map(([x, y]) => Pa(x, y)), dt = KEDALAMAN_TEBING * ISO.faktorTinggi(k);
+    const x0 = Math.min(...pp.map((q) => q[0])) - MARGIN.kiri, x1 = Math.max(...pp.map((q) => q[0])) + MARGIN.kanan;
+    const y0 = Math.min(...pp.map((q) => q[1])) - MARGIN.atas, y1 = Math.max(...pp.map((q) => q[1])) + dt + MARGIN.bawah;
+    t.m[4] = Math.round((t.m[4] - x0) * 1e6) / 1e6; t.m[5] = Math.round((t.m[5] - y0) * 1e6) / 1e6;
+    t.w = Math.round(x1 - x0); t.h = Math.round(y1 - y0);
+    t.inti = [0, 0, t.w, t.h]; // pulau kecil: zoom 19 untuk seluruh gambar
+  } else {
+    const Pa = ISO.proyektor(t.m), bi = batas.map(([x, y]) => Pa(x, y));
+    t.inti = [Math.min(...bi.map((p) => p[0])) - 120, Math.min(...bi.map((p) => p[1])) - 140, Math.max(...bi.map((p) => p[0])) + 120, Math.max(...bi.map((p) => p[1])) + 80].map(Math.round);
+  }
+  semuaArah[kunci] = t;
 }
 const kt = ISO.faktorTinggi(pilihMiring.k);
+
+// awan: tiga bentuk gumpalan, dipakai ulang dengan <use>
+const defsAwan = [
+  [[-42, 2, 22], [-14, -12, 30], [20, -6, 25], [46, 4, 17]],
+  [[-30, 0, 26], [4, -16, 32], [36, -2, 22]],
+  [[-48, 4, 16], [-22, -8, 24], [8, -14, 28], [38, -4, 22], [60, 6, 14]],
+].map((bola, i) => `<g id="awan${i}"><ellipse cx="4" cy="16" rx="${f1(Math.max(...bola.map((b) => Math.abs(b[0]) + b[2])) * 0.95)}" ry="9" fill="#BFD6E6" opacity=".55"/>
+  ${bola.map(([x, y, r]) => `<circle cx="${x}" cy="${y + 5}" r="${r}" fill="#DCEAF3"/>`).join("")}
+  ${bola.map(([x, y, r]) => `<circle cx="${x}" cy="${y}" r="${r}" fill="#FFFFFF"/>`).join("")}
+  <rect x="${Math.min(...bola.map((b) => b[0] - b[2] * 0.7))}" y="2" width="${f1(Math.max(...bola.map((b) => b[0] + b[2] * 0.7)) - Math.min(...bola.map((b) => b[0] - b[2] * 0.7)))}" height="14" rx="7" fill="#FFFFFF"/></g>`).join("") +
+  `<linearGradient id="gTebing" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6FA84E"/><stop offset=".07" stop-color="#5E9444"/><stop offset=".08" stop-color="#A4744B"/>
+   <stop offset=".45" stop-color="#8A5E3D"/><stop offset=".7" stop-color="#755645"/><stop offset="1" stop-color="#5C4538"/></linearGradient>`;
+
+// tebing tanah di bawah tepi pulau + awan di belakang/depan, untuk satu tampilan (proyektor P)
+const cacheLapis = new Map();
+function lapisPulau(P) {
+  if (cacheLapis.has(P)) return cacheLapis.get(P);
+  const pp = pulau.map(([x, y]) => P(x, y)), n = pp.length;
+  const cp = [pp.reduce((t, q) => t + q[0], 0) / n, pp.reduce((t, q) => t + q[1], 0) / n];
+  const D = KEDALAMAN_TEBING * kt, acak = (i, s) => { const v = Math.sin(i * 12.9898 + s * 78.233) * 43758.5453; return v - Math.floor(v); };
+  // titik bawah tebing: menyempit ke tengah dan bergerigi seperti bongkah tanah
+  const bawah = pp.map(([x, y], i) => { const g = 0.75 + 0.4 * (0.5 * acak(Math.floor(i / 3), 1) + 0.5 * acak(Math.floor(i / 3) + 1, 1));
+    return [cp[0] + (x - cp[0]) * 0.86, cp[1] + (y - cp[1]) * 0.8 + D * g]; });
+  const muka = [];
+  for (let i = 0; i < n; i++) {
+    const a = pp[i], b = pp[(i + 1) % n];
+    let nx = b[1] - a[1], ny = -(b[0] - a[0]);
+    if (nx * ((a[0] + b[0]) / 2 - cp[0]) + ny * ((a[1] + b[1]) / 2 - cp[1]) < 0) { nx = -nx; ny = -ny; }
+    if (ny <= 0) continue;
+    muka.push({ i, z: (a[1] + b[1]) / 2, a, b, ba: bawah[i], bb: bawah[(i + 1) % n], terang: -nx / (Math.hypot(nx, ny) || 1) });
+  }
+  muka.sort((u, v) => u.z - v.z);
+  const dd = (q) => q.map(([x, y], k) => `${k ? "L" : "M"}${f1(x)} ${f1(y)}`).join("") + "Z";
+  let tebing = "", lapisan = "", akar = "";
+  for (const f of muka) {
+    tebing += `<path d="${dd([f.a, f.b, f.bb, f.ba])}" fill="url(#gTebing)" stroke="url(#gTebing)" stroke-width="1.2"/>`;
+    if (f.terang > 0.2) tebing += `<path d="${dd([f.a, f.b, f.bb, f.ba])}" fill="#FFFFFF" opacity="${f1(f.terang * 0.12)}"/>`;
+    for (const t of [0.3, 0.55, 0.8]) {
+      const p1 = [f.a[0] + (f.ba[0] - f.a[0]) * t, f.a[1] + (f.ba[1] - f.a[1]) * t], p2 = [f.b[0] + (f.bb[0] - f.b[0]) * t, f.b[1] + (f.bb[1] - f.b[1]) * t];
+      lapisan += `M${f1(p1[0])} ${f1(p1[1])}L${f1(p2[0])} ${f1(p2[1])}`;
+    }
+    if (acak(f.i, 3) < 0.12) { const x = f.a[0], y = f.a[1] + 6; akar += `M${f1(x)} ${f1(y)}q${f1(-3 + 6 * acak(f.i, 4))} 10 ${f1(-2 + 4 * acak(f.i, 5))} ${f1(14 + 14 * acak(f.i, 6))}`; }
+  }
+  // bayang & awan di belakang pulau
+  const xs = pp.map((q) => q[0]), lebar = Math.max(...xs) - Math.min(...xs), yBawah = Math.max(...bawah.map((q) => q[1]));
+  let belakang = `<ellipse cx="${f1(cp[0])}" cy="${f1(yBawah - D * 0.3)}" rx="${f1(lebar * 0.55)}" ry="${f1(D * 0.55)}" fill="#FFFFFF" opacity=".55" filter="url(#b20)"/>`;
+  for (let i = 0; i < n; i += Math.max(1, Math.floor(n / 26))) {
+    const [x, y] = pp[i], vx = x - cp[0], vy = y - cp[1], l = Math.hypot(vx, vy) || 1, jauh = 50 + 90 * acak(i, 7);
+    const s = 0.9 + 0.8 * acak(i, 8);
+    belakang += `<use href="#awan${i % 3}" transform="translate(${f1(x + (vx / l) * jauh)} ${f1(y + (vy / l) * jauh * 0.6 + 20)}) scale(${f1(s)})"/>`;
+  }
+  // awan di depan: hanya di bawah tebing agar tidak menutupi permukaan pulau
+  let depan = "";
+  const yAtasDepan = (x) => Math.max(...pp.filter((q) => Math.abs(q[0] - x) < 30).map((q) => q[1]), -Infinity);
+  for (let i = 0; i < muka.length; i += 4) {
+    const f = muka[i], s = 0.9 + 0.9 * acak(f.i, 9), x = (f.ba[0] + f.bb[0]) / 2 + (acak(f.i, 10) - 0.5) * 40, y = (f.ba[1] + f.bb[1]) / 2 + 10 + 40 * acak(f.i, 11);
+    if (y - 45 * s < yAtasDepan(x) + 25) continue;
+    depan += `<use href="#awan${f.i % 3}" transform="translate(${f1(x)} ${f1(y)}) scale(${f1(s)})"/>`;
+  }
+  const tepi = `<g>${tebing}<path d="${lapisan}" stroke="#4E3A2C" stroke-opacity=".35" stroke-width="1.6" fill="none"/><path d="${akar}" stroke="#4E3A2C" stroke-opacity=".6" stroke-width="1" fill="none"/>
+    ${muka.map((f) => `<path d="M${f1(f.a[0])} ${f1(f.a[1])}L${f1(f.b[0])} ${f1(f.b[1])}" stroke="#5E9A45" stroke-width="4" stroke-linecap="round"/>`).join("")}</g>`;
+  const hasil = { belakang: `<g>${belakang}</g>`, tepi, depan: `<g>${depan}</g>` };
+  cacheLapis.set(P, hasil);
+  return hasil;
+}
 
 for (const a of ARAH) {
   const kunci = ISO.kunciTampilan(a, pilihMiring.k);
   const { m, w, h } = semuaArah[kunci];
   const P = ISO.proyektor(m);
   const isi = [];
-  // objek berdiri (pohon, orang, payung, kendaraan, perahu…) tetap tegak di layar
+  // objek berdiri (pohon, orang, payung, kendaraan, perahu…) tetap tegak di layar; hanya yang di pulau
   for (const o of [...spriteLaut, ...sprite]) {
+    if (!diPulau([o.x, o.y])) continue;
     const [X, Y] = P(o.x, o.y);
     const sk = o.s * 0.85, r2 = (v) => Math.round(v * 100) / 100;
     isi.push([Y, `<use href="#${o.id}" transform="translate(${f1(X)} ${f1(Y)}) scale(${r2(sk)}${kt === 1 ? "" : ` ${r2(sk * kt)}`})"/>`]);
   }
   // bangunan diekstrusi dari jejak asli
-  for (const g of daftarGedung) isi.push([P(g.c[0], g.c[1])[1] + 2, ISO.gedung(g, P, S.TENDA, kt)]);
+  for (const g of daftarGedung) if (diPulau(g.c)) isi.push([P(g.c[0], g.c[1])[1] + 2, ISO.gedung(g, P, S.TENDA, kt)]);
   // rangka jembatan busur biru di atas lantai jembatan
-  if (jembatan) isi.push(...ISO.jembatanBusur(jembatan.a, jembatan.b, P, { tinggi: 22 * kt }));
+  if (jembatan && diPulau(jembatan.a)) isi.push(...ISO.jembatanBusur(jembatan.a, jembatan.b, P, { tinggi: 22 * kt }));
   // pagar jembatan kecil (abu-abu, rendah)
-  for (const jk of jembatanKecil) isi.push(...ISO.jembatanBusur(jk.a, jk.b, P, { lebar: jk.lebar, tinggi: 0, ruas: 8, warna: ["#E9EDF0", "#7D8792"] }));
+  for (const jk of jembatanKecil) if (diPulau([(jk.a[0] + jk.b[0]) / 2, (jk.a[1] + jk.b[1]) / 2])) isi.push(...ISO.jembatanBusur(jk.a, jk.b, P, { lebar: jk.lebar, tinggi: 0, ruas: 8, warna: ["#E9EDF0", "#7D8792"] }));
   isi.sort((u, v) => u[0] - v[0]);
   const inti = semuaArah[kunci].inti;
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}">
 <!-- Dibuat oleh tools/gen-ilustrasi.mjs (isometrik), jangan edit manual. Arah pandang ${a}°, sudut kamera ${pilihMiring.id}. -->
-<defs>${defs.join("\n")}${ISO.defsIso()}</defs>
-<rect width="${w}" height="${h}" fill="#3F86C4"/>
-<g transform="matrix(${m.join(" ")})">${dasar}</g>
+<defs>${defs.join("\n")}${ISO.defsIso()}${defsAwan}${pulau ? `<clipPath id="cPulau"><path d="${smooth(pulau, true)}"/></clipPath>` : ""}</defs>
+${pulau ? lapisPulau(P).belakang : `<rect width="${w}" height="${h}" fill="#3F86C4"/>`}
+<g transform="matrix(${m.join(" ")})"${pulau ? ` clip-path="url(#cPulau)"` : ""}>${dasar}</g>
+${pulau ? lapisPulau(P).tepi : ""}
 <g>${isi.map((i) => i[1]).join("")}</g>
+${pulau ? lapisPulau(P).depan : ""}
 </svg>`;
   fs.writeFileSync(path.join(DIR, `peta-${kunci}.svg`), svg);
   fs.writeFileSync(path.join(DIR, `peta-${kunci}.json`), JSON.stringify({ arah: a, miring: pilihMiring.id, m, w, h, inti }));
