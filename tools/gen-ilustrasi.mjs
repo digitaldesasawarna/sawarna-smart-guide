@@ -690,8 +690,10 @@ for (const ujung of [laut.at(-2)]) for (let i = 0; i < 6; i++) {
 // ================================================================ bangunan khusus di titik data (koordinat Google Maps)
 // masjid (kubah & menara) dan Gedung TIC (aula besar): jejak persegi panjang searah jalan terdekat;
 // rumah OSM & objek berdiri yang tertimpa jejak baru dibuang
-for (const [idTitik, jenis, panjang, lebar, bebasPohon] of [["masjid", "masjid", 28, 28, 64], ["tic", "aula", 46, 26, 28]]) {
-  const t = PETA.titik.find((x) => x.id === idTitik);
+// panggung bertribun di depan Gedung TIC: koordinat dari Google Maps (dikirim pengguna, 27 Nov 2026)
+const PANGGUNG = [-6.985078, 106.308706];
+for (const [idTitik, jenis, panjang, lebar, bebasPohon] of [["masjid", "masjid", 28, 28, 64], ["tic", "aula", 46, 26, 28], [PANGGUNG, "panggung", 30, 18, 26]]) {
+  const t = typeof idTitik === "string" ? PETA.titik.find((x) => x.id === idTitik) : { lat: idTitik[0], lng: idTitik[1] };
   if (!t) continue;
   const c = P([t.lat, t.lng]);
   let sudut = 0, dMin = Infinity;
@@ -702,7 +704,11 @@ for (const [idTitik, jenis, panjang, lebar, bebasPohon] of [["masjid", "masjid",
   const dalam = (q, m = 0) => { const dx = q[0] - c[0], dy = q[1] - c[1], u = dx * ca + dy * sa, v = -dx * sa + dy * ca; return Math.abs(u) <= hp + m && Math.abs(v) <= hl + m; };
   for (let i = daftarGedung.length - 1; i >= 0; i--) { const g = daftarGedung[i]; if (dalam(g.c, 4) || g.poly.some((q) => dalam(q, 1))) daftarGedung.splice(i, 1); }
   for (let i = sprite.length - 1; i >= 0; i--) if (dalam([sprite[i].x, sprite[i].y], bebasPohon)) sprite.splice(i, 1); // halaman bebas pohon agar bangunan terlihat
-  daftarGedung.push({ id: daftarGedung.length + 10000, osm: idTitik, poly, c, jenis, atap: "terakota" });
+  // panggung: dinding latar di tepi yang paling dekat ke Gedung TIC, panggung menghadap lapangan
+  const tic = PETA.titik.find((x) => x.id === "tic"), pt = tic ? P([tic.lat, tic.lng]) : c;
+  const belakang = [0, 1, 2, 3].reduce((m, i) => { const u = poly[i], v = poly[(i + 1) % 4], w = poly[m], z = poly[(m + 1) % 4];
+    return Math.hypot((u[0] + v[0]) / 2 - pt[0], (u[1] + v[1]) / 2 - pt[1]) < Math.hypot((w[0] + z[0]) / 2 - pt[0], (w[1] + z[1]) / 2 - pt[1]) ? i : m; }, 0);
+  daftarGedung.push({ id: daftarGedung.length + 10000, osm: typeof idTitik === "string" ? idTitik : jenis, poly, c, jenis, atap: "terakota", belakang });
   L.push(`<path d="${dz(poly.map(([x, y]) => [c[0] + (x - c[0]) * 1.25, c[1] + (y - c[1]) * 1.25]))}" fill="#E4DCC8"/>`); // halaman berpaving
 }
 

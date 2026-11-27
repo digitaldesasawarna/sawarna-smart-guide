@@ -23,7 +23,7 @@ window.PETA = {
   // Peta ilustrasi: tile WebP hasil tools/gen-ilustrasi.mjs + tools/render-tiles.mjs.
   // Batas HARUS sama dengan data/geografi.json → batasGambar. Zoom 19 hanya ada di kawasan inti.
   ilustrasi: {
-    tiles: "assets/tiles/{arah}/{z}/{x}/{y}.webp?v=iso7", // naikkan ?v= setiap tile dirender ulang (hindari cache lama) // satu set per arah pandang (0, 45, … 315)
+    tiles: "assets/tiles/{arah}/{z}/{x}/{y}.webp?v=iso8", // naikkan ?v= setiap tile dirender ulang (hindari cache lama) // satu set per arah pandang (0, 45, … 315)
     batas: [[-6.9960, 106.2960], [-6.9735, 106.3180]],
     marginInti: 0.0015,
   },

@@ -51,6 +51,7 @@ const bayangBidang = (warna, nx, ny) => {
  * g: { poly (unit peta), c, jenis: rumah|rumah2|kios|warung|seng, atap, id }, P: proyektor
  */
 export function gedung(g, P, TENDA, kt = 1) {
+  if (g.jenis === "panggung") return panggung(g, P, kt);
   const r = hashAngka(g.id);
   const base = g.poly.map(([x, y]) => P(x, y));
   const n = base.length;
@@ -201,6 +202,47 @@ export function gedung(g, P, TENDA, kt = 1) {
     if (g.jenis === "kios") s += `<path d="${d(top)}" fill="url(#pGarisTenda)"/>`;
     else s += `<path d="${d(top.map(([x, y]) => [c[0] + (x - c[0]) * 0.8, (y - (c[1] - h)) * 0.8 + c[1] - h]))}" fill="${atap[0]}" opacity=".7"/>`;
   }
+  return s;
+}
+
+/*
+ * Panggung terbuka bertribun (foto Street View di depan Gedung TIC): lantai beton rendah berundak di sisi
+ * depan, dinding latar miring berlapis keramik kuning di sisi g.belakang, dan tugu putih di ujung yang tinggi.
+ */
+function panggung(g, P, kt) {
+  const base = g.poly.map(([x, y]) => P(x, y)), n = base.length;
+  const c = base.reduce((s, p) => [s[0] + p[0] / n, s[1] + p[1] / n], [0, 0]);
+  const h = 3.5 * kt, BETON = "#D9D5CA", ATAS = "#E6E3DA";
+  let s = `<path d="${d(base.map(([x, y]) => [x + 4, y + 2]))}" fill="#152638" opacity=".16"/>`;
+  // dinding latar (keramik kuning) berdiri di tepi g.belakang, tinggi menurun dari ujung a ke ujung b
+  const ia = g.belakang, ib = (g.belakang + 1) % n, A = base[ia], Bp = base[ib];
+  const ha = h + 17 * kt, hb = h + 6 * kt;
+  const latar = () => {
+    let t = `<path d="${d([[A[0], A[1] - h], [Bp[0], Bp[1] - h], [Bp[0], Bp[1] - hb], [A[0], A[1] - ha]])}" fill="#E4BE74" ${GARIS}/>`;
+    let kisi = "";
+    for (let k = 1; k < 8; k++) { const u = k / 8, x = A[0] + (Bp[0] - A[0]) * u, y = A[1] + (Bp[1] - A[1]) * u; kisi += `M${f1(x)} ${f1(y - h)}V${f1(y - h - (ha - h) * (1 - u) - (hb - h) * u)}`; }
+    for (let k = 1; k < 4; k++) { const v = k / 4; kisi += `M${f1(A[0])} ${f1(A[1] - h - (ha - h) * v)}L${f1(Bp[0])} ${f1(Bp[1] - h - (hb - h) * v)}`; }
+    t += `<path d="${kisi}" stroke="#C99D52" stroke-width=".5" opacity=".8"/>`;
+    // tugu putih di ujung yang tinggi
+    t += `<rect x="${f1(A[0] - 3)}" y="${f1(A[1] - ha - 9 * kt)}" width="6" height="${f1(ha + 9 * kt)}" fill="#F1EEE6" ${GARIS}/>`;
+    t += `<path d="M${f1(A[0] - 4)} ${f1(A[1] - ha - 9 * kt)}L${f1(A[0])} ${f1(A[1] - ha - 14 * kt)}L${f1(A[0] + 4)} ${f1(A[1] - ha - 9 * kt)}Z" fill="#4A4F57"/>`;
+    return t;
+  };
+  const latarDiBelakang = (A[1] + Bp[1]) / 2 <= c[1];
+  if (latarDiBelakang) s += latar();
+  // sisi lantai beton yang menghadap penonton + undakan di sisi depan (berseberangan dengan latar)
+  for (let k = 0; k < n; k++) {
+    const p = base[k], q = base[(k + 1) % n];
+    let nx = q[1] - p[1], ny = -(q[0] - p[0]);
+    if (nx * ((p[0] + q[0]) / 2 - c[0]) + ny * ((p[1] + q[1]) / 2 - c[1]) < 0) { nx = -nx; ny = -ny; }
+    if (ny <= 0.02 * Math.hypot(nx, ny)) continue;
+    s += `<path d="${d([p, q, [q[0], q[1] - h], [p[0], p[1] - h]])}" fill="${bayangBidang(BETON, nx, ny)}" ${GARIS}/>`;
+    if (k === (g.belakang + 2) % n) for (const y of [h * 0.33, h * 0.66]) s += `<path d="M${f1(p[0])} ${f1(p[1] - y)}L${f1(q[0])} ${f1(q[1] - y)}" stroke="#fff" stroke-opacity=".7" stroke-width=".8"/>`;
+  }
+  const top = base.map(([x, y]) => [x, y - h]);
+  s += `<path d="${d(top)}" fill="${ATAS}" ${GARIS}/>`;
+  s += `<path d="M${f1(top[0][0] * 0.6 + top[2][0] * 0.4)} ${f1(top[0][1] * 0.6 + top[2][1] * 0.4)}l6 2l5 -1M${f1(top[1][0] * 0.5 + top[3][0] * 0.5)} ${f1(top[1][1] * 0.5 + top[3][1] * 0.5)}l-7 1" stroke="#B9B4A8" stroke-width=".5" fill="none"/>`; // retak tipis
+  if (!latarDiBelakang) s += latar();
   return s;
 }
 
