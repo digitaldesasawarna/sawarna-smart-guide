@@ -31,7 +31,7 @@ window.PETA = {
   // Label nama tempat di atas ilustrasi. tipe: laut | sungai | alam
   label: [
     { teks: "Samudra Hindia", teks_en: "Indian Ocean", lokasi: [-6.9850, 106.3012], tipe: "laut", zoomMin: 16 },
-    { teks: "Pantai Ciantir", teks_en: "Ciantir Beach", lokasi: [-6.9857, 106.3083], tipe: "alam", zoomMin: 18, putar: 58 },
+    { teks: "Pantai Ciantir", teks_en: "Ciantir Beach", lokasi: [-6.985272, 106.308475], tipe: "alam", zoomMin: 18, putar: 58 },
     { teks: "Sungai Cisawarna", teks_en: "Cisawarna River", lokasi: [-6.98017, 106.3127], tipe: "sungai", zoomMin: 17, putar: -2 },
     { teks: "Persawahan", teks_en: "Rice fields", lokasi: [-6.9822, 106.3135], tipe: "alam", zoomMin: 17 },
     { teks: "Perbukitan", teks_en: "Hills", lokasi: [-6.9905, 106.3135], tipe: "alam", zoomMin: 17 },
@@ -45,6 +45,7 @@ window.PETA = {
     dasar:       { label: "Toilet & Ibadah",  label_en: "Toilets & prayer",  ikon: "toilet",   warna: "#6B7A8F" },
     keselamatan: { label: "Keselamatan",      label_en: "Safety",            ikon: "pelampung", warna: "#C94545" },
     spot:        { label: "Spot Wisata",      label_en: "Sights",            ikon: "kamera",   warna: "#BF5A8C" },
+    info:        { label: "Informasi",        label_en: "Information",       ikon: "info",     warna: "#2F8F74" },
     akses:       { label: "Akses",            label_en: "Access",            ikon: "gerbang",  warna: "#3F6DA6" },
   },
 
@@ -168,8 +169,11 @@ window.PETA = {
       deskripsi: "Papan selancar, bodyboard, dan instruktur lokal.", deskripsi_en: "Surfboards, bodyboards and local instructors.", contoh: true, aktif: true },
     { id: "kamar-bilas", kategori: "dasar", nama: "Toilet & Kamar Bilas", nama_en: "Toilets & showers", lat: -6.98599, lng: 106.30871, jam: "06.00–19.00",
       deskripsi: "Toilet umum dan kamar bilas air tawar.", deskripsi_en: "Public toilets and freshwater showers.", contoh: true, aktif: true },
-    { id: "mushola", kategori: "dasar", nama: "Mushola", nama_en: "Prayer room", lat: -6.98498, lng: 106.30899, jam: "24 jam",
-      deskripsi: "Tempat ibadah dengan tempat wudu.", deskripsi_en: "Prayer room with ablution area.", contoh: true, aktif: true },
+    // Koordinat masjid, TIC, dan Pantai Ciantir dari Google Maps (dikirim pengguna, 27 Nov 2026)
+    { id: "masjid", kategori: "dasar", nama: "Masjid", nama_en: "Mosque", lat: -6.984608, lng: 106.308764, jam: "24 jam",
+      deskripsi: "Masjid dengan tempat wudu, dekat pantai.", deskripsi_en: "Mosque with an ablution area, near the beach.", contoh: true, aktif: true },
+    { id: "tic", kategori: "info", nama: "Gedung TIC (Tourists International Center)", nama_en: "TIC building (Tourists International Center)", lat: -6.984636, lng: 106.309047,
+      deskripsi: "Pusat informasi wisata: tanya rute, keselamatan, dan layanan di Pantai Ciantir.", deskripsi_en: "Visitor information centre: ask about routes, safety and services at Ciantir Beach.", contoh: true, aktif: true },
     { id: "pos-balawista", kategori: "keselamatan", nama: "Pos Balawista", nama_en: "Lifeguard post", lat: -6.98505, lng: 106.30734, jam: "07.00–17.00",
       deskripsi: "Pos penjaga pantai. Laporkan keadaan darurat di sini.", deskripsi_en: "Lifeguard post. Report emergencies here.", contoh: true, aktif: true },
     { id: "titik-kumpul", kategori: "keselamatan", nama: "Titik Kumpul Evakuasi", nama_en: "Evacuation assembly point", lat: -6.98200, lng: 106.30985,

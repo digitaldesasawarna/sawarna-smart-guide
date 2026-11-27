@@ -60,7 +60,12 @@
     center: config.pusat,
     zoom: zoomAwal,
     crs: crsArah(kunci()),
-    zoomSnap: 1, // tile ilustrasi hanya ada di zoom bulat (16–19)
+    // zoom halus: berhenti tiap ¼ tingkat (roda mouse & cubit), tombol +/− tetap satu tingkat.
+    // Tile ilustrasi ada di zoom bulat 16–19; di antaranya Leaflet memakai tile terdekat yang diskalakan.
+    zoomSnap: 0.25,
+    zoomDelta: 1,
+    wheelPxPerZoomLevel: 110,
+    wheelDebounceTime: 30,
     minZoom: config.zoomMin,
     maxZoom: config.zoomMaks,
     zoomControl: false,
@@ -90,9 +95,14 @@
   aturZoomMin();
   map.on("resize", aturZoomMin);
   map.on("moveend", jagaBatas);
-  const aturJauh = () => map.getContainer().classList.toggle("jauh", map.getZoom() <= 16);
-  map.on("zoomend", aturJauh);
-  aturJauh();
+  // ukuran marker mengikuti zoom secara bertahap (CSS --skala-*, transisi 250 ms selaras animasi zoom)
+  function aturSkala() {
+    const z = map.getZoom(), el = map.getContainer();
+    el.style.setProperty("--skala-pin", Math.min(1.12, Math.max(0.8, 0.8 + (z - 16) * 0.1)).toFixed(3));
+    el.style.setProperty("--skala-kw", Math.min(1.12, Math.max(0.86, 0.86 + (z - 16) * 0.14)).toFixed(3));
+  }
+  map.on("zoom", aturSkala);
+  aturSkala();
 
   // Marker yang bisa difokus: Enter/Spasi membuka kartunya, diumumkan sebagai tombol (better-accessibility)
   const bisaKeyboard = (mk) => mk.on("add", () => {
@@ -162,13 +172,14 @@
     lapisKawasan.clearLayers();
     zona.forEach((z) => {
       const isi = titik.filter((tt) => kawasanDari(tt) === z && aktif.has(tt.kategori)).length;
-      const jumlah = isi ? `<b class="kw-jumlah" aria-hidden="true">${isi}</b>` : "";
-      const nama = d(z, "nama");
+      const nama = d(z, "nama"), judul = isi ? `${nama}: ${t("jumlahTempat", { n: isi })}` : nama;
+      // cukup ikon; nama kawasan tetap terbaca lewat judul (tooltip) & label aksesibel
       const mk = bisaKeyboard(L.marker(z.label, {
-        title: isi ? `${nama}: ${t("jumlahTempat", { n: isi })}` : nama, alt: nama, riseOnHover: true, zIndexOffset: 500,
+        title: judul, alt: nama, riseOnHover: true, zIndexOffset: 500,
         icon: L.divIcon({ className: "pin-kawasan", iconSize: [0, 0],
-          html: `<div class="kw" style="--c:${z.warna}"><span class="kw-ikon">${ikon(z.ikon || "toko")}</span><span class="kw-nama">${esc(nama)}</span>${jumlah}</div>` }),
+          html: `<div class="kw" style="--c:${z.warna}">${ikon(z.ikon || "toko")}</div>` }),
       }));
+      mk.on("add", () => mk.getElement()?.setAttribute("aria-label", judul));
       if (isi && !z.tautan) mk.on("click", () => masukKawasan(z));
       else mk.bindPopup(() => buatPopupZona(z), opsiPopup);
       mk.addTo(lapisKawasan);
@@ -179,8 +190,8 @@
     map.flyTo(z.label, Math.max(ZOOM_DETAIL, map.getZoom()), { duration: kurangiGerak ? 0 : .6 });
     toast(t("menampilkan", { x: d(z, "nama") }));
   }
-  const aturTingkat = () => map.getContainer().classList.toggle("tingkat-detail", map.getZoom() >= ZOOM_DETAIL);
-  map.on("zoomend", aturTingkat);
+  const aturTingkat = () => map.getContainer().classList.toggle("tingkat-detail", map.getZoom() >= ZOOM_DETAIL - 0.25);
+  map.on("zoom", aturTingkat);
   aturTingkat();
 
   // ================================================================ pin titik

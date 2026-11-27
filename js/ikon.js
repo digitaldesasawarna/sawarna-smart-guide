@@ -11,6 +11,7 @@
     toilet: '<circle cx="7.5" cy="5" r="1.6"/><circle cx="16.5" cy="5" r="1.6"/><path d="M5.5 21v-6H4.5V10a1.5 1.5 0 0 1 1.5-1.5h3A1.5 1.5 0 0 1 10.5 10v5h-1v6"/><path d="M15 21v-4h-2l2-7.5h3l2 7.5h-2v4"/><path d="M12 3v18"/>',
     pelampung: '<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="3.5"/><path d="M6 6l3.5 3.5M18 6l-3.5 3.5M6 18l3.5-3.5M18 18l-3.5-3.5"/>',
     kamera: '<path d="M4 8h3l1.5-2h7L17 8h3v11H4z"/><circle cx="12" cy="13" r="3.5"/>',
+    info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v6"/><circle cx="12" cy="7.6" r=".9" fill="currentColor"/>',
     gerbang: '<path d="M3 21V7l4-3 4 3v14"/><path d="M13 21V7l4-3 4 3v14"/><path d="M11 10h2M11 14h2"/><path d="M3 21h18"/>',
     // tombol
     kompas: '<circle cx="12" cy="12" r="9"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2"/>',
