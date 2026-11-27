@@ -45,13 +45,21 @@
     return L.latLngBounds([[k[0], k[1]], [k[2], k[1]], [k[2], k[3]], [k[0], k[3]]].map(([x, y]) => crs.projection.unproject(L.point(x, y))));
   };
   let arahAktif = config.arahAwal;
+  // sudut kamera (tilt): pilihan dari js/iso.js, tiap pilihan punya set tile sendiri.
+  // Bawaan = sudut saat ini ("sedang"); pilihan pengunjung diingat di perangkatnya saja.
+  const MIRING = ISO.miring || [{ id: "sedang", akhiran: "" }];
+  const MIRING_AWAL = ISO.miringAwal || "sedang";
+  const KUNCI_MIRING = "sawarna-sudut-kamera";
+  let miringAktif = (() => { try { const v = localStorage.getItem(KUNCI_MIRING); return MIRING.some((m) => m.id === v) ? v : MIRING_AWAL; } catch { return MIRING_AWAL; } })();
+  // kunci tampilan = arah + akhiran sudut kamera, mis. "225" (bawaan) atau "225-t38"
+  const kunci = (a = arahAktif, mr = miringAktif) => `${a}${(MIRING.find((m) => m.id === mr) || MIRING[0]).akhiran}`;
   // HP: satu tingkat lebih jauh agar semua marker kawasan (gambaran besar) muat di layar sempit
   const zoomAwal = innerWidth < 768 ? config.zoomAwal - 1 : config.zoomAwal;
   const norm = (v) => ((Math.round(v) % 360) + 360) % 360;
   const map = L.map("map", {
     center: config.pusat,
     zoom: zoomAwal,
-    crs: crsArah(config.arahAwal),
+    crs: crsArah(kunci()),
     zoomSnap: 1, // tile ilustrasi hanya ada di zoom bulat (16–19)
     minZoom: config.zoomMin,
     maxZoom: config.zoomMaks,
@@ -65,7 +73,7 @@
   // Batas peta dihitung di ruang piksel gambar. maxBounds & getBoundsZoom Leaflet memakai kotak lintang/bujur
   // dan hanya dua sudutnya, sehingga salah pada proyeksi isometrik yang berputar (zoom & geser terkunci).
   function aturZoomMin() {
-    const { w, h } = ISO.arah[arahAktif], s = map.getSize();
+    const { w, h } = ISO.arah[kunci()], s = map.getSize();
     let z = 18 + Math.log2((Math.max(s.x / w, s.y / h) * 0.85) / ISO.S0); // gambar (hampir) menutupi layar
     z = Math.min(config.zoomMaks, Math.max(config.zoomMin, Math.ceil(z)));
     map.setMinZoom(z);
@@ -73,7 +81,7 @@
   }
   // pusat peta dijaga agar layar tidak keluar dari gambar
   function jagaBatas() {
-    const { w, h } = ISO.arah[arahAktif], sk = map.options.crs.scale(map.getZoom()), s = map.getSize();
+    const { w, h } = ISO.arah[kunci()], sk = map.options.crs.scale(map.getZoom()), s = map.getSize();
     const c = map.project(map.getCenter());
     const jepit = (v, uk, layar) => (uk <= layar ? uk / 2 : Math.min(uk - layar / 2, Math.max(layar / 2, v)));
     const x = jepit(c.x, w * sk, s.x), y = jepit(c.y, h * sk, s.y);
@@ -98,14 +106,14 @@
   });
 
   // ---------- lapisan ilustrasi (8 arah pandang)
-  const opsiTile = { arah: config.arahAwal, noWrap: true, keepBuffer: 4, className: "ilustrasi", attribution: "Ilustrasi © KKN Sawarna · data © kontributor <a href=\"https://www.openstreetmap.org/copyright\">OpenStreetMap</a>" };
+  const opsiTile = { arah: kunci(), noWrap: true, keepBuffer: 4, className: "ilustrasi", attribution: "Ilustrasi © KKN Sawarna · data © kontributor <a href=\"https://www.openstreetmap.org/copyright\">OpenStreetMap</a>" };
   const tileIlustrasi = [
     L.tileLayer(ilustrasi.tiles, { ...opsiTile, minNativeZoom: 16, maxNativeZoom: 18, maxZoom: 19 }),
     L.tileLayer(ilustrasi.tiles, { ...opsiTile, minZoom: 19, minNativeZoom: 19, maxNativeZoom: 19, maxZoom: 19 }),
   ];
   // zoom 19 hanya dirender untuk kawasan inti
   const aturBatasInti = (a) => { tileIlustrasi[1].options.bounds = batasLatLng(a, ISO.arah[a].inti); };
-  aturBatasInti(config.arahAwal);
+  aturBatasInti(kunci());
 
   // label nama tempat & zona
   const lapisLabel = L.layerGroup();
@@ -274,7 +282,7 @@
   // ganti arah pandang = ganti sistem koordinat isometrik; pusat & zoom dipertahankan
   function terapkanCrs() {
     const pusat = map.getCenter(), z = map.getZoom();
-    map.options.crs = crsArah(arahAktif);
+    map.options.crs = crsArah(kunci());
     map.setView(pusat, z, { reset: true });
     aturZoomMin();
     jagaBatas();
@@ -283,10 +291,29 @@
     a = (Math.round(norm(a) / 45) * 45) % 360;
     if (a === arahAktif) return perbaruiArah();
     arahAktif = a;
-    tileIlustrasi.forEach((tl) => (tl.options.arah = a));
-    aturBatasInti(a);
-    terapkanCrs();
+    gantiTampilan();
     perbaruiArah();
+  }
+  // tile & sistem koordinat mengikuti kunci tampilan (arah + sudut kamera)
+  function gantiTampilan() {
+    tileIlustrasi.forEach((tl) => (tl.options.arah = kunci()));
+    aturBatasInti(kunci());
+    terapkanCrs();
+  }
+  function setMiring(id) {
+    if (id === miringAktif || !MIRING.some((m) => m.id === id)) return perbaruiMiring();
+    miringAktif = id;
+    try { localStorage.setItem(KUNCI_MIRING, id); } catch { /* penyimpanan tidak tersedia: pilihan berlaku sampai halaman ditutup */ }
+    gantiTampilan();
+    perbaruiMiring();
+  }
+  function buatMiring() {
+    const nama = t("miringNama");
+    $("pm-pilihan").innerHTML = MIRING.map((m) => `<button type="button" data-miring="${m.id}">${esc(nama[m.id] || m.id)}</button>`).join("");
+    perbaruiMiring();
+  }
+  function perbaruiMiring() {
+    $("pm-pilihan").querySelectorAll("[data-miring]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.miring === miringAktif)));
   }
   const selisih = (a, b) => Math.abs(((a - b + 540) % 360) - 180);
   void selisih;
@@ -306,13 +333,15 @@
   }
   elRange.addEventListener("change", () => setArah(+elRange.value));
   $("panel-arah").addEventListener("click", (e) => {
-    const c = e.target.closest("[data-derajat]"), st = e.target.closest("[data-step]");
+    const c = e.target.closest("[data-derajat]"), st = e.target.closest("[data-step]"), mr = e.target.closest("[data-miring]");
+    if (mr) setMiring(mr.dataset.miring);
     if (c) setArah(+c.dataset.derajat);
     if (st) setArah(arahKini() + +st.dataset.step);
   });
   btnKompas.addEventListener("click", () => bukaPanel("panel-arah", $("panel-arah").hidden));
   btnKompas.addEventListener("dblclick", () => { bukaPanel("panel-arah", false); keAwal(); });
   function keAwal() {
+    setMiring(MIRING_AWAL);
     setArah(config.arahAwal);
     map.flyTo(config.pusat, zoomAwal, { duration: kurangiGerak ? 0 : .6 });
   }
@@ -443,7 +472,7 @@
     document.querySelector(".bahasa").setAttribute("aria-label", t("bahasa"));
     document.querySelectorAll("[data-bahasa]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.bahasa === window.I18N.bahasa)));
     map.closePopup();
-    buatChip(); buatPin(); buatLabel(); buatPreset(); buatAman(); aturOnline(false);
+    buatChip(); buatPin(); buatLabel(); buatPreset(); buatMiring(); buatAman(); aturOnline(false);
     if (map.hasLayer(lapisEvak)) gambarEvakuasi();
   }
   document.querySelector(".bahasa").addEventListener("click", (e) => {

@@ -159,6 +159,8 @@ h1, h2, p { margin: 0; }
 .pa-slider { display: flex; align-items: center; gap: 8px; margin-top: 12px; }
 .pa-slider input { flex: 1; min-width: 0; accent-color: var(--sw-biru-600); height: 28px; }
 .pa-preset { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 12px; }
+.pa-sub { margin-top: 16px; }
+.pa-preset.pa-miring { grid-template-columns: repeat(3, 1fr); margin-top: 8px; }
 .pa-preset button {
   height: 44px; border: 0; border-radius: 10px; background: var(--sw-abu-100);
   font-size: 13px; font-weight: 600; color: var(--sw-abu-700); cursor: pointer;

@@ -39,15 +39,17 @@ lalu buka http://localhost:5173
 
 Peta dasar bawaan adalah ilustrasi 2.5D bergaya peta taman wisata: tanah (jalan, zona, pantai, sungai, sawah) presisi sesuai koordinat asli, sedangkan bangunan, pohon, orang, dan kendaraan digambar "berdiri" menghadap penonton. Peta hanya memakai ilustrasi (tanpa pilihan satelit/peta jalan). Saat peta jauh, tiap kawasan (UMKM Pantai, Homestay) tampil sebagai satu marker berikon; setelah diperbesar ke zoom 18, marker kawasan hilang dan titik detail di dalamnya muncul.
 
-Ilustrasi bergaya **isometrik** (dimetrik 2:1, ala Rod Hunt / Icograms): bangunan diekstrusi dari jejak OSM asli, dibuat untuk **8 arah pandang** (0°, 45°, … 315°). Tiap arah memakai CRS Leaflet khusus dengan matriks yang sama dengan generator, sehingga pin dan GPS tetap tepat. Arah dipilih lewat tombol kompas (slider, ±45°, 8 arah mata angin).
+Ilustrasi bergaya **isometrik** (dimetrik 2:1, ala Rod Hunt / Icograms): bangunan diekstrusi dari jejak OSM asli, dibuat untuk **8 arah pandang** (0°, 45°, … 315°). Tiap arah memakai CRS Leaflet khusus dengan matriks yang sama dengan generator, sehingga pin dan GPS tetap tepat. Arah dipilih lewat tombol kompas (slider, ±45°, 8 arah mata angin). Di panel yang sama pengunjung bisa memilih **sudut kamera** (tilt): Rendah (±22°), Sedang (30°, bawaan), atau Tinggi (±43°); tiap sudut punya set tile sendiri (`assets/tiles/{arah}-t38`, `{arah}`, `{arah}-t68`) dan pilihan diingat di perangkat pengunjung.
 
 Ilustrasi disajikan sebagai **tile WebP** di `assets/tiles/{arah}/{z}/{x}/{y}.webp`; HP hanya mengunduh tile arah & tampilan yang sedang dilihat. Cara membuat ulang setelah mengubah zona/jalur di `js/data.js` atau bentuk alam di `data/geografi.json`:
 
 ```
 python tools/siapkan-data-nyata.py  # 0. bangunan, jalan, sungai dari OpenStreetMap + warna atap dari citra (data/nyata.json)
-node tools/gen-ilustrasi.mjs      # 1. gambar SVG per arah (assets/ilustrasi/, tidak di-commit), ±10 detik
+python tools/tutupan-lahan.py       #    hutan, sawah, lahan dari citra satelit (data/tutupan.json)
+node tools/gen-ilustrasi.mjs      # 1. gambar SVG per arah, sudut kamera bawaan (assets/ilustrasi/, tidak di-commit)
+node tools/gen-ilustrasi.mjs --miring rendah   #    sudut kamera lain: rendah | tinggi (8 arah)
 node tools/render-tiles.mjs       # 2. potong jadi tile WebP memakai Chrome/Edge headless, ±4 menit
-node tools/render-tiles.mjs 225   #    (atau satu arah saja)
+node tools/render-tiles.mjs 225   #    (atau satu arah saja; sudut lain: 225-t38, 225-t68)
 ```
 
 Foto contoh untuk kartu info (potongan ilustrasi) dibuat dengan `python tools/foto-contoh.py` → `assets/foto/`; ganti dengan foto asli hasil survei.

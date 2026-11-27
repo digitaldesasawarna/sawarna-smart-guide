@@ -722,50 +722,62 @@ luar.push(`<g clip-path="url(#cLuarDarat)"><g filter="url(#b20)">${bukit}</g></g
 const spriteDalam = sprite; // semua objek berdiri ditampilkan (dalam & luar kawasan)
 
 // ================================================================ tulis: peta isometrik per arah pandang
-const ARAH = process.argv[2] ? [Number(process.argv[2])] : [0, 45, 90, 135, 180, 225, 270, 315];
+// node tools/gen-ilustrasi.mjs [arah] [--miring rendah|sedang|tinggi]   (bawaan: semua arah, sudut kamera "sedang")
+const argumen = process.argv.slice(2);
+const iMiring = argumen.indexOf("--miring");
+const pilihMiring = iMiring >= 0 ? ISO.MIRING.find((m) => m.id === argumen[iMiring + 1]) : ISO.MIRING.find((m) => m.k === ISO.ISO_K);
+if (!pilihMiring) { console.error("--miring harus salah satu dari:", ISO.MIRING.map((m) => m.id).join(", ")); process.exit(1); }
+const argArah = argumen.filter((v, i) => /^\d+$/.test(v) && i !== iMiring + 1);
+const ARAH = argArah.length ? argArah.map(Number) : [0, 45, 90, 135, 180, 225, 270, 315];
 const DIR = path.join(ROOT, "assets/ilustrasi");
 fs.mkdirSync(DIR, { recursive: true });
 const dasar = L.join("\n") + "\n" + luar.join("\n");
+// matriks semua tampilan (8 arah × tiap sudut kamera) → js/iso.js; kunci "225" (bawaan) atau "225-t38"
 const semuaArah = {};
-for (const a of [0, 45, 90, 135, 180, 225, 270, 315]) {
-  semuaArah[a] = ISO.matriks(a, W, H);
-  const Pa = ISO.proyektor(semuaArah[a].m), bi = batas.map(([x, y]) => Pa(x, y));
+for (const { k } of ISO.MIRING) for (const a of [0, 45, 90, 135, 180, 225, 270, 315]) {
+  const kunci = ISO.kunciTampilan(a, k);
+  semuaArah[kunci] = ISO.matriks(a, W, H, k);
+  const Pa = ISO.proyektor(semuaArah[kunci].m), bi = batas.map(([x, y]) => Pa(x, y));
   // kotak kawasan inti (untuk tile zoom 19)
-  semuaArah[a].inti = [Math.min(...bi.map((p) => p[0])) - 120, Math.min(...bi.map((p) => p[1])) - 140, Math.max(...bi.map((p) => p[0])) + 120, Math.max(...bi.map((p) => p[1])) + 80].map(Math.round);
+  semuaArah[kunci].inti = [Math.min(...bi.map((p) => p[0])) - 120, Math.min(...bi.map((p) => p[1])) - 140, Math.max(...bi.map((p) => p[0])) + 120, Math.max(...bi.map((p) => p[1])) + 80].map(Math.round);
 }
+const kt = ISO.faktorTinggi(pilihMiring.k);
 
 for (const a of ARAH) {
-  const { m, w, h } = semuaArah[a];
+  const kunci = ISO.kunciTampilan(a, pilihMiring.k);
+  const { m, w, h } = semuaArah[kunci];
   const P = ISO.proyektor(m);
   const isi = [];
   // objek berdiri (pohon, orang, payung, kendaraan, perahu…) tetap tegak di layar
   for (const o of [...spriteLaut, ...sprite]) {
     const [X, Y] = P(o.x, o.y);
-    const sk = o.s * 0.85;
-    isi.push([Y, `<use href="#${o.id}" transform="translate(${f1(X)} ${f1(Y)}) scale(${Math.round(sk * 100) / 100})"/>`]);
+    const sk = o.s * 0.85, r2 = (v) => Math.round(v * 100) / 100;
+    isi.push([Y, `<use href="#${o.id}" transform="translate(${f1(X)} ${f1(Y)}) scale(${r2(sk)}${kt === 1 ? "" : ` ${r2(sk * kt)}`})"/>`]);
   }
   // bangunan diekstrusi dari jejak asli
-  for (const g of daftarGedung) isi.push([P(g.c[0], g.c[1])[1] + 2, ISO.gedung(g, P, S.TENDA)]);
+  for (const g of daftarGedung) isi.push([P(g.c[0], g.c[1])[1] + 2, ISO.gedung(g, P, S.TENDA, kt)]);
   // rangka jembatan busur biru di atas lantai jembatan
-  if (jembatan) isi.push(...ISO.jembatanBusur(jembatan.a, jembatan.b, P));
+  if (jembatan) isi.push(...ISO.jembatanBusur(jembatan.a, jembatan.b, P, { tinggi: 22 * kt }));
   // pagar jembatan kecil (abu-abu, rendah)
   for (const jk of jembatanKecil) isi.push(...ISO.jembatanBusur(jk.a, jk.b, P, { lebar: jk.lebar, tinggi: 0, ruas: 8, warna: ["#E9EDF0", "#7D8792"] }));
   isi.sort((u, v) => u[0] - v[0]);
-  const inti = semuaArah[a].inti;
+  const inti = semuaArah[kunci].inti;
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}">
-<!-- Dibuat oleh tools/gen-ilustrasi.mjs (isometrik), jangan edit manual. Arah pandang ${a}°. -->
+<!-- Dibuat oleh tools/gen-ilustrasi.mjs (isometrik), jangan edit manual. Arah pandang ${a}°, sudut kamera ${pilihMiring.id}. -->
 <defs>${defs.join("\n")}${ISO.defsIso()}</defs>
 <rect width="${w}" height="${h}" fill="#3F86C4"/>
 <g transform="matrix(${m.join(" ")})">${dasar}</g>
 <g>${isi.map((i) => i[1]).join("")}</g>
 </svg>`;
-  fs.writeFileSync(path.join(DIR, `peta-${a}.svg`), svg);
-  fs.writeFileSync(path.join(DIR, `peta-${a}.json`), JSON.stringify({ arah: a, m, w, h, inti }));
-  console.log(`assets/ilustrasi/peta-${a}.svg  ${w}×${h}  ${(svg.length / 1024).toFixed(0)} KB`);
+  fs.writeFileSync(path.join(DIR, `peta-${kunci}.svg`), svg);
+  fs.writeFileSync(path.join(DIR, `peta-${kunci}.json`), JSON.stringify({ arah: a, miring: pilihMiring.id, m, w, h, inti }));
+  console.log(`assets/ilustrasi/peta-${kunci}.svg  ${w}×${h}  ${(svg.length / 1024).toFixed(0)} KB`);
 }
 
 // parameter proyeksi untuk aplikasi (Leaflet CRS khusus) — selalu lengkap 8 arah
 fs.writeFileSync(path.join(ROOT, "js/iso.js"), `/* Dibuat oleh tools/gen-ilustrasi.mjs — parameter proyeksi isometrik per arah pandang. */
-window.ISO = ${JSON.stringify({ U, KY, barat: B.barat, mercN: merc(B.utara), S0: ISO.S0, arah: semuaArah })};
+window.ISO = ${JSON.stringify({ U, KY, barat: B.barat, mercN: merc(B.utara), S0: ISO.S0,
+  miring: ISO.MIRING.map(({ id, k }) => ({ id, akhiran: ISO.akhiranMiring(k) })), miringAwal: ISO.MIRING.find((m) => m.k === ISO.ISO_K).id,
+  arah: semuaArah })};
 `);
 console.log(`${sprite.length + spriteLaut.length} objek berdiri, ${daftarGedung.length} bangunan isometrik`);

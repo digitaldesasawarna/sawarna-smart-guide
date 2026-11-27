@@ -4,6 +4,7 @@
  *
  *   node tools/render-tiles.mjs          (semua arah)
  *   node tools/render-tiles.mjs 225      (satu arah saja)
+ *   node tools/render-tiles.mjs 225-t38 225-t68   (tampilan dengan sudut kamera lain)
  *
  *   node tools/render-tiles.mjs
  *
@@ -22,7 +23,8 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const DIR = path.join(ROOT, "assets/ilustrasi");
-const ARAH = (process.argv[2] ? [process.argv[2]] : fs.readdirSync(DIR).map((f) => (f.match(/^peta-(\d+)\.svg$/) || [])[1]).filter(Boolean)).map(Number).sort((a, b) => a - b);
+// kunci tampilan: "225" (sudut kamera bawaan) atau "225-t38" (sudut lain), sama dengan nama peta-{kunci}.svg
+const ARAH = (process.argv.length > 2 ? process.argv.slice(2) : fs.readdirSync(DIR).map((f) => (f.match(/^peta-(\d+(?:-t\d+)?)\.svg$/) || [])[1]).filter(Boolean)).sort((a, b) => parseInt(a) - parseInt(b) || a.localeCompare(b));
 if (!ARAH.length) { console.error("Belum ada assets/ilustrasi/peta-*.svg. Jalankan dulu: node tools/gen-ilustrasi.mjs"); process.exit(1); }
 const GEO = JSON.parse(fs.readFileSync(path.join(ROOT, "data/geografi.json"), "utf8"));
 const ctx = { window: {} };

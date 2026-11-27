@@ -8,17 +8,27 @@
  */
 import { f1, ATAP, DINDING } from "./simbol.mjs";
 
-export const ISO_K = 0.5;     // tekanan vertikal (2:1)
+export const ISO_K = 0.5;     // tekanan vertikal (2:1) = sin(sudut kamera 30°), tampilan bawaan
+// pilihan sudut kamera (tilt): nilai = sin(sudut elevasi). Tiap pilihan punya set tile sendiri.
+export const MIRING = [
+  { id: "rendah", k: 0.38 },  // ±22°, lebih landai
+  { id: "sedang", k: ISO_K }, // 30°, bawaan
+  { id: "tinggi", k: 0.68 },  // ±43°, lebih dari atas
+];
+export const akhiranMiring = (k) => (k === ISO_K ? "" : `-t${Math.round(k * 100)}`);
+export const kunciTampilan = (a, k = ISO_K) => `${a}${akhiranMiring(k)}`;
+// tinggi benda tegak mengikuti cos(sudut kamera), relatif terhadap tampilan bawaan
+export const faktorTinggi = (k) => Math.cos(Math.asin(k)) / Math.cos(Math.asin(ISO_K));
 export const S0 = 0.932;      // piksel per unit pada zoom 18 (sama dengan versi sebelumnya)
 const PAD = 90;
 
-export function matriks(a, W, H) {
+export function matriks(a, W, H, K = ISO_K) {
   const t = (-a * Math.PI) / 180, cs = Math.cos(t), sn = Math.sin(t), cx = W / 2, cy = H / 2;
-  const mentah = (x, y) => [cs * (x - cx) - sn * (y - cy), ISO_K * (sn * (x - cx) + cs * (y - cy))];
+  const mentah = (x, y) => [cs * (x - cx) - sn * (y - cy), K * (sn * (x - cx) + cs * (y - cy))];
   const sd = [[0, 0], [W, 0], [W, H], [0, H]].map(([x, y]) => mentah(x, y));
   const minX = Math.min(...sd.map((p) => p[0])) - PAD, maxX = Math.max(...sd.map((p) => p[0])) + PAD;
   const minY = Math.min(...sd.map((p) => p[1])) - PAD * 1.4, maxY = Math.max(...sd.map((p) => p[1])) + PAD;
-  const m = [cs, ISO_K * sn, -sn, ISO_K * cs, -cs * cx + sn * cy - minX, -ISO_K * (sn * cx + cs * cy) - minY];
+  const m = [cs, K * sn, -sn, K * cs, -cs * cx + sn * cy - minX, -K * (sn * cx + cs * cy) - minY];
   return { m: m.map((v) => Math.round(v * 1e6) / 1e6), w: Math.round(maxX - minX), h: Math.round(maxY - minY) };
 }
 export const proyektor = ([A, B, C, D, E, F]) => (x, y) => [A * x + C * y + E, B * x + D * y + F];
@@ -40,13 +50,13 @@ const bayangBidang = (warna, nx, ny) => {
  * Bangunan isometrik dari jejak OSM.
  * g: { poly (unit peta), c, jenis: rumah|rumah2|kios|warung|seng, atap, id }, P: proyektor
  */
-export function gedung(g, P, TENDA) {
+export function gedung(g, P, TENDA, kt = 1) {
   const r = hashAngka(g.id);
   const base = g.poly.map(([x, y]) => P(x, y));
   const n = base.length;
   const c = base.reduce((s, p) => [s[0] + p[0] / n, s[1] + p[1] / n], [0, 0]);
   const toko = MINIMARKET[g.jenis];
-  const h = toko ? 14 : { rumah2: 19, kios: 7, warung: 8, seng: 9, rumahKayu: 10 }[g.jenis] ?? 11;
+  const h = (toko ? 14 : { rumah2: 19, kios: 7, warung: 8, seng: 9, rumahKayu: 10 }[g.jenis] ?? 11) * kt;
   const dinding = toko ? "#F6F4EF" : g.jenis === "rumahKayu" ? "#94704F" : g.jenis === "kios" ? "#F3E1C2" : g.jenis === "warung" ? "#E9CFA4" : DINDING[Math.floor(r * DINDING.length)];
   const tenda = TENDA[Math.floor(r * TENDA.length)];
   const atap = toko ? ["#E3E6E9", "#CDD2D7", "#B4BBC2"]
@@ -118,7 +128,7 @@ export function gedung(g, P, TENDA) {
     const panjang01 = len(0, 1) >= len(1, 2);
     const [i0, i1, i2, i3] = panjang01 ? [0, 1, 2, 3] : [1, 2, 3, 0]; // sisi panjang: i0–i1 & i2–i3
     const pendek = Math.min(len(0, 1), len(1, 2));
-    const naik = pendek * 0.42 + 3;
+    const naik = (pendek * 0.42 + 3) * kt;
     const mid = (u, v) => [(top[u][0] + top[v][0]) / 2, (top[u][1] + top[v][1]) / 2 - naik];
     let R1 = mid(i1, i2), R2 = mid(i3, i0);
     if (g.jenis !== "rumah2" && g.jenis !== "warung") { // limas: bubungan dipendekkan
