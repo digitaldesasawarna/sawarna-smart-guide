@@ -190,6 +190,13 @@ const TP = (() => {
   }
   const nada = new Uint8Array(t.lebar * t.tinggi);
   (t.nada || []).forEach((rl, j) => { let i = j * t.lebar; for (const seg of rl.split(".")) { const n = seg.length > 1 ? +seg.slice(1) : 1; nada.fill(+seg[0], i, i + n); i += n; } });
+  // di kawasan inti (pantai, UMKM, homestay) tidak ada sawah: lahan terbuka di citra di sini adalah tanah/rumput
+  for (let j = 0; j < t.tinggi; j++) for (let i = 0; i < t.lebar; i++) {
+    const k = j * t.lebar + i;
+    if (a[k] !== 2) continue;
+    const p = [(i + 0.5) * t.sel, (j + 0.5) * t.sel];
+    if (inside(p, batas) || inside(p, zUmkm) || inside(p, zHome)) a[k] = 0;
+  }
   return { sel: t.sel, w: t.lebar, h: t.tinggi, g: a, nada };
 })();
 // nada sawah di sekitar titik (mayoritas 3×3 sel kelas sawah): 0 kering terang · 1 kering gelap · 2 tergenang · 3 hijau muda · 4 hijau
