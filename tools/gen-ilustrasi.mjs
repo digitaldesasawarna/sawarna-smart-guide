@@ -687,6 +687,25 @@ for (const ujung of [laut.at(-2)]) for (let i = 0; i < 6; i++) {
   sprite.push({ x: p[0], y: p[1], id: "batu2", s: rr(1, 1.6) });
 }
 
+// ================================================================ bangunan khusus di titik data (koordinat Google Maps)
+// masjid (kubah & menara) dan Gedung TIC (aula besar): jejak persegi panjang searah jalan terdekat;
+// rumah OSM & objek berdiri yang tertimpa jejak baru dibuang
+for (const [idTitik, jenis, panjang, lebar, bebasPohon] of [["masjid", "masjid", 28, 28, 64], ["tic", "aula", 46, 26, 28]]) {
+  const t = PETA.titik.find((x) => x.id === idTitik);
+  if (!t) continue;
+  const c = P([t.lat, t.lng]);
+  let sudut = 0, dMin = Infinity;
+  for (const g of [...jalanNyata.map((j) => j.garis), jalur, ...(jalur2 ? [jalur2] : [])])
+    for (let i = 1; i < g.length; i++) { const dd = distSeg(c, g[i - 1], g[i]); if (dd < dMin) { dMin = dd; sudut = Math.atan2(g[i][1] - g[i - 1][1], g[i][0] - g[i - 1][0]); } }
+  const ca = Math.cos(sudut), sa = Math.sin(sudut), hp = panjang / 2, hl = lebar / 2;
+  const poly = [[-hp, -hl], [hp, -hl], [hp, hl], [-hp, hl]].map(([x, y]) => [c[0] + x * ca - y * sa, c[1] + x * sa + y * ca]);
+  const dalam = (q, m = 0) => { const dx = q[0] - c[0], dy = q[1] - c[1], u = dx * ca + dy * sa, v = -dx * sa + dy * ca; return Math.abs(u) <= hp + m && Math.abs(v) <= hl + m; };
+  for (let i = daftarGedung.length - 1; i >= 0; i--) { const g = daftarGedung[i]; if (dalam(g.c, 4) || g.poly.some((q) => dalam(q, 1))) daftarGedung.splice(i, 1); }
+  for (let i = sprite.length - 1; i >= 0; i--) if (dalam([sprite[i].x, sprite[i].y], bebasPohon)) sprite.splice(i, 1); // halaman bebas pohon agar bangunan terlihat
+  daftarGedung.push({ id: daftarGedung.length + 10000, osm: idTitik, poly, c, jenis, atap: "terakota" });
+  L.push(`<path d="${dz(poly.map(([x, y]) => [c[0] + (x - c[0]) * 1.25, c[1] + (y - c[1]) * 1.25]))}" fill="#E4DCC8"/>`); // halaman berpaving
+}
+
 // ================================================================ tulis: satu SVG per arah pandang
 // ---------- luar kawasan: pemandangan hijau (sawah terasering, perbukitan, desa)
 const diKawasan = (o) => inside([o.x, o.y], batas);

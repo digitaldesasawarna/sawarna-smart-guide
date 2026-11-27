@@ -56,15 +56,27 @@ export function gedung(g, P, TENDA, kt = 1) {
   const n = base.length;
   const c = base.reduce((s, p) => [s[0] + p[0] / n, s[1] + p[1] / n], [0, 0]);
   const toko = MINIMARKET[g.jenis];
-  const h = (toko ? 14 : { rumah2: 19, kios: 7, warung: 8, seng: 9, rumahKayu: 10 }[g.jenis] ?? 11) * kt;
-  const dinding = toko ? "#F6F4EF" : g.jenis === "rumahKayu" ? "#94704F" : g.jenis === "kios" ? "#F3E1C2" : g.jenis === "warung" ? "#E9CFA4" : DINDING[Math.floor(r * DINDING.length)];
+  const h = (toko ? 14 : { rumah2: 19, kios: 7, warung: 8, seng: 9, rumahKayu: 10, masjid: 15, aula: 18 }[g.jenis] ?? 11) * kt;
+  const dinding = g.jenis === "masjid" ? "#F8F5EC" : g.jenis === "aula" ? "#F2ECDD" : toko ? "#F6F4EF" : g.jenis === "rumahKayu" ? "#94704F" : g.jenis === "kios" ? "#F3E1C2" : g.jenis === "warung" ? "#E9CFA4" : DINDING[Math.floor(r * DINDING.length)];
   const tenda = TENDA[Math.floor(r * TENDA.length)];
-  const atap = toko ? ["#E3E6E9", "#CDD2D7", "#B4BBC2"]
+  const atap = g.jenis === "masjid" ? ["#E9E4D6", "#D6CFBD", "#BDB4A0"]
+    : g.jenis === "aula" ? ["#3F8F84", "#33766D", "#285E57"]
+    : toko ? ["#E3E6E9", "#CDD2D7", "#B4BBC2"]
     : g.jenis === "rumahKayu" ? ["#737B84", "#5E656D", "#4A5057"]
     : g.jenis === "kios" ? [tenda[0], terang(tenda[0], -0.12), terang(tenda[0], -0.25)]
     : g.jenis === "warung" ? ["#D9B470", "#B48B45", "#9C7638"]
     : ATAP[g.jenis === "seng" ? "seng" : g.atap] || ATAP.terakota;
   let s = `<path d="${d(base.map(([x, y]) => [x + 5, y + 2.5]))}" fill="#152638" opacity=".2"/>`;
+  // menara masjid di sudut paling belakang (digambar lebih dulu agar badan masjid menutup bagian bawahnya)
+  if (g.jenis === "masjid") {
+    const k = base.reduce((m, p, i) => (p[1] < base[m][1] ? i : m), 0), [mx, my] = base[k];
+    const tm = h + 30 * kt, lb = 3.2;
+    s += `<rect x="${f1(mx - lb)}" y="${f1(my - tm)}" width="${f1(lb * 2)}" height="${f1(tm)}" fill="#F4F0E4" ${GARIS}/>`;
+    s += `<rect x="${f1(mx)}" y="${f1(my - tm)}" width="${f1(lb)}" height="${f1(tm)}" fill="#DCD5C2"/>`;
+    s += `<rect x="${f1(mx - lb - 1.6)}" y="${f1(my - tm * 0.72)}" width="${f1(lb * 2 + 3.2)}" height="2.2" fill="#2E8B57"/>`;
+    s += `<path d="M${f1(mx - lb - 0.6)} ${f1(my - tm)}Q${f1(mx)} ${f1(my - tm - 9 * kt)} ${f1(mx + lb + 0.6)} ${f1(my - tm)}Z" fill="#2E8B57" ${GARIS}/>`;
+    s += `<path d="M${f1(mx)} ${f1(my - tm - 7 * kt)}V${f1(my - tm - 12 * kt)}" stroke="#E2B23A" stroke-width="1"/>`;
+  }
 
   // dinding yang menghadap penonton, dari belakang ke depan
   const dindingTampak = [];
@@ -101,6 +113,27 @@ export function gedung(g, P, TENDA, kt = 1) {
       if (pj >= 9) s += `<path d="${bidang(0.38, 0.62, 0, h * 0.75)}" fill="#3F4A55" stroke="#fff" stroke-opacity=".5" stroke-width=".5"/>`;
       continue;
     }
+    if (g.jenis === "masjid" && pj >= 7) { // jendela lengkung berjajar
+      const jml = Math.max(2, Math.floor(pj / 7));
+      for (let j = 0; j < jml; j++) {
+        const t0 = (j + 0.3) / jml, t1 = (j + 0.7) / jml, tm = (t0 + t1) / 2;
+        const a0 = [p[0] + (q[0] - p[0]) * t0, p[1] + (q[1] - p[1]) * t0], a1 = [p[0] + (q[0] - p[0]) * t1, p[1] + (q[1] - p[1]) * t1], am = [p[0] + (q[0] - p[0]) * tm, p[1] + (q[1] - p[1]) * tm];
+        s += `<path d="M${f1(a0[0])} ${f1(a0[1] - h * 0.18)}L${f1(a1[0])} ${f1(a1[1] - h * 0.18)}L${f1(a1[0])} ${f1(a1[1] - h * 0.6)}Q${f1(am[0])} ${f1(am[1] - h * 0.78)} ${f1(a0[0])} ${f1(a0[1] - h * 0.6)}Z" fill="#3E7D6A" stroke="#fff" stroke-opacity=".7" stroke-width=".5"/>`;
+      }
+      s += `<path d="M${f1(p[0])} ${f1(p[1] - h * 0.9)}L${f1(q[0])} ${f1(q[1] - h * 0.9)}" stroke="#2E8B57" stroke-width="1.6"/>`; // list hijau di bawah atap
+      continue;
+    }
+    if (g.jenis === "aula" && pj >= 7) { // aula: jendela kaca tinggi + pintu lebar di sisi depan
+      const jml = Math.max(2, Math.floor(pj / 8));
+      for (let j = 0; j < jml; j++) {
+        const t0 = (j + 0.22) / jml, t1 = (j + 0.78) / jml;
+        const pintu = j === Math.floor(jml / 2) && w.nx * w.nx < w.ny * w.ny * 4;
+        const a0 = [p[0] + (q[0] - p[0]) * t0, p[1] + (q[1] - p[1]) * t0], a1 = [p[0] + (q[0] - p[0]) * t1, p[1] + (q[1] - p[1]) * t1];
+        const ya = pintu ? 0 : h * 0.2, yb = h * 0.78;
+        s += `<path d="${d([[a0[0], a0[1] - ya], [a1[0], a1[1] - ya], [a1[0], a1[1] - yb], [a0[0], a0[1] - yb]])}" fill="${pintu ? "#5B7F95" : "#8DB6D3"}" stroke="#fff" stroke-opacity=".7" stroke-width=".6"/>`;
+      }
+      continue;
+    }
     // jendela & pintu (bangunan kecil cukup satu deret)
     if (pj < 7 || g.jenis === "kios") continue;
     const lantai = g.jenis === "rumah2" ? 2 : 1, jml = Math.max(1, Math.floor(pj / 9));
@@ -118,6 +151,17 @@ export function gedung(g, P, TENDA, kt = 1) {
 
   // atap
   const top = base.map(([x, y]) => [x, y - h]);
+  if (g.jenis === "masjid") { // atap datar + kubah hijau berpuncak emas di tengah
+    s += `<path d="${d(top)}" fill="${atap[0]}" ${GARIS}/>`;
+    s += `<path d="${d(top.map(([x, y]) => [c[0] + (x - c[0]) * 0.86, (y - (c[1] - h)) * 0.86 + c[1] - h]))}" fill="${atap[2]}" opacity=".4"/>`;
+    const sisi = Math.min(...g.poly.map((pp, i) => Math.hypot(g.poly[(i + 1) % n][0] - pp[0], g.poly[(i + 1) % n][1] - pp[1])));
+    const rk = sisi * 0.4, cx = c[0], cy = c[1] - h, tk = rk * 1.05 * kt;
+    s += `<rect x="${f1(cx - rk)}" y="${f1(cy - 4 * kt)}" width="${f1(rk * 2)}" height="${f1(4 * kt)}" fill="#F4F0E4" ${GARIS}/>`; // leher kubah
+    s += `<path d="M${f1(cx - rk)} ${f1(cy - 4 * kt)}C${f1(cx - rk)} ${f1(cy - 4 * kt - tk * 1.25)} ${f1(cx + rk)} ${f1(cy - 4 * kt - tk * 1.25)} ${f1(cx + rk)} ${f1(cy - 4 * kt)}Z" fill="#2E8B57" ${GARIS}/>`;
+    s += `<path d="M${f1(cx - rk * 0.55)} ${f1(cy - 4 * kt - tk * 0.35)}Q${f1(cx - rk * 0.4)} ${f1(cy - 4 * kt - tk * 0.85)} ${f1(cx)} ${f1(cy - 4 * kt - tk * 0.93)}" stroke="#fff" stroke-opacity=".45" stroke-width="1.2" fill="none"/>`;
+    s += `<path d="M${f1(cx)} ${f1(cy - 4 * kt - tk * 0.93)}V${f1(cy - 4 * kt - tk * 0.93 - 7 * kt)}" stroke="#E2B23A" stroke-width="1.1"/><circle cx="${f1(cx)}" cy="${f1(cy - 4 * kt - tk * 0.93 - 7.5 * kt)}" r="1.2" fill="#E2B23A"/>`;
+    return s;
+  }
   if (toko) { // atap datar beton dengan dinding tepi (parapet)
     s += `<path d="${d(top)}" fill="${atap[0]}" ${GARIS}/>`;
     s += `<path d="${d(top.map(([x, y]) => [c[0] + (x - c[0]) * 0.86, (y - (c[1] - h)) * 0.86 + c[1] - h]))}" fill="${atap[2]}" opacity=".45"/>`;
@@ -131,7 +175,7 @@ export function gedung(g, P, TENDA, kt = 1) {
     const naik = (pendek * 0.42 + 3) * kt;
     const mid = (u, v) => [(top[u][0] + top[v][0]) / 2, (top[u][1] + top[v][1]) / 2 - naik];
     let R1 = mid(i1, i2), R2 = mid(i3, i0);
-    if (g.jenis !== "rumah2" && g.jenis !== "warung") { // limas: bubungan dipendekkan
+    if (g.jenis !== "rumah2" && g.jenis !== "warung" && g.jenis !== "aula") { // limas: bubungan dipendekkan
       const kt = 0.28; const a = R1, b = R2;
       R1 = [a[0] + (b[0] - a[0]) * kt, a[1] + (b[1] - a[1]) * kt];
       R2 = [b[0] + (a[0] - b[0]) * kt, b[1] + (a[1] - b[1]) * kt];
