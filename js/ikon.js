@@ -12,6 +12,7 @@
     pelampung: '<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="3.5"/><path d="M6 6l3.5 3.5M18 6l-3.5 3.5M6 18l3.5-3.5M18 18l-3.5-3.5"/>',
     kamera: '<path d="M4 8h3l1.5-2h7L17 8h3v11H4z"/><circle cx="12" cy="13" r="3.5"/>',
     info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v6"/><circle cx="12" cy="7.6" r=".9" fill="currentColor"/>',
+    kembali: '<path d="M15 5l-7 7 7 7"/>',
     bus: '<rect x="4" y="3.5" width="16" height="14" rx="2.5"/><path d="M4 10h16M8 20.5v-3M16 20.5v-3"/><circle cx="8" cy="14" r=".9" fill="currentColor"/><circle cx="16" cy="14" r=".9" fill="currentColor"/>',
     jam: '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',
     gerbang: '<path d="M3 21V7l4-3 4 3v14"/><path d="M13 21V7l4-3 4 3v14"/><path d="M11 10h2M11 14h2"/><path d="M3 21h18"/>',

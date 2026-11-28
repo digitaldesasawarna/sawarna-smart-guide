@@ -90,6 +90,7 @@
   }
   // pusat peta dijaga agar layar tidak keluar dari gambar
   function jagaBatas() {
+    if (map._popup && map.hasLayer(map._popup)) return; // biarkan peta bergeser agar kartu pop-up tidak terpotong
     const { w, h } = ISO.arah[kunci()], sk = map.options.crs.scale(map.getZoom()), s = map.getSize();
     const c = map.project(map.getCenter());
     const jepit = (v, uk, layar) => (uk <= layar ? uk / 2 : Math.min(uk - layar / 2, Math.max(layar / 2, v)));
@@ -167,7 +168,7 @@
   // Zoom jauh (< ZOOM_DETAIL): satu marker per kawasan mewakili isinya; titik di dalam kawasan disembunyikan.
   // Zoom dekat (>= ZOOM_DETAIL): marker kawasan hilang, titik detail di dalamnya muncul.
   const ZOOM_DETAIL = 18;
-  const opsiPopup = { className: "popup-kartu", maxWidth: 300, minWidth: 240, autoPanPaddingTopLeft: [16, 130], autoPanPaddingBottomRight: [72, 24] };
+  const opsiPopup = { className: "popup-kartu", maxWidth: 300, minWidth: 240, autoPanPaddingTopLeft: [16, 130], autoPanPaddingBottomRight: [72, 84] };
   const dalamPoligon = ([la, ln], poly) => {
     let c = false;
     for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
@@ -369,8 +370,10 @@
   }
 
   // ================================================================ zoom
-  $("btn-plus").addEventListener("click", () => map.zoomIn());
-  $("btn-minus").addEventListener("click", () => map.zoomOut());
+  // tombol zoom bekerja pada peta yang sedang tampil (peta besar Sawarna atau peta detail)
+  const petaAktif = () => (document.body.dataset.mode === "besar" && window.petaBesar ? window.petaBesar.map : map);
+  $("btn-plus").addEventListener("click", () => petaAktif().zoomIn());
+  $("btn-minus").addEventListener("click", () => petaAktif().zoomOut());
 
   // ================================================================ lokasi saya
   let posMarker, posAkurasi, lacak = false, pertama = true;
@@ -582,4 +585,7 @@
   const minimal = kurangiGerak ? 500 : 1000;
   tileIlustrasi[0].once("load", () => setTimeout(tutupPembuka, Math.max(0, minimal - (performance.now() - mulai))));
   setTimeout(tutupPembuka, 2200); // batas atas bila tile lambat (sinyal lemah)
+
+  // dipakai js/sawarna.js saat berpindah dari peta besar ke peta detail
+  window.petaDetail = { map, tampil() { map.invalidateSize(); aturZoomMin(); jagaBatas(); } };
 })();

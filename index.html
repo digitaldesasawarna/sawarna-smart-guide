@@ -12,25 +12,27 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,600;0,700;1,600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
-  <link rel="stylesheet" href="brand/tokens.css?v=iso20">
-  <link rel="stylesheet" href="css/style.css?v=iso20">
+  <link rel="stylesheet" href="brand/tokens.css?v=iso27">
+  <link rel="stylesheet" href="css/style.css?v=iso27">
 </head>
 <body>
   <!-- Layar pembuka: logo memudar ±1 detik (DESIGN §4.1) -->
   <div id="pembuka" class="pembuka" aria-hidden="true">
     <div class="pembuka-isi">
       <img src="brand/logo/sawarna-logo-web.png" alt="" width="220" height="110">
-      <p data-t="judul">Pantai Ciantir</p>
+      <p data-t="judulBesar">Desa Wisata Sawarna</p>
     </div>
     <svg class="pembuka-ombak" viewBox="0 0 400 40" preserveAspectRatio="none" aria-hidden="true"><path d="M0 22c33 0 33-10 67-10s33 10 66 10 34-10 67-10 33 10 67 10 33-10 66-10 34 10 67 10" fill="none" stroke="currentColor" stroke-width="1.2"/></svg>
   </div>
 
   <main id="map" aria-label="Peta Pantai Ciantir"></main>
+  <main id="peta-besar" aria-label="Peta wisata Sawarna"></main>
   <div id="muat" class="muat" role="progressbar" aria-label="Memuat peta" hidden><span></span></div>
 
   <!-- Header & filter (DESIGN §4.2–4.3) -->
   <div class="atas">
     <header class="kartu header">
+      <button type="button" class="kembali" id="btn-kembali" hidden></button>
       <img class="header-logo" src="brand/logo/sawarna-mark-web.png" alt="Sawarna" width="28" height="22">
       <h1 data-t="judul">Pantai Ciantir</h1>
       <span id="tanda-offline" class="tanda-offline" hidden></span>
@@ -101,12 +103,15 @@
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-  <script src="js/data.js?v=iso20"></script>
-  <script src="js/iso.js?v=iso20"></script>
-  <script src="js/rute.js?v=iso20"></script>
-  <script src="js/i18n.js?v=iso20"></script>
-  <script src="js/ikon.js?v=iso20"></script>
-  <script src="js/popup.js?v=iso20"></script>
-  <script src="js/app.js?v=iso20"></script>
+  <script src="js/data.js?v=iso27"></script>
+  <script src="js/iso.js?v=iso27"></script>
+  <script src="js/rute.js?v=iso27"></script>
+  <script src="js/i18n.js?v=iso27"></script>
+  <script src="js/ikon.js?v=iso27"></script>
+  <script src="js/popup.js?v=iso27"></script>
+  <script src="js/app.js?v=iso27"></script>
+  <script src="js/iso-sawarna.js?v=iso27"></script>
+  <script src="js/ikon-wisata.js?v=iso27"></script>
+  <script src="js/sawarna.js?v=iso27"></script>
 </body>
 </html>

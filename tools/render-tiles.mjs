@@ -94,7 +94,7 @@ for (const arah of ARAH) {
   const BONGKAH = 8; // 8×8 tile per bongkah
   // ruang piksel isometrik: piksel = unit × S0 × 2^(z−18) (sama dengan CRS di js/iso.js)
   const meta = JSON.parse(fs.readFileSync(path.join(DIR, `peta-${arah}.json`), "utf8"));
-  for (const z of [16, 17, 18, 19]) {
+  for (const z of meta.zooms || [16, 17, 18, 19]) { // peta besar: zoom sendiri (lihat peta-sawarna.json)
     const sk = S0 * 2 ** (z - 18);
     const X0 = 0, Y0 = 0, X1 = meta.w * sk, Y1 = meta.h * sk;
     const R = z === 19 ? meta.inti.map((v) => v * sk) : [0, 0, X1, Y1];

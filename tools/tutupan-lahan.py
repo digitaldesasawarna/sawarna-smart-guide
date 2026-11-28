@@ -3,7 +3,7 @@
 Peta tutupan lahan dari citra satelit (docs/DESIGN.md §5.1): agar hutan, sawah, dan lahan terbuka
 di ilustrasi berada di tempat yang sama dengan kenyataan, bukan poligon gambar tangan.
 
-  python tools/tutupan-lahan.py [--debug FOLDER]
+  python tools/tutupan-lahan.py [--sawarna] [--debug FOLDER]   (--sawarna: wilayah peta besar → data/tutupan-sawarna.json)
 
 1. Mengambil citra Esri World Imagery zoom 17 di batasGambar (HANYA acuan; citra tidak disimpan di repo).
 2. Mengelompokkan tiap sel ±4 m menjadi kelas tutupan lahan berdasarkan warna & tekstur.
@@ -20,11 +20,14 @@ from PIL import Image, ImageFilter, ImageStat
 AKAR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 GEO = json.load(open(os.path.join(AKAR, "data", "geografi.json"), encoding="utf-8"))
 B = GEO["batasGambar"]
+# --sawarna: wilayah peta besar Sawarna (data/sawarna.json), sel lebih kasar
+SAWARNA = "--sawarna" in sys.argv
+if SAWARNA: B = json.load(open(os.path.join(AKAR, "data", "sawarna.json"), encoding="utf-8"))["batas"]
 UA = {"User-Agent": "sawarna-smart-guide/1.0 (peta wisata desa)"}
-Z = 17
+Z = 16 if SAWARNA else 17
 U = 200000                    # unit per derajat bujur (sama dengan tools/gen-ilustrasi.mjs)
 KY = U * 180 / math.pi
-SEL = 8                       # ukuran sel dalam unit (±4,4 m)
+SEL = 16 if SAWARNA else 8    # ukuran sel dalam unit (±4,4 m; peta besar ±8,8 m)
 merc = lambda lat: math.log(math.tan(math.pi / 4 + math.radians(lat) / 2))
 W = (B["timur"] - B["barat"]) * U
 H = (merc(B["utara"]) - merc(B["selatan"])) * KY
@@ -116,10 +119,10 @@ if debug:
             for _ in range(n): pp[i, j] = WARNA[c]; i += 1
     peta.save(os.path.join(debug, "kelas.png"))
 
-with open(os.path.join(AKAR, "data", "tutupan.json"), "w", encoding="utf-8") as f:
+with open(os.path.join(AKAR, "data", "tutupan-sawarna.json" if SAWARNA else "tutupan.json"), "w", encoding="utf-8") as f:
     json.dump({
         "_catatan": "Dibuat oleh tools/tutupan-lahan.py dari citra Esri World Imagery (acuan; citra tidak disimpan). "
                     "Kelas: 0 tanah/rumput, 1 pepohonan, 2 sawah/ladang, 3 permukiman, 4 air. Baris = run-length 'kelas[panjang]' dipisah titik.",
         "diambil": time.strftime("%Y-%m-%d"), "sel": SEL, "lebar": GW, "tinggi": GH, "baris": baris, "nada": barisNada,
     }, f, separators=(",", ":"))
-print(f"data/tutupan.json ditulis ({GW}×{GH} sel)")
+print(f"tutupan ditulis ({GW}×{GH} sel)")

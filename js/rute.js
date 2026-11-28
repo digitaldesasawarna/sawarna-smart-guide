@@ -3,7 +3,7 @@
  * Sumber: keterangan warga setempat (survei KKN, November 2026). Waktu & ongkos adalah PERKIRAAN;
  * periksa ulang sebelum rilis dan perbarui kolom `diperbarui`.
  * Teks dwibahasa: kolom biasa = Indonesia, akhiran _en = Inggris.
- * Koordinat wisata: OpenStreetMap kecuali ditandai; `null` = belum ada → Google Maps mencari nama tempat.
+ * Deskripsi wisata: draf, perlu diperiksa tim/pokdarwis. Koordinat wisata: OpenStreetMap kecuali ditandai; `null` = belum ada → Google Maps mencari nama tempat.
  */
 window.RUTE = {
   diperbarui: "2026-11-28",
@@ -125,6 +125,9 @@ window.RUTE = {
   tujuan: [
     {
       id: "ciantir", nama: "Pantai Ciantir", nama_en: "Ciantir Beach", lokasi: [-6.985272, 106.308475],
+      deskripsi: "Pantai berpasir putih yang luas dengan ombak favorit peselancar, sekaligus pusat kuliner dan homestay Sawarna.",
+      deskripsi_en: "A wide white-sand beach with waves loved by surfers, and the hub of Sawarna's food stalls and homestays.",
+      peta: "ciantir", // punya peta detail
       akses: "Mobil tidak bisa masuk (jembatan gantung desa sempit); motor bisa sampai dekat pantai. Jalan kaki dari parkir mobil ±15–20 menit.",
       akses_en: "Cars cannot enter (narrow village suspension bridge); motorbikes can get close to the beach. About 15–20 minutes on foot from the car park.",
       parkir: "Parkir utama desa · motor Rp5.000 · mobil Rp20.000–25.000 per malam.", parkir_en: "Main village car park · motorbike IDR 5,000 · car IDR 20,000–25,000 per night.",
@@ -135,6 +138,8 @@ window.RUTE = {
     },
     {
       id: "tanjung-layar", nama: "Tanjung Layar", nama_en: "Tanjung Layar", lokasi: [-6.994269, 106.307067],
+      deskripsi: "Dua batu karang raksasa menjulang seperti layar kapal, ikon Sawarna. Paling indah dan aman didekati saat air surut di sore hari.",
+      deskripsi_en: "Two giant rocks rising like ship sails, Sawarna's icon. Best and safest to approach at low tide in the late afternoon.",
       akses: "Mobil tidak bisa masuk (jembatan gantung desa sempit); motor bisa sampai dekat pantai. Jalan kaki dari parkir mobil ±15–20 menit.",
       akses_en: "Cars cannot enter (narrow village suspension bridge); motorbikes can get close. About 15–20 minutes on foot from the car park.",
       parkir: "Parkir utama desa · motor Rp5.000 · mobil Rp20.000–25.000 per malam.", parkir_en: "Main village car park · motorbike IDR 5,000 · car IDR 20,000–25,000 per night.",
@@ -145,6 +150,8 @@ window.RUTE = {
     },
     {
       id: "legon-pari", nama: "Pantai Legon Pari", nama_en: "Legon Pari Beach", lokasi: [-6.987852, 106.323781],
+      deskripsi: "Teluk yang lebih tenang di timur Sawarna, tempat perahu nelayan bersandar; pemandangan teluk dan karangnya memikat.",
+      deskripsi_en: "A calmer bay east of Sawarna where fishing boats moor, with lovely views of the bay and its reefs.",
       akses: "Hanya motor, lewat jalan setapak semen yang sempit dan menanjak di sela rumah warga. Mobil parkir di luar (pemancingan/jalan utama), lalu jalan kaki ±1,5–2 km (30–45 menit). Jembatan semen aksesnya kadang sedang diperbaiki.",
       akses_en: "Motorbikes only, along a narrow, steep concrete path between houses. Cars park outside (fishing pond/main road), then walk about 1.5–2 km (30–45 min). The concrete access bridge is sometimes under repair.",
       parkir: "", tiket: "Rp10.000/orang, tiket terusan desa, dibayar di pos gerbang utama desa.", tiket_en: "IDR 10,000/person, village combined ticket, paid at the main village gate.",
@@ -153,6 +160,8 @@ window.RUTE = {
     },
     {
       id: "karang-taraje", nama: "Karang Taraje", nama_en: "Karang Taraje", lokasi: [-6.969887, 106.261938],
+      deskripsi: "Karang bertingkat seperti anak tangga; saat ombak besar menghantam, air jatuh berundak seperti air terjun laut.",
+      deskripsi_en: "A stepped reef like a staircase; when big waves hit, water cascades down like a sea waterfall.",
       akses: "Hanya motor, lewat jalan setapak semen yang sempit dan menanjak. Mobil parkir di luar, lalu jalan kaki ±1,5–2 km (30–45 menit).",
       akses_en: "Motorbikes only, along a narrow, steep concrete path. Cars park outside, then walk about 1.5–2 km (30–45 min).",
       parkir: "", tiket: "Rp10.000/orang, tiket terusan desa, dibayar di pos gerbang utama desa.", tiket_en: "IDR 10,000/person, village combined ticket, paid at the main village gate.",
@@ -163,6 +172,8 @@ window.RUTE = {
     },
     {
       id: "goa-langir", nama: "Pantai Goa Langir", nama_en: "Goa Langir Beach", lokasi: [-6.975127, 106.29043],
+      deskripsi: "Pantai dengan goa karang di tebing tepi laut yang bisa dijelajahi saat air surut.",
+      deskripsi_en: "A beach with a sea cave in the cliffs that you can explore at low tide.",
       akses: "Mobil dan motor bisa sampai parkir dekat lokasi di tepi jalan raya Sawarna–Bayah; lalu jalan kaki 3–5 menit.",
       akses_en: "Cars and motorbikes can reach the car park by the Sawarna–Bayah main road; then a 3–5 minute walk.",
       parkir: "Motor Rp3.000–5.000 · mobil Rp25.000.", parkir_en: "Motorbike IDR 3,000–5,000 · car IDR 25,000.",
@@ -174,6 +185,8 @@ window.RUTE = {
     },
     {
       id: "karang-bokor", nama: "Pantai Karang Bokor", nama_en: "Karang Bokor Beach", lokasi: null, // belum ada di OpenStreetMap → kirim koordinatnya
+      deskripsi: "Pantai berkarang besar dengan deburan ombak, di tepi jalan raya Sawarna–Bayah.",
+      deskripsi_en: "A beach of big rocks and crashing waves, right by the Sawarna–Bayah road.",
       akses: "Mobil dan motor bisa sampai parkir dekat lokasi di tepi jalan raya Sawarna–Bayah; lalu jalan kaki 3–5 menit.",
       akses_en: "Cars and motorbikes can reach the car park by the Sawarna–Bayah main road; then a 3–5 minute walk.",
       parkir: "Motor Rp3.000–5.000 · mobil Rp25.000.", parkir_en: "Motorbike IDR 3,000–5,000 · car IDR 25,000.",

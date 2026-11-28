@@ -27,6 +27,9 @@ lalu buka http://localhost:5173
 | `tools/ilustrasi/` | Pustaka simbol tanah & sprite 2.5D |
 | `js/rute.js` | Data "Cara ke Sawarna": rute kota asal → Desa Sawarna, dan info lokal tiap wisata (akses, parkir, tiket, waktu terbaik, sinyal). Perkiraan dari keterangan warga; perbarui `diperbarui` setiap kali diubah |
 | `js/iso.js` | Parameter proyeksi isometrik per arah (dibuat `gen-ilustrasi.mjs`) |
+| `js/sawarna.js` | Peta besar Sawarna (halaman awal): ikon khas tiap wisata, pop-up wisata, pindah ke peta detail Ciantir dan tombol "← Sawarna" |
+| `js/ikon-wisata.js` | Ikon ilustrasi khas tiap wisata (SVG) |
+| `js/iso-sawarna.js` | Parameter proyeksi peta besar (dibuat `gen-sawarna.mjs`) |
 
 ## Fitur kerangka
 
@@ -58,6 +61,18 @@ Foto contoh untuk kartu info (potongan ilustrasi) dibuat dengan `python tools/fo
 Hutan, sawah, dan lahan terbuka mengikuti tutupan lahan hasil `python tools/tutupan-lahan.py` (klasifikasi warna & tekstur citra satelit Esri per sel ±4 m → `data/tutupan.json`; citranya sendiri tidak disimpan). Sungai Cisawarna, bangunan, jalan, dan anak sungai di ilustrasi mengikuti data OpenStreetMap; setiap jalan yang melintasi sungai diberi jembatan (© kontributor OpenStreetMap, ODbL); warna atap disimpulkan dari citra satelit sebagai acuan saja.
 
 Simbol tanah ada di `tools/ilustrasi/simbol.mjs`, objek berdiri (rumah, kios, pohon, orang, gapura, dll.) di `tools/ilustrasi/sprite.mjs`. Label nama tempat diatur di `js/data.js` → `label`.
+
+## Peta besar Sawarna
+
+Halaman awal adalah pulau pesisir Desa Sawarna (satu arah pandang, 225°) dengan ikon khas tiap wisata dari `js/rute.js` (`tujuan` yang punya `lokasi`). Ketuk ikon untuk pop-up: deskripsi, tiket, waktu terbaik, petunjuk arah Google Maps, Cara ke Sawarna, dan "Lihat peta detail" untuk wisata yang punya `peta`. Tautan `?dari=` (QR) dan `?peta=ciantir` langsung membuka peta detail. Membuat ulang:
+
+```
+python tools/siapkan-sawarna.py          # 0. garis pantai, sungai, jalan, bangunan OSM (data/sawarna.json)
+python tools/tutupan-lahan.py --sawarna  #    tutupan lahan kawasan Sawarna (data/tutupan-sawarna.json)
+python tools/pulau-sawarna.py            #    bentuk pulau (pulau di data/sawarna.json)
+node tools/gen-sawarna.mjs               # 1. SVG peta besar + js/iso-sawarna.js
+node tools/render-tiles.mjs sawarna      # 2. tile WebP assets/tiles/sawarna/ (naikkan VERSI di js/sawarna.js)
+```
 
 ## Menambah data
 
