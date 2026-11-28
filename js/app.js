@@ -288,7 +288,7 @@
     const tp = e.target.closest("[data-tutup]");
     if (!tp) return;
     const id = tp.dataset.tutup;
-    if (id === "panel-aman") $("panel-aman").close();
+    if ($(id)?.tagName === "DIALOG") $(id).close();
     else { bukaPanel(id, false); PANEL[id].focus(); }
   });
   document.addEventListener("keydown", (e) => {
@@ -476,6 +476,58 @@
     toast(`${t("koordinatDisalin")}: ${teks}`);
   });
 
+  // ================================================================ cara ke Sawarna (rute dari kota asal ke tiap wisata)
+  const RUTE = window.RUTE;
+  const dlgRute = $("panel-rute");
+  let ruteTujuan = RUTE?.tujuan[0].id, ruteAsal = RUTE?.asal[0].id, pemicuRute = null;
+  const duaBahasa = (pasangan) => (window.I18N.bahasa === "en" && pasangan[1]) || pasangan[0];
+  function buatRute() {
+    if (!RUTE) return;
+    const tj = RUTE.tujuan.find((x) => x.id === ruteTujuan), as = RUTE.asal.find((x) => x.id === ruteAsal);
+    const chip = (attr, id, label, aktif) => `<button type="button" class="chip" ${attr}="${id}" aria-pressed="${aktif}">${esc(label)}</button>`;
+    // Google Maps: asal kosong = lokasi pengunjung saat ini; tujuan = koordinat (atau nama tempat bila belum ada)
+    const ke = tj.lokasi ? `${tj.lokasi[0]},${tj.lokasi[1]}` : encodeURIComponent(`${tj.nama}, Sawarna, Bayah, Lebak, Banten`);
+    const baris = (label, isi) => (isi ? `<div><dt>${label}</dt><dd>${esc(isi)}</dd></div>` : "");
+    const tgl = new Intl.DateTimeFormat(window.I18N.bahasa === "en" ? "en-GB" : "id-ID", { day: "numeric", month: "long", year: "numeric" }).format(new Date(RUTE.diperbarui));
+    $("rute-isi").innerHTML = `
+      <section class="aman-bagian"><h3 id="rt-h-tujuan">${t("ruteTujuan")}</h3>
+        <div class="rt-pilih" role="group" aria-labelledby="rt-h-tujuan">${RUTE.tujuan.map((x) => chip("data-rute-tujuan", x.id, d(x, "nama"), x.id === ruteTujuan)).join("")}</div></section>
+      <section class="aman-bagian"><h3 id="rt-h-asal">${t("ruteAsal")}</h3>
+        <div class="rt-pilih" role="group" aria-labelledby="rt-h-asal">${RUTE.asal.map((x) => chip("data-rute-asal", x.id, d(x, "nama"), x.id === ruteAsal)).join("")}</div>
+        ${as.catatan ? `<p class="rt-catatan">${esc(d(as, "catatan"))}</p>` : ""}</section>
+      <section class="aman-bagian"><h3>${ikon("arah")}${t("rutePribadi")}</h3>
+        <p>${esc(d(as.pribadi, "rute"))}</p><p class="rt-waktu">${ikon("jam")}<span>${esc(d(as.pribadi, "waktu"))}</span></p></section>
+      <section class="aman-bagian"><h3>${ikon("bus")}${t("ruteUmum")}</h3>
+        ${as.umum.map((o, i) => `<div class="rt-opsi"><h4>${as.umum.length > 1 ? `${t("ruteOpsi", { n: i + 1 })} · ` : ""}${esc(d(o, "judul"))}</h4>
+          <ol>${o.langkah.map((l) => `<li>${esc(duaBahasa(l))}</li>`).join("")}</ol></div>`).join("")}</section>
+      <section class="aman-bagian"><h3>${t("ruteLokal", { x: d(tj, "nama") })}</h3>
+        <dl class="rt-dl">${baris(t("rtAkses"), d(tj, "akses"))}${baris(t("rtParkir"), d(tj, "parkir"))}${baris(t("rtTiket"), d(tj, "tiket"))}${baris(t("rtWaktu"), d(tj, "waktu"))}${baris(t("rtKeamanan"), d(tj, "keamanan"))}${baris(t("rtSinyal"), d(tj, "sinyal"))}</dl>
+        <a class="tombol utama rt-gmaps" href="https://www.google.com/maps/dir/?api=1&destination=${ke}" target="_blank" rel="noopener" aria-describedby="rt-gmaps-ket">${ikon("lokasi")}<span>${t("ruteGmaps")}</span>${ikon("luar")}</a>
+        <p class="rt-ket" id="rt-gmaps-ket">${t("ruteGmapsKet")}</p></section>
+      <section class="aman-bagian"><details class="rt-peringatan"><summary>${t("rutePeringatan")}</summary>
+        <ul>${RUTE.peringatan.map((p) => `<li>${esc(duaBahasa(p))}</li>`).join("")}</ul></details></section>
+      <p class="rt-sumber">${esc(t("ruteSumber", { x: tgl }))}</p>`;
+  }
+  $("rute-isi").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-rute-tujuan], [data-rute-asal]");
+    if (!b) return;
+    const attr = b.hasAttribute("data-rute-tujuan") ? "data-rute-tujuan" : "data-rute-asal", id = b.getAttribute(attr);
+    if (attr === "data-rute-tujuan") ruteTujuan = id; else ruteAsal = id;
+    buatRute();
+    $("rute-isi").querySelector(`[${attr}="${id}"]`)?.focus(); // fokus tetap di pilihan yang baru diketuk
+  });
+  function bukaRute(idTujuan, pemicu) {
+    if (idTujuan && RUTE.tujuan.some((x) => x.id === idTujuan)) ruteTujuan = idTujuan;
+    pemicuRute = pemicu || null;
+    buatRute();
+    dlgRute.showModal();
+    dlgRute.querySelector(".lembar-isi").scrollTop = 0;
+  }
+  window.bukaRute = bukaRute;
+  $("btn-rute").addEventListener("click", (e) => bukaRute(null, e.currentTarget));
+  dlgRute.addEventListener("close", () => pemicuRute?.focus());
+  dlgRute.addEventListener("click", (e) => { if (e.target === dlgRute) dlgRute.close(); }); // klik di luar lembar
+
   // ================================================================ bahasa
   const FAB = { "btn-aman": ["pelampung", "keselamatan"], "btn-lokasi": ["lokasi", "lokasi"],
     "btn-plus": ["plus", "perbesar"], "btn-minus": ["minus", "perkecil"], "btn-koordinat": ["koordinat", "koordinat"] };
@@ -495,6 +547,8 @@
     document.querySelectorAll("[data-bahasa]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.bahasa === window.I18N.bahasa)));
     map.closePopup();
     buatChip(); buatPin(); buatLabel(); buatPreset(); buatMiring(); buatAman(); aturOnline(false);
+    $("btn-rute").innerHTML = `${ikon("bus")}<span>${t("caraKeSawarna")}</span>`;
+    if (dlgRute.open) buatRute();
     if (map.hasLayer(lapisEvak)) gambarEvakuasi();
   }
   document.querySelector(".bahasa").addEventListener("click", (e) => {

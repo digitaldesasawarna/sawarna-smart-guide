@@ -226,6 +226,38 @@ h1, h2, p { margin: 0; }
 }
 .nomor-daftar .kosong { background: var(--sw-abu-100); color: var(--sw-abu-300); }
 
+/* ---------- Cara ke Sawarna ---------- */
+.tombol-rute {
+  position: fixed; z-index: 800; left: 16px; bottom: max(24px, env(safe-area-inset-bottom));
+  display: inline-flex; align-items: center; gap: 8px; height: 44px; padding: 0 16px 0 12px;
+  border: 1px solid transparent; border-radius: 999px; background: #fff; color: var(--sw-biru-700);
+  box-shadow: var(--sw-bayangan-kartu); font-size: 14px; font-weight: 700; cursor: pointer;
+  -webkit-tap-highlight-color: transparent; transition: scale 150ms ease-out;
+}
+.tombol-rute .ikon { width: 20px; height: 20px; stroke-width: 2; }
+.tombol-rute:active { scale: .96; }
+@media (hover: hover) { .tombol-rute:hover { box-shadow: var(--sw-bayangan-kartu-hover); } }
+.rute .aman-bagian h3 { display: flex; align-items: center; gap: 6px; }
+.rute .aman-bagian h3 .ikon { width: 16px; height: 16px; stroke-width: 2; }
+.rt-pilih { display: flex; flex-wrap: wrap; gap: 6px; }
+.rt-pilih .chip { box-shadow: inset 0 0 0 1px var(--sw-abu-200); background: #fff; }
+.rt-pilih .chip[aria-pressed="true"] { background: var(--sw-biru-50); color: var(--sw-biru-700); box-shadow: inset 0 0 0 1.5px var(--sw-biru-600); }
+.rt-catatan, .rt-ket { margin-top: 8px; font-size: 13px; color: var(--sw-abu-500); }
+.rt-waktu { margin-top: 8px; display: flex; align-items: center; gap: 6px; font-weight: 600; color: var(--sw-biru-900) !important; font-variant-numeric: tabular-nums; }
+.rt-waktu .ikon { width: 16px; height: 16px; flex: none; }
+.rt-opsi + .rt-opsi { margin-top: 14px; }
+.rt-opsi h4 { margin: 0 0 6px; font-size: 14px; font-weight: 700; color: var(--sw-tinta); }
+.rt-opsi ol { margin: 0; padding-left: 20px; display: grid; gap: 6px; color: var(--sw-abu-700); }
+.rt-dl { margin: 0; display: grid; gap: 10px; }
+.rt-dl dt { font-size: 12px; font-weight: 600; color: var(--sw-abu-500); }
+.rt-dl dd { margin: 2px 0 0; color: var(--sw-abu-700); }
+.rt-gmaps { margin-top: 14px; width: 100%; justify-content: center; }
+.rt-gmaps .ikon:last-child { width: 14px; height: 14px; opacity: .8; }
+.rt-peringatan summary { cursor: pointer; font-weight: 700; color: var(--sw-tinta); min-height: 32px; display: flex; align-items: center; }
+.rt-peringatan ul { margin: 8px 0 0; padding-left: 18px; display: grid; gap: 8px; color: var(--sw-abu-700); }
+.rt-sumber { margin-top: 16px; font-size: 12px; color: var(--sw-abu-500); }
+@media (min-width: 768px) { .lembar.rute { width: 420px; } }
+
 /* ---------- Pin ---------- */
 .pin { background: none; border: 0; }
 .pin-bulat {

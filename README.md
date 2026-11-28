@@ -25,6 +25,7 @@ lalu buka http://localhost:5173
 | `tools/gen-ilustrasi.mjs` | Generator ilustrasi peta (8 arah) → `assets/ilustrasi/peta-{arah}.svg` |
 | `tools/render-tiles.mjs` | SVG → tile WebP `assets/tiles/{arah}/{z}/{x}/{y}.webp` |
 | `tools/ilustrasi/` | Pustaka simbol tanah & sprite 2.5D |
+| `js/rute.js` | Data "Cara ke Sawarna": rute kota asal → Desa Sawarna, dan info lokal tiap wisata (akses, parkir, tiket, waktu terbaik, sinyal). Perkiraan dari keterangan warga; perbarui `diperbarui` setiap kali diubah |
 | `js/iso.js` | Parameter proyeksi isometrik per arah (dibuat `gen-ilustrasi.mjs`) |
 
 ## Fitur kerangka

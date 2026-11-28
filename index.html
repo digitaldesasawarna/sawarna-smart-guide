@@ -12,8 +12,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,600;0,700;1,600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
-  <link rel="stylesheet" href="brand/tokens.css?v=iso18">
-  <link rel="stylesheet" href="css/style.css?v=iso18">
+  <link rel="stylesheet" href="brand/tokens.css?v=iso20">
+  <link rel="stylesheet" href="css/style.css?v=iso20">
 </head>
 <body>
   <!-- Layar pembuka: logo memudar ±1 detik (DESIGN §4.1) -->
@@ -75,6 +75,18 @@
   </section>
 
 
+  <!-- Tombol & panel "Cara ke Sawarna" (rute dari kota asal ke tiap wisata, data js/rute.js) -->
+  <button type="button" class="tombol-rute" id="btn-rute" aria-haspopup="dialog"></button>
+  <dialog id="panel-rute" class="lembar rute" aria-labelledby="rute-judul">
+    <div class="lembar-isi">
+      <header class="panel-kepala">
+        <h2 id="rute-judul" class="lembar-judul" data-t="caraKeSawarna">Cara ke Sawarna</h2>
+        <button type="button" class="tutup" data-tutup="panel-rute"></button>
+      </header>
+      <div id="rute-isi"></div>
+    </div>
+  </dialog>
+
   <!-- Panel keselamatan (DESIGN §4.7) -->
   <dialog id="panel-aman" class="lembar aman" aria-labelledby="aman-judul">
     <div class="lembar-isi">
@@ -89,11 +101,12 @@
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-  <script src="js/data.js?v=iso18"></script>
-  <script src="js/iso.js?v=iso18"></script>
-  <script src="js/i18n.js?v=iso18"></script>
-  <script src="js/ikon.js?v=iso18"></script>
-  <script src="js/popup.js?v=iso18"></script>
-  <script src="js/app.js?v=iso18"></script>
+  <script src="js/data.js?v=iso20"></script>
+  <script src="js/iso.js?v=iso20"></script>
+  <script src="js/rute.js?v=iso20"></script>
+  <script src="js/i18n.js?v=iso20"></script>
+  <script src="js/ikon.js?v=iso20"></script>
+  <script src="js/popup.js?v=iso20"></script>
+  <script src="js/app.js?v=iso20"></script>
 </body>
 </html>
