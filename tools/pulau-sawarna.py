@@ -20,7 +20,7 @@ P = lambda la, ln: ((ln - B["barat"]) * U, (merc(B["utara"]) - merc(la)) * KY)
 inv = lambda x, y: ((2 * math.atan(math.exp(merc(B["utara"]) - y / KY)) - math.pi / 2) * 180 / math.pi, x / U + B["barat"])
 W, H = (B["timur"] - B["barat"]) * U, (merc(B["utara"]) - merc(B["selatan"])) * KY
 
-BUJUR = (106.2598, 106.3285)   # rentang pulau: sedikit di luar Karang Taraje & Legon Pari
+BUJUR = (106.2735, 106.3285)   # rentang pulau: sedikit di luar Karang Bokor & Legon Pari
 DARAT, LAUT = 2100, 300        # unit (1 unit ≈ 0,55 m)
 
 # garis pantai OSM (barat → timur, darat di utara): ruas yang bersambung

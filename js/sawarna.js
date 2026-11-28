@@ -11,7 +11,7 @@
   const $ = (id) => document.getElementById(id);
   const params = new URLSearchParams(location.search);
   const kurangiGerak = matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const VERSI = "sw1"; // naikkan setiap tile peta besar dirender ulang
+  const VERSI = "sw2"; // naikkan setiap tile peta besar dirender ulang
 
   // ---------------------------------------------------------------- CRS isometrik peta besar (satu tampilan)
   const [A, B, C, D, E, F] = IS.m, det = A * D - C * B;
