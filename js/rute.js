@@ -131,8 +131,8 @@ window.RUTE = {
       akses: "Mobil tidak bisa masuk (jembatan gantung desa sempit); motor bisa sampai dekat pantai. Jalan kaki dari parkir mobil ±15–20 menit.",
       akses_en: "Cars cannot enter (narrow village suspension bridge); motorbikes can get close to the beach. About 15–20 minutes on foot from the car park.",
       parkir: "Parkir utama desa · motor Rp5.000 · mobil Rp20.000–25.000 per malam.", parkir_en: "Main village car park · motorbike IDR 5,000 · car IDR 20,000–25,000 per night.",
-      tiket: "Rp10.000/orang, tiket terusan desa (berlaku juga untuk Tanjung Layar, Legon Pari, Karang Taraje), dibayar di pos gerbang utama desa.",
-      tiket_en: "IDR 10,000/person, village combined ticket (also valid for Tanjung Layar, Legon Pari and Karang Taraje), paid at the main village gate.",
+      tiket: "Rp10.000/orang, tiket terusan desa (berlaku juga untuk Tanjung Layar dan Legon Pari), dibayar di pos gerbang utama desa.",
+      tiket_en: "IDR 10,000/person, village combined ticket (also valid for Tanjung Layar and Legon Pari), paid at the main village gate.",
       waktu: "", keamanan: "Relatif aman untuk anak dan lansia bila didampingi.", keamanan_en: "Fairly safe for children and older visitors when accompanied.",
       sinyal: "Sinyal cukup baik untuk beberapa operator besar.", sinyal_en: "Signal is fairly good for the major operators.",
     },
@@ -159,18 +159,6 @@ window.RUTE = {
       sinyal: "Sinyal sangat lemah, sering tidak ada. Simpan peta/rute sebelum berangkat.", sinyal_en: "Very weak or no signal. Save maps/routes before you go.",
     },
     {
-      id: "karang-taraje", nama: "Karang Taraje", nama_en: "Karang Taraje", lokasi: [-6.969887, 106.261938],
-      deskripsi: "Karang bertingkat seperti anak tangga; saat ombak besar menghantam, air jatuh berundak seperti air terjun laut.",
-      deskripsi_en: "A stepped reef like a staircase; when big waves hit, water cascades down like a sea waterfall.",
-      akses: "Hanya motor, lewat jalan setapak semen yang sempit dan menanjak. Mobil parkir di luar, lalu jalan kaki ±1,5–2 km (30–45 menit).",
-      akses_en: "Motorbikes only, along a narrow, steep concrete path. Cars park outside, then walk about 1.5–2 km (30–45 min).",
-      parkir: "", tiket: "Rp10.000/orang, tiket terusan desa, dibayar di pos gerbang utama desa.", tiket_en: "IDR 10,000/person, village combined ticket, paid at the main village gate.",
-      waktu: "Pagi menjelang siang saat air mulai pasang: ombak menghantam karang bertingkat seperti 'air terjun laut'.",
-      waktu_en: "Late morning as the tide rises, when waves crash over the stepped reef like a 'sea waterfall'.",
-      keamanan: "Licin saat hujan dan tangga karangnya curam; kurang disarankan untuk lansia.", keamanan_en: "Slippery in the rain with steep rock steps; not recommended for older visitors.",
-      sinyal: "Sinyal sangat lemah, sering tidak ada. Simpan peta/rute sebelum berangkat.", sinyal_en: "Very weak or no signal. Save maps/routes before you go.",
-    },
-    {
       id: "goa-langir", nama: "Pantai Goa Langir", nama_en: "Goa Langir Beach", lokasi: [-6.975127, 106.29043],
       deskripsi: "Pantai dengan goa karang di tebing tepi laut yang bisa dijelajahi saat air surut.",
       deskripsi_en: "A beach with a sea cave in the cliffs that you can explore at low tide.",
@@ -184,7 +172,7 @@ window.RUTE = {
       sinyal: "Sinyal lemah di dalam area goa.", sinyal_en: "Weak signal inside the cave area.",
     },
     {
-      id: "karang-bokor", nama: "Pantai Karang Bokor", nama_en: "Karang Bokor Beach", lokasi: null, // belum ada di OpenStreetMap → kirim koordinatnya
+      id: "karang-bokor", nama: "Pantai Karang Bokor", nama_en: "Karang Bokor Beach", lokasi: [-6.97797, 106.27875], // koordinat dari tim KKN
       deskripsi: "Pantai berkarang besar dengan deburan ombak, di tepi jalan raya Sawarna–Bayah.",
       deskripsi_en: "A beach of big rocks and crashing waves, right by the Sawarna–Bayah road.",
       akses: "Mobil dan motor bisa sampai parkir dekat lokasi di tepi jalan raya Sawarna–Bayah; lalu jalan kaki 3–5 menit.",

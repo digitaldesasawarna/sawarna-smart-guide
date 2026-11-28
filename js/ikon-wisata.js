@@ -37,12 +37,6 @@
       <path d="M18 78q-4-18 12-26q20-10 40 0q16 8 12 26z" fill="#8F7E6C" ${G}/><path d="M24 56q18-10 34-2" stroke="#ADA08C" stroke-width="3" fill="none" stroke-linecap="round"/>
       <path d="M30 52q10-8 22-6q8 0 14 6" stroke="#5E9A45" stroke-width="4" fill="none" stroke-linecap="round"/>
       <path d="M80 70q8-14 4-26q8 10 6 26zM84 60q6-6 10-4q-4 6-10 4z" fill="#fff" opacity=".95"/><circle cx="76" cy="50" r="2.4" fill="#fff"/><circle cx="88" cy="46" r="1.8" fill="#fff"/>`,
-    // karang bertingkat, ombak jatuh berundak seperti air terjun laut
-    "karang-taraje": `${laut(78, 44, 14)}
-      <path d="M18 80v-14h64v14z" fill="#8C7A68" ${G}/><path d="M24 66v-12h52v12z" fill="#9C8A76" ${G}/><path d="M32 54v-12h36v12z" fill="#AC9A84" ${G}/>
-      <path d="M32 42h36" stroke="#5E9A45" stroke-width="4" stroke-linecap="round"/>
-      <path d="M44 42v12M52 42v12M60 42v12M38 54v12M50 54v12M62 54v12M30 66v14M44 66v14M56 66v14M70 66v14" stroke="#E4F4FC" stroke-width="2.4" stroke-linecap="round" opacity=".95"/>
-      <path d="M16 82q8-5 16 0q8-5 16 0q8-5 16 0q8-5 16 0q4-3 8 0" stroke="#fff" stroke-width="2.4" fill="none" stroke-linecap="round"/>`,
   };
   window.ikonWisata = (id) => `<svg class="iw-svg" viewBox="0 0 100 100" aria-hidden="true">${IKON[id] || IKON.ciantir}</svg>`;
 })();

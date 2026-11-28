@@ -73,7 +73,7 @@
     const ke = `${w.lokasi[0]},${w.lokasi[1]}`;
     const info = (label, isi) => (isi ? `<p class="kw-info"><b>${label}</b> ${esc(isi)}</p>` : "");
     return `<article class="kartu kt ktw" aria-label="${esc(d(w, "nama"))}">
-      <figure class="ktw-gambar" aria-hidden="true">${window.ikonWisata(w.id)}</figure>
+      <figure class="ktw-gambar">${window.ikonWisata(w.id)}<img src="${esc(w.foto || `assets/foto/wisata/${w.id}.webp`)}" alt="${esc(d(w, "nama"))}" width="640" height="400" decoding="async" onerror="this.remove()"></figure>
       <div class="kt-isi">
         <h2 class="kt-nama">${esc(d(w, "nama"))}</h2>
         ${d(w, "deskripsi") ? `<p class="kt-desk">${esc(d(w, "deskripsi"))}</p>` : ""}
